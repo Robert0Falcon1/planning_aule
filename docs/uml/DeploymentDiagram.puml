@@ -1,0 +1,77 @@
+@startuml 03_DeploymentDiagram
+' ============================================================
+' SISTEMA PRENOTAZIONE AULE - Deployment Diagram
+' ============================================================
+skinparam nodeBackgroundColor #FAFAFA
+skinparam nodeBorderColor #4A6FA5
+skinparam arrowColor #333
+skinparam cloudBackgroundColor #EEF2FF
+skinparam cloudBorderColor #7B96D2
+
+actor "Utente\n(browser / mobile)" as USER
+
+node "Client Device" #EEF2FF {
+  artifact "Browser\n(Chrome / Firefox / Safari)" as BROWSER
+}
+
+cloud "Cloud Provider\n(Render / Heroku / AWS)" #EFFFEF {
+
+  node "App Container (Docker)" #EFFFEF {
+    artifact "Streamlit Server\n:8501" as STREAMLIT
+    artifact "FastAPI Backend\n:8000" as FASTAPI
+    artifact "SQLAlchemy ORM" as ORM
+    artifact "Auth Service\n(JWT + PyJWT)" as AUTH
+    artifact "Calendar Sync\n(google-api-python-client)" as CALSYNC
+    artifact "Notification Service\n(smtplib)" as NOTIF
+  }
+
+  node "DB Container (Docker)" #FFF8EE {
+    database "SQLite\n(development)" as SQLD
+    database "MySQL 8.x\n(production)" as MYSQL
+  }
+
+  node "Reverse Proxy" #FEF0F0 {
+    artifact "Nginx / Traefik\n(HTTPS + Load Balancing)" as PROXY
+  }
+}
+
+cloud "Google Cloud Platform" #F5F0FF {
+  node "Google APIs" {
+    [Google Calendar API v3] as GCAL
+    [Google OAuth 2.0] as GOAUTH
+  }
+}
+
+cloud "Email Provider" #FEF0F0 {
+  [SMTP Server\n(SendGrid / Mailgun)] as SMTP
+}
+
+' Flussi
+USER      --> BROWSER   : interazione
+BROWSER   --> PROXY     : HTTPS :443
+PROXY     --> STREAMLIT : HTTP :8501
+STREAMLIT --> FASTAPI   : HTTP REST :8000
+FASTAPI   --> AUTH      : verifica JWT
+FASTAPI   --> ORM       : query / persist
+ORM       --> SQLD      : dev
+ORM       --> MYSQL     : prod
+FASTAPI   --> CALSYNC   : sync evento
+FASTAPI   --> NOTIF     : invia email
+CALSYNC   --> GCAL      : REST API (OAuth2)
+AUTH      --> GOAUTH    : OAuth2 token
+NOTIF     --> SMTP      : SMTP/TLS :587
+
+note right of PROXY
+  SSL Termination
+  Rate Limiting
+  Routing /api → FastAPI
+  Routing / → Streamlit
+end note
+
+note bottom of MYSQL
+  Migrazioni con Alembic
+  Backup automatico
+  Replica in read-only
+end note
+
+@enduml

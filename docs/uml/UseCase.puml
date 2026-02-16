@@ -1,0 +1,103 @@
+@startuml 04_UseCaseDiagram
+' ============================================================
+' SISTEMA PRENOTAZIONE AULE - Use Case Diagram
+' ============================================================
+skinparam actorBackgroundColor #FAFAFA
+skinparam actorBorderColor #4A6FA5
+skinparam usecaseBackgroundColor #EEF2FF
+skinparam usecaseBorderColor #7B96D2
+skinparam arrowColor #333
+left to right direction
+
+actor "Responsabile Corso"   as RC    #lightblue
+actor "Segreteria di Sede"   as SS    #lightgreen
+actor "Responsabile di Sede" as RS    #lightyellow
+actor "Segreteria Didattica" as SD    #lightsalmon
+actor "Coordinamento"        as CO    #plum
+actor "Google Calendar"      as GC    <<system>> #grey
+
+rectangle "Sistema Prenotazione Aule" {
+
+  ' ── RESPONSABILE CORSO ──
+  usecase "UC01\nRichiedi prenotazione singola"          as UC01
+  usecase "UC02\nRichiedi prenotazione massiva\n(ricorrente)" as UC02
+  usecase "UC03\nVisualizza slot liberi per aula"        as UC03
+  usecase "UC04\nRichiedi attrezzature"                  as UC04
+  usecase "UC05\nVisualizza proprie prenotazioni"        as UC05
+
+  ' ── SEGRETERIA DI SEDE ──
+  usecase "UC06\nValida richiesta prenotazione"          as UC06
+  usecase "UC07\nInserisci prenotazione"                 as UC07
+  usecase "UC08\nGestisci conflitto di slot"             as UC08
+  usecase "UC09\nRifiuta prenotazione"                   as UC09
+  usecase "UC10\nSegnala conflitto (warning)\nma consenti richiesta" as UC10
+
+  ' ── RESPONSABILE DI SEDE ──
+  usecase "UC11\nVisualizza prenotazioni sede"           as UC11
+  usecase "UC12\nVerifica capienza complessiva sede"     as UC12
+  usecase "UC13\nVisualizza saturazione spazi"           as UC13
+
+  ' ── SEGRETERIA DIDATTICA ──
+  usecase "UC14\nVisualizza prenotazioni\nper corso"     as UC14
+  usecase "UC15\nFiltra prenotazioni per\nperiodo/docente" as UC15
+
+  ' ── COORDINAMENTO ──
+  usecase "UC16\nVisualizza prenotazioni\nglobali multi-sede" as UC16
+  usecase "UC17\nGenera report saturazione"              as UC17
+  usecase "UC18\nEsporta report (CSV/PDF)"               as UC18
+
+  ' ── SISTEMA (comune a tutti) ──
+  usecase "UC19\nAutenticazione e\ngestione sessione"    as UC19
+  usecase "UC20\nSincronizza con\nGoogle Calendar"       as UC20
+  usecase "UC21\nInvia notifica email"                   as UC21
+  usecase "UC22\nVerifica disponibilità\naula in real-time" as UC22
+}
+
+' Responsabile Corso
+RC --> UC01
+RC --> UC02
+RC --> UC03
+RC --> UC04
+RC --> UC05
+RC --> UC19
+
+' Segreteria di Sede
+SS --> UC06
+SS --> UC07
+SS --> UC08
+SS --> UC09
+SS --> UC10
+SS --> UC19
+
+' Responsabile di Sede
+RS --> UC11
+RS --> UC12
+RS --> UC13
+RS --> UC19
+
+' Segreteria Didattica
+SD --> UC14
+SD --> UC15
+SD --> UC19
+
+' Coordinamento
+CO --> UC16
+CO --> UC17
+CO --> UC18
+CO --> UC19
+
+' Google Calendar (sistema esterno)
+GC --> UC20
+
+' Include / Extend
+UC01 ..> UC22  : <<include>>
+UC02 ..> UC22  : <<include>>
+UC07 ..> UC20  : <<include>>
+UC07 ..> UC21  : <<include>>
+UC06 ..> UC10  : <<extend>>\n[se conflitto]
+UC06 ..> UC08  : <<extend>>\n[se conflitto grave]
+UC01 ..> UC21  : <<include>>
+UC09 ..> UC21  : <<include>>
+UC17 ..> UC18  : <<extend>>
+
+@enduml

@@ -1,0 +1,37 @@
+@startuml C4_02_Container
+!include <C4/C4_Container>
+
+LAYOUT_WITH_LEGEND()
+
+title [C4 Level 2] Container Diagram - Sistema Prenotazione Aule
+
+Person(utente, "Utente (tutti i ruoli)", "Accede via browser o app mobile")
+
+System_Boundary(spa, "Sistema Prenotazione Aule") {
+  Container(proxy, "Reverse Proxy", "Nginx / Traefik", "HTTPS termination - routing - rate limiting - load balancing")
+  Container(streamlit, "Streamlit App", "Python 3.11 / Streamlit", "Interfaccia web responsive: dashboard per ruolo - form prenotazione - calendar view - report - gestione conflitti")
+  Container(api, "FastAPI Backend", "Python 3.11 / FastAPI + Pydantic", "REST API con logica di business: gestione prenotazioni - validazione slot - prenotazioni massive - reportistica")
+  Container(auth, "Auth & Permission Service", "Python / PyJWT + OAuth2", "Autenticazione JWT - gestione sessioni - RBAC per i 5 ruoli del sistema")
+  ContainerDb(db, "Database", "SQLite dev / MySQL 8.x prod / SQLAlchemy + Alembic", "Persistenza di utenti - sedi - aule - corsi - prenotazioni - slot - attrezzature - richieste - report")
+  Container(calsync, "Calendar Sync Service", "Python / google-api-python-client", "Sincronizzazione con Google Calendar: crea - aggiorna - elimina eventi al cambio stato prenotazione")
+  Container(notif, "Notification Service", "Python / smtplib + Jinja2", "Email HTML per conferma prenotazione - rifiuto - alert conflitto - reminder corso")
+}
+
+System_Ext(gcal, "Google Calendar API v3", "")
+System_Ext(smtp, "SMTP Server SendGrid", "")
+System_Ext(gauth, "Google OAuth 2.0", "")
+
+Rel(utente, proxy, "HTTPS :443", "Browser")
+Rel(proxy, streamlit, "HTTP :8501", "")
+Rel(proxy, api, "HTTP :8000", "")
+Rel(streamlit, api, "REST JSON", "HTTP")
+Rel(streamlit, auth, "Verifica sessione", "HTTP")
+Rel(api, auth, "Valida JWT + RBAC", "")
+Rel(api, db, "CRUD operations", "SQLAlchemy")
+Rel(api, calsync, "Trigger sync", "interno")
+Rel(api, notif, "Trigger email", "interno")
+Rel(auth, gauth, "OAuth2 code flow", "HTTPS")
+Rel(calsync, gcal, "Insert/Update event", "REST + OAuth2")
+Rel(notif, smtp, "Send MIME email", "SMTP TLS :587")
+
+@enduml

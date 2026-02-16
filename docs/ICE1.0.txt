@@ -1,0 +1,70 @@
+PLANNING PRENOTAZIONE AULE
+
+
+
+Vogliamo implementare un sistema di prenotazione aule per lo svolgimento dei corsi finanziati e a pagamento organizzati da un'Agenzia Formativa; Questo sistema, ad uso interno, dovrà poter comprendere utilizzi diversificati di prenotazione spazi.
+
+
+
+
+DI QUANTI E QUALI SPAZI PARLIAMO?
+
+3 sedi a Torino:  1 aule in Via Livorno 49 2 aule in Via Livorno 53 5 aule in C.so Svizzera 161  
+
+2 aule a Cuneo
+3 aule ad Asti
+4 aule a Novara
+4 aule a Biella
+
+
+GLI OBIETTIVI
+
+-RENDERE PIU’ AGILE IL SISTEMA DI PRENOTAZIONE AULE 
+
+-UNIFORMARE GLI STRUMENTI IN USO ALLE SEDI 
+
+-RIDURRE L’ERRORE UMANO NEL PROCESSO DI PRENOTAZIONE 
+
+-RACCOGLIERE DATI CIRCA LA SATURAZIONE DEGLI SPAZI 
+
+-FORNIRE FOTOGRAFIE PRECISE DI CIO’ CHE ACCADE IN OGNI SEDE 
+
+
+
+
+
+I RUOLI
+
+-RESPONSABILE CORSO: Richiede la prenotazione  dell’aula per il suo corso  
+
+-RESPONSABILE DI SEDE: Verifica la situazione delle prenotazioni per la sua sede
+
+-SEGRETERIA DI SEDE:  Valida e inserisce la prenotazione 
+
+-SEGRETERIA DIDATTICA: Verifica la situazione delle prenotazioni per i suoi corsi 
+
+-COORDINAMENTO:  Verifica la situazione complessiva delle prenotazioni
+
+
+COSA DOVRA’ CONSENTIRE IL SISTEMA
+
+-PRENOTAZIONI MASSIVE (es: tutti i lunedì da una certa data ad un’altra)
+
+-VERIFICA DELLE CAPIENZE (limite di persone presenti per sede complessivamente)
+
+-RICHIESTE DI ATTREZZATURE (es: pc)
+
+-VISUALIZZARE SLOT LIBERI PER AULA
+
+-SEGNALARE COME PROBLEMA, MA CONSENTIRE RICHIESTA PRENOTAZIONE PER SLOT GIA’ BLOCCATI
+
+-LAVORARE ON CLOUD
+
+-CONSENTIRE PERMESSI E AZIONI DIVERSIFICATE A SECONDA DEI RUOLI 
+
+
+Partiamo dalla progettazione: 
+* Genera i seguenti diagrammi UML compatibili con estensione VSCode PlantUML: ClassDiagram, ComponentDiagram, DeploymentDiagram e UseCase Diagram
+* Genera i seguenti diagrammi C4: Component, Container, Context
+
+Considera sempre: astrazione, polimorfismo, ereditarietà e incapsulamento . Prendi in considerazione MySQL (per ora SQLite), Python per il backend e streamlit pe ril frontend. Considera anche eventuali integrazioni con Google Calendar.

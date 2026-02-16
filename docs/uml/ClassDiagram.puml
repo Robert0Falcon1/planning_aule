@@ -1,0 +1,310 @@
+@startuml 01_ClassDiagram
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classBackgroundColor #FAFAFA
+skinparam classBorderColor #4A6FA5
+skinparam arrowColor #333
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #7B96D2
+hide empty members
+
+package "Utenti" #EEF2FF {
+
+  abstract class Utente {
+    - id             : int
+    - nome           : str
+    - cognome        : str
+    - email          : str
+    - _password_hash : str
+    - attivo         : bool
+    - sede_id        : int
+    + login(email, pwd)          : bool
+    + logout()                   : void
+    + get_permessi()             : List[Permesso]
+    + {abstract} get_dashboard() : Dashboard
+  }
+
+  class ResponsabileCorso {
+    - corsi_assegnati : List[Corso]
+    + richiedi_prenotazione(aula, slot)            : RichiestaPrenotazione
+    + richiedi_prenotazione_massiva(aula, pattern) : List[RichiestaPrenotazione]
+    + richiedi_attrezzatura(prenotazione, eq_list) : void
+    + visualizza_slot_liberi(aula, data)           : List[SlotOrario]
+    + get_dashboard()                              : Dashboard
+  }
+
+  class ResponsabileSede {
+    - sede : Sede
+    + visualizza_prenotazioni_sede()    : List[Prenotazione]
+    + verifica_capienza_sede(data)      : int
+    + visualizza_saturazione()          : float
+    + get_dashboard()                   : Dashboard
+  }
+
+  class SegreteriaSede {
+    - sede : Sede
+    + valida_prenotazione(richiesta)          : Prenotazione
+    + rifiuta_prenotazione(richiesta, motivo) : void
+    + inserisci_prenotazione(p)               : void
+    + gestisci_conflitto(richiesta)           : void
+    + get_dashboard()                         : Dashboard
+  }
+
+  class SegreteriaDidattica {
+    - corsi_gestiti : List[Corso]
+    + visualizza_prenotazioni_corsi() : List[Prenotazione]
+    + filtra_per_corso(corso)         : List[Prenotazione]
+    + get_dashboard()                 : Dashboard
+  }
+
+  class Coordinamento {
+    + visualizza_prenotazioni_globali()        : List[Prenotazione]
+    + genera_report_saturazione(sede, periodo) : Report
+    + esporta_report(formato)                  : File
+    + get_dashboard()                          : Dashboard
+  }
+
+  Utente <|-- ResponsabileCorso
+  Utente <|-- ResponsabileSede
+  Utente <|-- SegreteriaSede
+  Utente <|-- SegreteriaDidattica
+  Utente <|-- Coordinamento
+}
+
+package "Spazi" #FFF8EE {
+
+  class Sede {
+    - id               : int
+    - nome             : str
+    - indirizzo        : str
+    - citta            : str
+    - capienza_massima : int
+    + get_aule()                             : List[Aula]
+    + get_capienza_disponibile(data, fascia) : int
+    + verifica_saturazione(data)             : float
+    + get_prenotazioni_del_giorno(data)      : List[Prenotazione]
+  }
+
+  class Aula {
+    - id                : int
+    - nome              : str
+    - capienza          : int
+    - _sede             : Sede
+    - attrezzature_base : List[Attrezzatura]
+    + get_slot_liberi(data)   : List[SlotOrario]
+    + is_disponibile(slot)    : bool
+    + get_prenotazioni(da, a) : List[Prenotazione]
+    + has_conflitti(slot)     : bool
+  }
+
+  Sede "1" *-- "1..*" Aula : contiene
+}
+
+package "Prenotazioni" #EFFFEF {
+
+  abstract class Prenotazione {
+    - id              : int
+    - _aula           : Aula
+    - _corso          : Corso
+    - _richiedente    : ResponsabileCorso
+    - data_creazione  : datetime
+    - stato           : StatoPrenotazione
+    - note            : str
+    - google_event_id : str
+    + conferma()               : void
+    + annulla()                : void
+    + {abstract} get_slots()   : List[SlotOrario]
+    + ha_conflitti()           : bool
+  }
+
+  class PrenotazioneSingola {
+    - slot : SlotOrario
+    + get_slots() : List[SlotOrario]
+  }
+
+  class PrenotazioneMassiva {
+    - _pattern       : PatternRicorrenza
+    - data_inizio    : date
+    - data_fine      : date
+    - slots_generati : List[SlotOrario]
+    + genera_slots()     : List[SlotOrario]
+    + get_slots()        : List[SlotOrario]
+    + conta_occorrenze() : int
+  }
+
+  class RichiestaPrenotazione {
+    - id              : int
+    - _prenotazione   : Prenotazione
+    - _segreteria     : SegreteriaSede
+    - stato_richiesta : StatoRichiesta
+    - data_richiesta  : datetime
+    - conflitti       : List[Conflitto]
+    + approva()           : Prenotazione
+    + rifiuta(motivo)     : void
+    + segnala_conflitto() : void
+    + ha_conflitti()      : bool
+  }
+
+  class Conflitto {
+    - _prenotazione_esistente : Prenotazione
+    - _richiesta_conflittante : RichiestaPrenotazione
+    - tipo                    : TipoConflitto
+    - descrizione             : str
+    + segnala()       : void
+    + get_dettaglio() : str
+  }
+
+  class SlotOrario {
+    - id         : int
+    - data       : date
+    - ora_inizio : time
+    - ora_fine   : time
+    + get_durata_minuti()   : int
+    + sovrapponi_con(altro) : bool
+    + is_nel_futuro()       : bool
+  }
+
+  class PatternRicorrenza {
+    - tipo_ricorrenza  : TipoRicorrenza
+    - giorni_settimana : List[int]
+    - intervallo       : int
+    + genera_date(inizio, fine) : List[date]
+    + to_rrule_string()         : str
+  }
+
+  Prenotazione <|-- PrenotazioneSingola
+  Prenotazione <|-- PrenotazioneMassiva
+  Prenotazione "1" *-- "1..*" SlotOrario
+  PrenotazioneMassiva "1" *-- "1" PatternRicorrenza
+  RichiestaPrenotazione "1" o-- "1" Prenotazione
+  RichiestaPrenotazione "1" *-- "0..*" Conflitto
+}
+
+package "Corsi e Risorse" #FEF0F0 {
+
+  class Corso {
+    - id                 : int
+    - codice             : str
+    - titolo             : str
+    - tipo_finanziamento : TipoFinanziamento
+    - _responsabile      : ResponsabileCorso
+    - num_partecipanti   : int
+    - data_inizio        : date
+    - data_fine          : date
+    + get_prenotazioni() : List[Prenotazione]
+    + is_attivo()        : bool
+  }
+
+  class Attrezzatura {
+    - id                   : int
+    - tipo                 : TipoAttrezzatura
+    - descrizione          : str
+    - quantita_disponibile : int
+    - _sede                : Sede
+    + is_disponibile(slot, quantita) : bool
+    + get_disponibilita(data)        : int
+  }
+
+  class RichiestaAttrezzatura {
+    - _prenotazione : Prenotazione
+    - _attrezzatura : Attrezzatura
+    - quantita      : int
+    - stato         : StatoRichiesta
+    - note          : str
+    + approva()       : void
+    + rifiuta(motivo) : void
+  }
+
+  Sede "1" *-- "0..*" Attrezzatura
+  Prenotazione "1" -- "0..*" RichiestaAttrezzatura
+  Attrezzatura "1" -- "0..*" RichiestaAttrezzatura
+}
+
+package "Servizi" #F5F0FF {
+
+  class GoogleCalendarService {
+    - _credentials : OAuth2Credentials
+    - calendar_id  : str
+    + sincronizza_prenotazione(p) : str
+    + rimuovi_evento(event_id)    : void
+    + aggiorna_evento(p)          : void
+    + verifica_connessione()      : bool
+  }
+
+  class NotificationService {
+    - smtp_host : str
+    - smtp_port : int
+    + invia_conferma(dest, p)     : void
+    + invia_rifiuto(dest, motivo) : void
+    + invia_alert_conflitto(p)    : void
+  }
+
+  class Report {
+    - periodo_inizio : date
+    - periodo_fine   : date
+    - sede           : Sede
+    - dati           : dict
+    + genera()                : void
+    + get_tasso_saturazione() : float
+    + esporta_csv()           : File
+    + esporta_pdf()           : File
+  }
+}
+
+package "Enumerazioni" #F9F9F9 {
+
+  enum StatoPrenotazione {
+    IN_ATTESA
+    CONFERMATA
+    RIFIUTATA
+    ANNULLATA
+    CONFLITTO
+  }
+
+  enum StatoRichiesta {
+    INVIATA
+    IN_REVISIONE
+    APPROVATA
+    RIFIUTATA
+  }
+
+  enum TipoRicorrenza {
+    GIORNALIERA
+    SETTIMANALE
+    BISETTIMANALE
+    MENSILE
+  }
+
+  enum TipoAttrezzatura {
+    PC
+    PROIETTORE
+    LAVAGNA_DIGITALE
+    MICROFONO
+    WEBCAM
+  }
+
+  enum TipoFinanziamento {
+    FINANZIATO_PUBBLICO
+    A_PAGAMENTO
+    MISTO
+  }
+
+  enum TipoConflitto {
+    SOVRAPPOSIZIONE_SLOT
+    CAPIENZA_SUPERATA
+    ATTREZZATURA_INDISPONIBILE
+  }
+}
+
+' ── RELAZIONI TRASVERSALI ──
+Aula              "1"    o-- "0..*" Prenotazione          : ospita
+Corso             "1"    o-- "0..*" Prenotazione          : pianifica
+ResponsabileCorso "1"    --  "0..*" Prenotazione          : richiede
+SegreteriaSede    "1"    --  "0..*" RichiestaPrenotazione : gestisce
+Utente            "0..*" --  "1"   Sede                   : appartiene a
+Coordinamento     "1"    --  "0..*" Report                : genera
+
+Prenotazione   ..> GoogleCalendarService : <<sync>>
+SegreteriaSede ..> NotificationService   : <<notifica>>
+
+@enduml

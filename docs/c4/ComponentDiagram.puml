@@ -1,0 +1,52 @@
+@startuml C4_03_Component
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 3 - Component Diagram - FastAPI Backend
+
+Container(streamlit, "Streamlit App", "Python Streamlit", "Interfaccia utente web")
+ContainerDb(db, "Database", "SQLite dev - MySQL prod", "Persistenza dati")
+Container_Ext(gcal, "Google Calendar API", "Calendari condivisi")
+Container_Ext(smtp, "SMTP Server", "Invio email")
+
+Container_Boundary(api, "FastAPI Backend") {
+  Component(authComp, "Auth Component", "PyJWT OAuth2 Passlib", "Login - logout - refresh token - verifica JWT - hash password - OAuth2 Google flow")
+  Component(rbacComp, "RBAC Permission Manager", "Python decorators", "Verifica ruolo utente per endpoint - matrice permessi per 5 ruoli - filtri query per sede e corso")
+  Component(bookComp, "Booking Component", "Python domain logic", "Prenotazioni singole e massive - generazione slot da RRULE - workflow richiesta - validazione - conferma")
+  Component(conflictComp, "Conflict Detection Engine", "Python query overlap", "Rilevamento sovrapposizioni slot - verifica capienza sede complessiva - segnalazione warning vs blocco")
+  Component(roomComp, "Room and Slot Component", "Python", "CRUD aule e sedi - calcolo slot liberi - verifica disponibilita real-time - gestione capienza massima")
+  Component(courseComp, "Course Component", "Python", "CRUD corsi - associazione responsabile - gestione tipo finanziamento - visualizzazione per segreteria didattica")
+  Component(equipComp, "Equipment Component", "Python", "CRUD attrezzature per sede - gestione richieste per prenotazione - verifica disponibilita per slot")
+  Component(reportComp, "Report and Analytics Component", "Python Pandas", "Calcolo tasso saturazione per sede e aula - aggregazioni per periodo e corso - esportazione CSV e PDF")
+  Component(calSyncComp, "Calendar Sync Component", "google-api-python-client", "Mapping prenotazione su Google Event - create patch delete su cambio stato - gestione errori e retry")
+  Component(notifComp, "Notification Component", "smtplib Jinja2", "Template email HTML per ogni evento - queue notifiche asincrona - gestione indirizzi per ruolo")
+  Component(ormComp, "ORM Repository Layer", "SQLAlchemy Alembic", "Modelli ORM - session management - transazioni ACID - migrazioni schema - query builder tipizzato")
+}
+
+Rel(streamlit, authComp, "POST auth login")
+Rel(streamlit, bookComp, "POST bookings - GET bookings")
+Rel(streamlit, roomComp, "GET rooms - GET slots")
+Rel(streamlit, courseComp, "GET courses")
+Rel(streamlit, reportComp, "GET reports")
+Rel(streamlit, equipComp, "POST equipment-requests")
+
+Rel(bookComp, rbacComp, "verifica permesso creazione")
+Rel(bookComp, conflictComp, "rileva conflitti slot")
+Rel(bookComp, roomComp, "verifica disponibilita aula")
+Rel(bookComp, equipComp, "allega richiesta attrezzatura")
+Rel(bookComp, calSyncComp, "sync su conferma e annullamento")
+Rel(bookComp, notifComp, "notifica cambio stato")
+Rel(bookComp, ormComp, "persiste prenotazione")
+Rel(conflictComp, ormComp, "query overlap slots")
+Rel(roomComp, ormComp, "CRUD aule sedi slot")
+Rel(courseComp, ormComp, "CRUD corsi")
+Rel(equipComp, ormComp, "CRUD attrezzature")
+Rel(reportComp, ormComp, "query aggregate")
+Rel(authComp, ormComp, "verifica e CRUD utenti")
+
+Rel(calSyncComp, gcal, "REST OAuth2")
+Rel(notifComp, smtp, "SMTP TLS")
+Rel(ormComp, db, "SQL via SQLAlchemy")
+
+@enduml

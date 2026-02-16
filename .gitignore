@@ -1,0 +1,13 @@
+# Ambiente virtuale
+ice_venv/
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Credenziali
+**/*credenziali*.json
+
+# Log
+*.log

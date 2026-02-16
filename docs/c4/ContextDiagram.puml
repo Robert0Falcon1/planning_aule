@@ -1,0 +1,31 @@
+@startuml C4_01_Context
+!include <C4/C4_Context>
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+title [C4 Level 1] System Context - Sistema Prenotazione Aule
+
+Person(rc, "Responsabile Corso", "Richiede prenotazioni aula per i propri corsi")
+Person(ss, "Segreteria di Sede", "Valida e inserisce le prenotazioni nella sede")
+Person(rs, "Responsabile di Sede", "Supervisiona lo stato degli spazi della sede")
+Person(sd, "Segreteria Didattica", "Monitora le prenotazioni associate ai corsi")
+Person(co, "Coordinamento", "Supervisione globale multi-sede e reportistica")
+
+System(spa, "Sistema Prenotazione Aule", "Gestione centralizzata cloud delle prenotazioni aule - Permessi differenziati per ruolo")
+
+System_Ext(gcal, "Google Calendar", "Sincronizzazione eventi e calendari condivisi per sede e corso")
+System_Ext(gmail, "Email Service SMTP", "Notifiche automatiche: conferme - rifiuti - alert conflitti")
+System_Ext(gauth, "Google OAuth 2.0", "Autenticazione federata degli utenti")
+
+Rel(rc, spa, "Richiede prenotazioni e visualizza slot liberi")
+Rel(ss, spa, "Valida - inserisce e gestisce conflitti")
+Rel(rs, spa, "Visualizza stato sede e saturazione spazi")
+Rel(sd, spa, "Monitora prenotazioni dei propri corsi")
+Rel(co, spa, "Oversight globale e report saturazione")
+
+Rel(spa, gcal, "Sincronizza prenotazioni come eventi calendario", "Google API v3 REST")
+Rel(spa, gmail, "Invia notifiche email agli utenti", "SMTP TLS")
+Rel(spa, gauth, "Autentica gli utenti tramite OAuth2", "OAuth 2.0")
+
+@enduml

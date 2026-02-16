@@ -1,0 +1,81 @@
+@startuml 02_ComponentDiagram
+' ============================================================
+' SISTEMA PRENOTAZIONE AULE - Component Diagram
+' ============================================================
+skinparam componentStyle rectangle
+skinparam componentBackgroundColor #FAFAFA
+skinparam componentBorderColor #4A6FA5
+skinparam arrowColor #333
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #7B96D2
+
+package "Frontend — Streamlit" #EEF2FF {
+  [Auth UI]             as UI_Auth
+  [Dashboard Widget]    as UI_Dash
+  [Booking Form]        as UI_Book
+  [Calendar View]       as UI_Cal
+  [Report View]         as UI_Rep
+  [Room Availability]   as UI_Room
+}
+
+package "Backend — Python / FastAPI" #EFFFEF {
+  [Auth Service]         as SVC_Auth
+  [Booking Service]      as SVC_Book
+  [Room Service]         as SVC_Room
+  [User Service]         as SVC_User
+  [Course Service]       as SVC_Cors
+  [Report Service]       as SVC_Rep
+  [Equipment Service]    as SVC_Eq
+  [Notification Service] as SVC_Notif
+  [Calendar Sync Service]as SVC_Cal
+  [Permission Manager]   as SVC_Perm
+}
+
+package "Data Layer" #FFF8EE {
+  [SQLAlchemy ORM]  as ORM
+  database "SQLite\n(dev)" as DB_DEV
+  database "MySQL\n(prod)" as DB_PROD
+}
+
+package "Servizi Esterni" #FEF0F0 {
+  [Google Calendar API v3] as EXT_GCal
+  [SMTP Server]            as EXT_SMTP
+  [Google OAuth 2.0]       as EXT_OAuth
+}
+
+' Frontend → Backend
+UI_Auth  --> SVC_Auth  : login / verifica token
+UI_Dash  --> SVC_Book  : lista prenotazioni
+UI_Dash  --> SVC_Rep   : dati saturazione
+UI_Book  --> SVC_Book  : crea richiesta
+UI_Book  --> SVC_Room  : slot disponibili
+UI_Book  --> SVC_Eq    : richiesta attrezzatura
+UI_Cal   --> SVC_Book  : vista calendario
+UI_Room  --> SVC_Room  : slot liberi per aula
+UI_Rep   --> SVC_Rep   : genera report
+
+' Auth → Permission
+SVC_Auth --> SVC_Perm  : verifica permessi ruolo
+SVC_Auth --> EXT_OAuth : OAuth2 flow
+
+' Business Logic
+SVC_Book --> SVC_Room  : verifica disponibilità
+SVC_Book --> SVC_Eq    : verifica attrezzatura
+SVC_Book --> SVC_Notif : trigger notifica
+SVC_Book --> SVC_Cal   : trigger sync calendario
+SVC_Book --> ORM       : CRUD prenotazioni
+SVC_Room --> ORM       : CRUD aule / slot
+SVC_User --> ORM       : CRUD utenti
+SVC_Cors --> ORM       : CRUD corsi
+SVC_Rep  --> ORM       : query aggregazione
+SVC_Eq   --> ORM       : CRUD attrezzature
+
+' Data Layer
+ORM --> DB_DEV  : dev environment
+ORM --> DB_PROD : prod environment
+
+' External
+SVC_Cal   --> EXT_GCal  : insert / update / delete event
+SVC_Notif --> EXT_SMTP  : email MIME / TLS
+
+@enduml
