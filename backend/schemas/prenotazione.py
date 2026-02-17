@@ -50,6 +50,14 @@ class PrenotazioneMassivaInput(BaseModel):
             raise ValueError("I giorni della settimana devono essere tra 1 (lunedì) e 7 (domenica)")
         return sorted(set(v))
 
+class RichiestaEmbedded(BaseModel):
+    id:           int
+    stato:        StatoRichiesta
+    ha_conflitti: bool
+    note_rifiuto: Optional[str] = None
+    data_gestione: Optional[datetime] = None
+    class Config:
+        from_attributes = True
 
 class PrenotazioneRisposta(BaseModel):
     """Schema di risposta per una prenotazione."""
@@ -62,6 +70,7 @@ class PrenotazioneRisposta(BaseModel):
     note:           Optional[str]
     data_creazione: datetime
     slots:          List[SlotOrarioSchema] = []
+    richiesta: Optional[RichiestaEmbedded] = None
 
     class Config:
         from_attributes = True

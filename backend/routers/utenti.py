@@ -38,7 +38,6 @@ def crea_utente(
     _:    Utente  = Depends(verifica_permesso("utente:creare"))
 ):
     """Crea un nuovo utente nel sistema (solo Coordinamento)."""
-    # Verifica email univoca
     esistente = db.query(Utente).filter(Utente.email == dati.email).first()
     if esistente:
         raise HTTPException(
@@ -59,3 +58,53 @@ def crea_utente(
     db.commit()
     db.refresh(utente)
     return utente
+
+
+@router.delete("/{utente_id}", status_code=200, summary="Disattiva utente")
+def disattiva_utente(
+    utente_id: int,
+    db:        Session = Depends(get_db),
+    corrente:  Utente  = Depends(verifica_permesso("utente:creare"))
+):
+    """
+    Soft-delete: imposta attivo=False senza eliminare il record.
+    Mantiene l'integrità referenziale con prenotazioni e corsi esistenti.
+    """
+    utente = db.query(Utente).filter(Utente.id == utente_id).first()
+    if not utente:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if utente.id == corrente.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Non puoi disattivare il tuo stesso account"
+        )
+    if not utente.attivo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="L'utente è già disattivato"
+        )
+
+    utente.attivo = False
+    db.commit()
+    return {"detail": f"Utente '{utente.email}' disattivato con successo"}
+
+
+@router.patch("/{utente_id}/riattiva", status_code=200, summary="Riattiva utente")
+def riattiva_utente(
+    utente_id: int,
+    db:        Session = Depends(get_db),
+    _:         Utente  = Depends(verifica_permesso("utente:creare"))
+):
+    """Riattiva un utente precedentemente disattivato."""
+    utente = db.query(Utente).filter(Utente.id == utente_id).first()
+    if not utente:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    if utente.attivo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="L'utente è già attivo"
+        )
+
+    utente.attivo = True
+    db.commit()
+    return {"detail": f"Utente '{utente.email}' riattivato con successo"}

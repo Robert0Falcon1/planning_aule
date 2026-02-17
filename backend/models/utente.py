@@ -26,7 +26,7 @@ class Utente(Base):
     cognome        = Column(String(100), nullable=False)
     email          = Column(String(255), unique=True, nullable=False, index=True)
     password_hash  = Column(String(255), nullable=False)
-    attivo         = Column(Boolean, default=True, nullable=False)
+    attivo         = Column(Boolean, default=True)
     ruolo          = Column(SAEnum(RuoloUtente), nullable=False)
     sede_id        = Column(Integer, ForeignKey("sedi.id"), nullable=True)
     data_creazione = Column(DateTime, default=datetime.utcnow, nullable=False)

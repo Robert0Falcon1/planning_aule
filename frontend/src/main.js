@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 
 // Bootstrap Italia: design system della PA italiana
 import 'bootstrap-italia/dist/css/bootstrap-italia.min.css'
-import 'bootstrap-italia/dist/js/bootstrap-italia.bundle.min'
+import 'bootstrap-italia/dist/js/bootstrap-italia.bundle.min.js'
 
 // Foglio di stile custom (decommentare quando pronto)
 // import '@/assets/custom.css'

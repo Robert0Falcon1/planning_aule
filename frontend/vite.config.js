@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 5173,
     // Proxy verso FastAPI: tutte le chiamate /api vengono inoltrate al backend
     proxy: {

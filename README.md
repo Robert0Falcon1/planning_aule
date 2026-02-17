@@ -676,3 +676,14 @@ Per segnalare bug, richiedere nuove funzionalità o ottenere supporto tecnico, c
 ---
 
 *Gestionale ICE v1.0 — InforCoopEcipa*
+
+
+## Terminale 1 (Backend):
+```bash
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## Terminale 2 (Frontend):
+```bash
+npm run dev -- --host
+```

@@ -2,23 +2,28 @@
 // API — Utenti (solo Coordinamento)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import apiClient from './client'
+import client from './client'
 
-/**
- * Restituisce tutti gli utenti registrati.
- * @returns {Promise<Utente[]>}
- */
+/** Lista completa degli utenti */
 export async function getUtenti() {
-  const response = await apiClient.get('/utenti/')
-  return response.data
+  const res = await client.get('/utenti/')
+  return res.data
 }
 
-/**
- * Crea un nuovo utente nel sistema.
- * @param {{ nome, cognome, email, password, ruolo, sede_id? }} dati
- * @returns {Promise<Utente>}
- */
+/** Crea un nuovo utente */
 export async function creaUtente(dati) {
-  const response = await apiClient.post('/utenti/', dati)
-  return response.data
+  const res = await client.post('/utenti/', dati)
+  return res.data
+}
+
+/** Disattiva (soft-delete) un utente */
+export async function disattivaUtente(utenteId) {
+  const res = await client.delete(`/utenti/${utenteId}`)
+  return res.data
+}
+
+/** Riattiva un utente precedentemente disattivato */
+export async function riattivaUtente(utenteId) {
+  const res = await client.patch(`/utenti/${utenteId}/riattiva`)
+  return res.data
 }

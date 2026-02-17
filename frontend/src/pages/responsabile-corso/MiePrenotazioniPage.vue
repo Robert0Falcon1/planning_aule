@@ -32,7 +32,6 @@
       </div>
     </div>
 
-    <!-- Lista prenotazioni -->
     <LoadingSpinner v-if="loading" />
 
     <div v-else-if="prenotazioni.length === 0" class="alert alert-info">
@@ -45,7 +44,6 @@
         :key="p.id"
         class="accordion-item border-0 shadow-sm mb-2"
       >
-        <!-- Intestazione accordion -->
         <h3 class="accordion-header">
           <button
             class="accordion-button collapsed"
@@ -67,23 +65,43 @@
           </button>
         </h3>
 
-        <!-- Corpo accordion: lista degli slot -->
         <div :id="`collapse-${p.id}`" class="accordion-collapse collapse">
           <div class="accordion-body bg-light">
+
+            <!-- Motivo rifiuto — ben visibile se presente -->
+            <div
+              v-if="p.stato === 'rifiutata' && p.richiesta?.note_rifiuto"
+              class="alert alert-danger mb-3"
+            >
+              <strong>❌ Motivo del rifiuto:</strong><br/>
+              {{ p.richiesta.note_rifiuto }}
+            </div>
+
+            <!-- Avviso conflitto senza rifiuto formale -->
+            <div v-else-if="p.stato === 'conflitto'" class="alert alert-warning mb-3">
+              ⚠️ Richiesta in attesa di gestione: esiste un conflitto con un'altra prenotazione nella stessa fascia oraria.
+            </div>
+
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-5">
                 <p class="small mb-1"><strong>Tipo:</strong> {{ p.tipo }}</p>
                 <p class="small mb-1"><strong>Aula ID:</strong> {{ p.aula_id }}</p>
                 <p class="small mb-1"><strong>Corso ID:</strong> {{ p.corso_id }}</p>
-                <p v-if="p.note" class="small mb-0"><strong>Note:</strong> {{ p.note }}</p>
+                <p class="small mb-1">
+                  <strong>Stato richiesta:</strong>
+                  <span class="ms-1 text-capitalize">{{ p.richiesta?.stato ?? '—' }}</span>
+                </p>
+                <p v-if="p.note" class="small mb-0">
+                  <strong>Note:</strong> {{ p.note }}
+                </p>
               </div>
-              <div class="col-md-6">
-                <p class="small fw-semibold mb-1">Slot orari ({{ p.slots?.length ?? 0 }}):</p>
-                <div
-                  v-if="p.slots?.length"
-                  class="overflow-auto"
-                  style="max-height: 150px;"
-                >
+
+              <div class="col-md-7">
+                <p class="small fw-semibold mb-1">
+                  Slot orari ({{ p.slots?.length ?? 0 }}):
+                </p>
+                <!-- Nessun max-height: tutti gli slot visibili -->
+                <div class="overflow-auto" style="max-height: 300px;">
                   <div
                     v-for="s in p.slots"
                     :key="`${p.id}-${s.data}-${s.ora_inizio}`"
@@ -111,7 +129,6 @@ import BadgeStato     from '@/components/ui/BadgeStato.vue'
 
 const loading      = ref(false)
 const prenotazioni = ref([])
-
 const filtri = reactive({ stato: '', data_dal: '', data_al: '' })
 
 async function carica() {

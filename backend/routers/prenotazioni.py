@@ -3,7 +3,7 @@ Router per la gestione delle prenotazioni aule.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from backend.database import get_db
 from backend.core.dependencies import get_utente_corrente, verifica_permesso
 from backend.models.utente import Utente
@@ -69,13 +69,18 @@ def lista_prenotazioni(
     Restituisce le prenotazioni visibili in base al ruolo dell'utente:
     - ResponsabileCorso: solo le proprie
     - SegreteriaSede/ResponsabileSede: della propria sede
-    - SegreteriaDidattica: per i propri corsi
+    - SegreteriaDidattica: tutte le prenotazioni della propria sede  ← FIX
     - Coordinamento: tutte
     """
     from backend.models.enums import RuoloUtente
     from backend.models.aula import Aula
 
-    query = db.query(Prenotazione)
+    # FIX: joinedload su richiesta così note_rifiuto arriva nella risposta
+    # senza N+1 query aggiuntive
+    query = db.query(Prenotazione).options(
+        joinedload(Prenotazione.richiesta),
+        joinedload(Prenotazione.slots),
+    )
 
     # Filtri per ruolo (RBAC a livello di dati)
     if utente.ruolo == RuoloUtente.RESPONSABILE_CORSO:
@@ -84,15 +89,23 @@ def lista_prenotazioni(
         query = (query.join(Aula)
                  .filter(Aula.sede_id == utente.sede_id))
     elif utente.ruolo == RuoloUtente.SEGRETERIA_DIDATTICA:
-        query = (query.join(Prenotazione.corso)
-                 .filter(Prenotazione.corso.has(
-                     responsabile_id=utente.id
-                 )))
+        # FIX: vedeva solo i corsi dove era responsabile (sempre vuoto perché
+        # responsabile_id appartiene al Responsabile Corso, non alla Segreteria).
+        # Ora vede tutte le prenotazioni della propria sede, coerente con il
+        # suo ruolo di monitoraggio del piano didattico.
+        if utente.sede_id:
+            query = (query.join(Aula)
+                     .filter(Aula.sede_id == utente.sede_id))
     # COORDINAMENTO: vede tutto, nessun filtro aggiuntivo
 
     # Filtri opzionali dalla querystring
     if sede_id:
-        query = query.join(Aula).filter(Aula.sede_id == sede_id)
+        # Evita doppio join su Aula se già joinata dal filtro ruolo
+        if utente.ruolo not in [RuoloUtente.SEGRETERIA_SEDE,
+                                  RuoloUtente.RESPONSABILE_SEDE,
+                                  RuoloUtente.SEGRETERIA_DIDATTICA]:
+            query = query.join(Aula)
+        query = query.filter(Aula.sede_id == sede_id)
     if corso_id:
         query = query.filter(Prenotazione.corso_id == corso_id)
     if stato:
@@ -115,7 +128,12 @@ def dettaglio_prenotazione(
     utente: Utente  = Depends(get_utente_corrente)
 ):
     """Restituisce il dettaglio di una singola prenotazione."""
-    p = db.query(Prenotazione).filter(Prenotazione.id == prenotazione_id).first()
+    p = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.richiesta), joinedload(Prenotazione.slots))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
     if not p:
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
     return p
@@ -172,7 +190,7 @@ def slot_liberi(
             Prenotazione.stato.in_([
                 StatoPrenotazione.CONFERMATA,
                 StatoPrenotazione.IN_ATTESA,
-                StatoPrenotazione.CONFLITTO, 
+                StatoPrenotazione.CONFLITTO,
             ]),
             SlotOrario.data >= data_dal,
             SlotOrario.data <= data_al,
