@@ -172,6 +172,7 @@ def slot_liberi(
             Prenotazione.stato.in_([
                 StatoPrenotazione.CONFERMATA,
                 StatoPrenotazione.IN_ATTESA,
+                StatoPrenotazione.CONFLITTO, 
             ]),
             SlotOrario.data >= data_dal,
             SlotOrario.data <= data_al,

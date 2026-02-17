@@ -1,0 +1,25 @@
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * custom.css — Foglio di stile custom per ICE Planning Aule
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Bootstrap Italia è già importato in main.js.
+ * Aggiungi qui le personalizzazioni SENZA toccare i file del framework.
+ *
+ * Abilita questo file decommentando la riga in src/main.js:
+ *   // import '@/assets/custom.css'
+ *
+ * Esempi di personalizzazione:
+ *
+ * :root {
+ *   --it-primary:  #005CA3;   -- colore primario PA (default Bootstrap Italia)
+ *   --it-accent:   #E30613;   -- accento
+ * }
+ *
+ * .navbar-brand {
+ *   font-family: 'Titillium Web', sans-serif;
+ * }
+ *
+ * .card { border-radius: 8px; }
+ * ─────────────────────────────────────────────────────────────────────────────
+ */

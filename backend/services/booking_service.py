@@ -1,6 +1,7 @@
 """
 Servizio principale per la gestione delle prenotazioni.
-Coordina creazione, validazione, conflitti e stati del workflow.
+FIX: passato escludi_prenotazione_id a rileva_conflitti_slot per evitare
+     che la prenotazione appena creata si auto-segnali come conflitto con se stessa.
 """
 
 from datetime import date, timedelta
@@ -27,9 +28,6 @@ def crea_prenotazione_singola(
 ) -> tuple[PrenotazioneSingola, RichiestaPrenotazione]:
     """
     Crea una prenotazione singola con il relativo workflow di richiesta.
-
-    Returns:
-        Tupla (prenotazione, richiesta)
     """
     # ── Creazione prenotazione ────────────────────────────────────────────────
     prenotazione = PrenotazioneSingola(
@@ -40,7 +38,7 @@ def crea_prenotazione_singola(
         stato=StatoPrenotazione.IN_ATTESA,
     )
     db.add(prenotazione)
-    db.flush()  # Ottieni l'ID senza fare commit
+    db.flush()  # Ottieni l'ID prima del commit
 
     # ── Creazione slot ────────────────────────────────────────────────────────
     slot = SlotOrario(
@@ -52,15 +50,24 @@ def crea_prenotazione_singola(
     db.add(slot)
     db.flush()
 
-    # ── Rilevamento conflitti (warning, non blocco) ────────────────────────────
+    # ── Rilevamento conflitti ─────────────────────────────────────────────────
+    # FIX: escludiamo la prenotazione appena creata dalla ricerca.
+    # Senza questo parametro, il conflict service trovava lo slot appena inserito
+    # (visibile nella sessione dopo il flush) e lo segnalava come conflitto
+    # con se stesso, anche su un DB completamente vuoto.
     slots_da_verificare = [{
         "data": dati.slot.data,
         "ora_inizio": dati.slot.ora_inizio,
         "ora_fine": dati.slot.ora_fine,
     }]
-    conflitti_trovati = rileva_conflitti_slot(db, dati.aula_id, slots_da_verificare)
+    conflitti_trovati = rileva_conflitti_slot(
+        db,
+        dati.aula_id,
+        slots_da_verificare,
+        escludi_prenotazione_id=prenotazione.id,   # <── FIX
+    )
 
-    # ── Creazione richiesta di approvazione ───────────────────────────────────
+    # ── Richiesta di approvazione ─────────────────────────────────────────────
     richiesta = RichiestaPrenotazione(
         prenotazione_id=prenotazione.id,
         stato=StatoRichiesta.INVIATA,
@@ -69,7 +76,7 @@ def crea_prenotazione_singola(
     db.add(richiesta)
     db.flush()
 
-    # ── Registrazione conflitti come warning ──────────────────────────────────
+    # ── Registra conflitti come warning ───────────────────────────────────────
     if conflitti_trovati:
         prenotazione.stato = StatoPrenotazione.CONFLITTO
         for c in conflitti_trovati:
@@ -95,35 +102,29 @@ def genera_date_ricorrenza(
 ) -> list[date]:
     """
     Genera tutte le date di una prenotazione ricorrente.
-
-    Args:
-        data_inizio:     Prima data del range
-        data_fine:       Ultima data del range
-        tipo:            Tipo di ricorrenza
-        giorni_settimana: Lista di giorni (1=lunedì, 7=domenica)
-
-    Returns:
-        Lista di date generate
+    isoweekday(): 1=lunedì … 7=domenica
     """
     date_generate = []
     corrente = data_inizio
 
     while corrente <= data_fine:
-        # isoweekday(): 1=lunedì, 7=domenica
         if corrente.isoweekday() in giorni_settimana:
             date_generate.append(corrente)
 
-        # Avanzamento in base al tipo di ricorrenza
-        if tipo == TipoRicorrenza.GIORNALIERA:
-            corrente += timedelta(days=1)
-        elif tipo == TipoRicorrenza.SETTIMANALE:
-            corrente += timedelta(days=1)
-        elif tipo == TipoRicorrenza.BISETTIMANALE:
-            corrente += timedelta(days=1)
-        elif tipo == TipoRicorrenza.MENSILE:
+        if tipo == TipoRicorrenza.MENSILE:
+            # Per mensile: salta al mese successivo mantenendo il giorno
             corrente += relativedelta(months=1)
-            # Per mensile: salta alle settimane pari
-            break  # Semplificazione: mensile gestito separatamente
+        else:
+            # Giornaliera, settimanale, bisettimanale: avanza giorno per giorno
+            corrente += timedelta(days=1)
+
+    # Per bisettimanale: filtra tenendo solo le settimane pari
+    if tipo == TipoRicorrenza.BISETTIMANALE:
+        prima_settimana = data_inizio.isocalendar()[1]
+        date_generate = [
+            d for d in date_generate
+            if (d.isocalendar()[1] - prima_settimana) % 2 == 0
+        ]
 
     return date_generate
 
@@ -135,11 +136,7 @@ def crea_prenotazione_massiva(
 ) -> tuple[PrenotazioneMassiva, RichiestaPrenotazione]:
     """
     Crea una prenotazione massiva generando tutti gli slot ricorrenti.
-
-    Returns:
-        Tupla (prenotazione, richiesta)
     """
-    # ── Creazione prenotazione base ───────────────────────────────────────────
     prenotazione = PrenotazioneMassiva(
         aula_id=dati.aula_id,
         corso_id=dati.corso_id,
@@ -154,7 +151,7 @@ def crea_prenotazione_massiva(
     db.add(prenotazione)
     db.flush()
 
-    # ── Generazione degli slot ────────────────────────────────────────────────
+    # ── Generazione slot ──────────────────────────────────────────────────────
     date_ricorrenti = genera_date_ricorrenza(
         dati.data_inizio,
         dati.data_fine,
@@ -179,10 +176,16 @@ def crea_prenotazione_massiva(
 
     db.flush()
 
-    # ── Rilevamento conflitti ─────────────────────────────────────────────────
-    conflitti_trovati = rileva_conflitti_slot(db, dati.aula_id, slots_da_verificare)
+    # ── Rilevamento conflitti (con esclusione della prenotazione corrente) ─────
+    # FIX: stesso problema della singola — escludiamo se stessa
+    conflitti_trovati = rileva_conflitti_slot(
+        db,
+        dati.aula_id,
+        slots_da_verificare,
+        escludi_prenotazione_id=prenotazione.id,   # <── FIX
+    )
 
-    # ── Richiesta di approvazione ─────────────────────────────────────────────
+    # ── Richiesta ─────────────────────────────────────────────────────────────
     richiesta = RichiestaPrenotazione(
         prenotazione_id=prenotazione.id,
         stato=StatoRichiesta.INVIATA,
