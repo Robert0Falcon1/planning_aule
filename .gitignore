@@ -11,3 +11,6 @@ __pycache__/
 
 # Log
 *.log
+
+# Database test
+*.db
