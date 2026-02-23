@@ -67,4 +67,4 @@ class TipoConflitto(str, enum.Enum):
     """Tipologie di conflitto rilevabili nel sistema."""
     SOVRAPPOSIZIONE_SLOT         = "sovrapposizione_slot"
     CAPIENZA_SUPERATA            = "capienza_superata"
-    ATTREZZATURA_INDISPONIBILE   = "attrezzatura_indisponibile"
+    ATTREZZATURA_NON_DISPONIBILE   = "ATTREZZATURA_NON_DISPONIBILE"
