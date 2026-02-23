@@ -50,10 +50,10 @@ class TipoAttrezzatura(str, enum.Enum):
     """Categorie di attrezzatura richiedibile."""
     PC               = "pc"
     PROIETTORE       = "proiettore"
-    LAVAGNA_DIGITALE = "lavagna_digitale"
+    LAVAGNA          = "lavagna"
+    CASSE_AUDIO      = "casse audio"
     MICROFONO        = "microfono"
-    WEBCAM           = "webcam"
-    STAMPANTE        = "stampante"
+    WEBCAM           = "webcam"   
 
 
 class TipoFinanziamento(str, enum.Enum):

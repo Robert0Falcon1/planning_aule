@@ -69,7 +69,10 @@ package "Utenti" #EEF2FF {
   Utente <|-- SegreteriaSede
   Utente <|-- SegreteriaDidattica
   Utente <|-- Coordinamento
+
 }
+
+
 
 package "Spazi" #FFF8EE {
 
@@ -278,7 +281,8 @@ package "Enumerazioni" #F9F9F9 {
   enum TipoAttrezzatura {
     PC
     PROIETTORE
-    LAVAGNA_DIGITALE
+    LAVAGNA
+    CASSE_AUDIO
     MICROFONO
     WEBCAM
   }
@@ -304,7 +308,9 @@ SegreteriaSede    "1"    --  "0..*" RichiestaPrenotazione : gestisce
 Utente            "0..*" --  "1"   Sede                   : appartiene a
 Coordinamento     "1"    --  "0..*" Report                : genera
 
+
 Prenotazione   ..> GoogleCalendarService : <<sync>>
 SegreteriaSede ..> NotificationService   : <<notifica>>
 
 @enduml
+
