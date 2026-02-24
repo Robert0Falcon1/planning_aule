@@ -3,27 +3,17 @@ Configurazione della connessione al database tramite SQLAlchemy.
 Gestisce il motore, la sessione e la base dichiarativa dei modelli.
 """
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from backend.config import settings
 
 
 # ── Creazione del motore SQLAlchemy ──────────────────────────────────────────
-# connect_args è necessario solo per SQLite per abilitare i foreign key
 engine = create_engine(
     settings.database_url,
-    connect_args={"check_same_thread": False},  # Solo per SQLite
-    echo=settings.debug,  # Logga le query SQL in modalità debug
+    pool_pre_ping=True,
+    connect_args={"charset": "utf8mb4"},
 )
-
-
-# ── Abilitazione Foreign Keys in SQLite ──────────────────────────────────────
-@event.listens_for(engine, "connect")
-def abilita_foreign_keys(dbapi_connection, connection_record):
-    """SQLite disabilita i FK per default: questa funzione li abilita ad ogni connessione."""
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
 
 
 # ── Factory della sessione ────────────────────────────────────────────────────

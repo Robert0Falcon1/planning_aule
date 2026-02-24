@@ -12,7 +12,7 @@ from backend.models.enums import (TipoFinanziamento, StatoPrenotazione,
 from backend.models.prenotazione import (PrenotazioneSingola, PrenotazioneMassiva,
                                           RichiestaPrenotazione)
 from backend.models.slot_orario import SlotOrario
-from datetime import date, time, datetime, timedelta
+from datetime import date, time, datetime, timedelta, timezone
 
 
 def seed():
@@ -31,14 +31,13 @@ def seed():
         # SEDI
         # ══════════════════════════════════════════════════════════════════════
         sedi = [
-            Sede(nome="Via Livorno 49",   indirizzo="Via Livorno 49",    citta="Torino", capienza_massima=30),
-            Sede(nome="Via Livorno 53 A", indirizzo="Via Livorno 53 A",  citta="Torino", capienza_massima=50),
-            Sede(nome="Via Livorno 53 B", indirizzo="Via Livorno 53 B",  citta="Torino", capienza_massima=50),
-            Sede(nome="Corso Svizzera",   indirizzo="C.so Svizzera 161", citta="Torino", capienza_massima=150),
-            Sede(nome="Cuneo",            indirizzo="Via Roma 1",        citta="Cuneo",  capienza_massima=60),
-            Sede(nome="Asti",             indirizzo="Corso Alba 10",     citta="Asti",   capienza_massima=80),
-            Sede(nome="Novara",           indirizzo="Via Biglieri 5",    citta="Novara", capienza_massima=100),
-            Sede(nome="Biella",           indirizzo="Via Galileo 3",     citta="Biella", capienza_massima=100),
+            Sede(nome="Via Livorno 49",  indirizzo="Via Livorno 49",             citta="Torino", capienza_massima=34),  # NO AULE + 15p
+            Sede(nome="Via Livorno 53",  indirizzo="Via Livorno 53",             citta="Torino", capienza_massima=69),  # Aula 1: 25p Aula 2: 21p + 7pp
+            Sede(nome="Corso Svizzera",  indirizzo="C.so Svizzera 161",          citta="Torino", capienza_massima=99),  # Aula Gialla: 18p Aula Arancio: 21p Aula Verde: 25p Aula Azzurra: 20p Aula Viola: 25p + 3pp
+            Sede(nome="Cuneo",           indirizzo="Via Cascina Colombaro 26/D", citta="Cuneo",  capienza_massima=41),  # Aula 1: 15p + 2pp
+            Sede(nome="Asti",            indirizzo="Piazza Roma 13",             citta="Asti",   capienza_massima=56),  # Aula 1: 21p Aula 2: 16p + 15p (sala polifunzionale) + 2pp
+            Sede(nome="Novara",          indirizzo="Via Porzio Giovanola 7",     citta="Novara", capienza_massima=95),  # Aula 1: 21p Aula 2: 17p Aula 3: 22p + 3pp
+            Sede(nome="Biella",          indirizzo="Strada Campagnè 7/A",        citta="Biella", capienza_massima=96),  # Aula 1: 24p Aula 2: 23p Aula 3: 23p Aula 4: 31p + 15p (personale) + 4pp
         ]
         for s in sedi:
             db.add(s)
@@ -46,91 +45,91 @@ def seed():
         print(f"   ✅ {len(sedi)} sedi create")
 
         # Alias per leggibilità
-        s_liv49, s_liv53a, s_liv53b, s_svizzera, s_cuneo, s_asti, s_novara, s_biella = sedi
+        s_liv49, s_liv53, s_svizzera, s_cuneo, s_asti, s_novara, s_biella = sedi
 
         # ══════════════════════════════════════════════════════════════════════
         # AULE
         # ══════════════════════════════════════════════════════════════════════
         aule = [
-            # Via Livorno 49 (1 aula)
-            Aula(nome="Aula 1", capienza=20, sede_id=s_liv49.id),
-            # Via Livorno 53 A (1 aula)
-            Aula(nome="Aula 1", capienza=25, sede_id=s_liv53a.id),
-            # Via Livorno 53 B (1 aula)
-            Aula(nome="Aula 2", capienza=25, sede_id=s_liv53b.id),
-            # Corso Svizzera (5 aule)
-            Aula(nome="Aula 1", capienza=30, sede_id=s_svizzera.id),
-            Aula(nome="Aula 2", capienza=30, sede_id=s_svizzera.id),
-            Aula(nome="Aula 3", capienza=25, sede_id=s_svizzera.id),
-            Aula(nome="Aula 4", capienza=25, sede_id=s_svizzera.id),
-            Aula(nome="Aula 5", capienza=20, sede_id=s_svizzera.id),
-            # Cuneo (2 aule)
-            Aula(nome="Aula 1", capienza=30, sede_id=s_cuneo.id),
-            Aula(nome="Aula 2", capienza=30, sede_id=s_cuneo.id),
-            # Asti (3 aule)
-            Aula(nome="Aula 1", capienza=25, sede_id=s_asti.id),
-            Aula(nome="Aula 2", capienza=25, sede_id=s_asti.id),
-            Aula(nome="Aula 3", capienza=25, sede_id=s_asti.id),
-            # Novara (4 aule)
-            Aula(nome="Aula 1", capienza=25, sede_id=s_novara.id),
-            Aula(nome="Aula 2", capienza=25, sede_id=s_novara.id),
-            Aula(nome="Aula 3", capienza=25, sede_id=s_novara.id),
-            Aula(nome="Aula 4", capienza=25, sede_id=s_novara.id),
-            # Biella (4 aule)
-            Aula(nome="Aula 1", capienza=25, sede_id=s_biella.id),
-            Aula(nome="Aula 2", capienza=25, sede_id=s_biella.id),
-            Aula(nome="Aula 3", capienza=25, sede_id=s_biella.id),
-            Aula(nome="Aula 4", capienza=25, sede_id=s_biella.id),
+            # Via Livorno 49 → NO AULE
+
+            # Via Livorno 53 (2 aule) → indici 0, 1
+            Aula(nome="Aula 1", capienza=25, sede_id=s_liv53.id),
+            Aula(nome="Aula 2", capienza=21, sede_id=s_liv53.id),
+
+            # Corso Svizzera (5 aule con nomi cromatici) → indici 2, 3, 4, 5, 6
+            Aula(nome="Aula Gialla",  capienza=18, sede_id=s_svizzera.id),
+            Aula(nome="Aula Arancio", capienza=21, sede_id=s_svizzera.id),  # Informatica
+            Aula(nome="Aula Verde",   capienza=25, sede_id=s_svizzera.id),
+            Aula(nome="Aula Azzurra", capienza=20, sede_id=s_svizzera.id),
+            Aula(nome="Aula Viola",   capienza=25, sede_id=s_svizzera.id),
+
+            # Cuneo (1 aula) → indice 7
+            Aula(nome="Aula 1", capienza=15, sede_id=s_cuneo.id),
+
+            # Asti (2 aule) → indici 8, 9
+            Aula(nome="Aula 1", capienza=21, sede_id=s_asti.id),
+            Aula(nome="Aula 2", capienza=16, sede_id=s_asti.id),
+
+            # Novara (3 aule) → indici 10, 11, 12
+            Aula(nome="Aula 1", capienza=21, sede_id=s_novara.id),
+            Aula(nome="Aula 2", capienza=17, sede_id=s_novara.id),
+            Aula(nome="Aula 3", capienza=22, sede_id=s_novara.id),
+
+            # Biella (4 aule) → indici 13, 14, 15, 16
+            Aula(nome="Aula 1", capienza=24, sede_id=s_biella.id),
+            Aula(nome="Aula 2", capienza=23, sede_id=s_biella.id),
+            Aula(nome="Aula 3", capienza=23, sede_id=s_biella.id),
+            Aula(nome="Aula 4", capienza=31, sede_id=s_biella.id),
         ]
         for a in aule:
             db.add(a)
         db.flush()
         print(f"   ✅ {len(aule)} aule create")
 
-        # Alias aule Corso Svizzera (usate nelle prenotazioni)
-        a_sv1, a_sv2, a_sv3, a_sv4, a_sv5 = aule[3], aule[4], aule[5], aule[6], aule[7]
-        a_cu1 = aule[8]
-        a_as1 = aule[10]
+        # Alias aule
+        a_sv1, a_sv2, a_sv3, a_sv4, a_sv5 = aule[2], aule[3], aule[4], aule[5], aule[6]
+        a_cu1 = aule[7]
+        a_as1 = aule[8]
 
         # ══════════════════════════════════════════════════════════════════════
         # UTENTI
         # ══════════════════════════════════════════════════════════════════════
-        # Utenti principali per i test (uno per ruolo, tutti su Corso Svizzera)
         utenti = [
             # [0] Responsabile corso principale (Mario Rossi)
-            Utente(nome="Mario",    cognome="Rossi",     email="responsabile@test.it",
+            Utente(nome="Mario",   cognome="Rossi",    email="responsabile@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_svizzera.id),
             # [1] Responsabile sede
-            Utente(nome="Lucia",    cognome="Bianchi",   email="resp.sede@test.it",
+            Utente(nome="Lucia",   cognome="Bianchi",  email="resp.sede@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_svizzera.id),
             # [2] Segreteria sede
-            Utente(nome="Giulia",   cognome="Verdi",     email="segr.sede@test.it",
+            Utente(nome="Giulia",  cognome="Verdi",    email="segr.sede@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_svizzera.id),
             # [3] Segreteria didattica
-            Utente(nome="Paolo",    cognome="Neri",      email="segr.did@test.it",
+            Utente(nome="Paolo",   cognome="Neri",     email="segr.did@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_DIDATTICA, sede_id=s_svizzera.id),
             # [4] Coordinamento (nessuna sede)
-            Utente(nome="Anna",     cognome="Blu",       email="coord@test.it",
+            Utente(nome="Anna",    cognome="Blu",      email="coord@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.COORDINAMENTO,        sede_id=None),
-            # [5] Secondo responsabile corso (per simulare prenotazioni da utenti diversi)
-            Utente(nome="Luca",     cognome="Ferrari",   email="responsabile2@test.it",
+            # [5] Secondo responsabile corso
+            Utente(nome="Luca",    cognome="Ferrari",  email="responsabile2@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_svizzera.id),
             # [6] Responsabile sede Cuneo
-            Utente(nome="Carla",    cognome="Esposito",  email="resp.cuneo@test.it",
+            Utente(nome="Carla",   cognome="Esposito", email="resp.cuneo@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_cuneo.id),
             # [7] Segreteria sede Cuneo
-            Utente(nome="Roberto",  cognome="Marino",    email="segr.cuneo@test.it",
+            Utente(nome="Roberto", cognome="Marino",   email="segr.cuneo@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_cuneo.id),
             # [8] Responsabile corso Asti
-            Utente(nome="Elena",    cognome="Conti",     email="resp.asti@test.it",
+            Utente(nome="Elena",   cognome="Conti",    email="resp.asti@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_asti.id),
         ]
@@ -139,17 +138,17 @@ def seed():
         db.flush()
         print(f"   ✅ {len(utenti)} utenti creati")
 
-        mario    = utenti[0]
-        giulia   = utenti[2]   # segreteria sede svizzera
-        luca     = utenti[5]   # secondo resp. corso
-        roberto  = utenti[7]   # segreteria sede cuneo
-        elena    = utenti[8]   # resp. corso asti
+        mario   = utenti[0]
+        giulia  = utenti[2]
+        luca    = utenti[5]
+        roberto = utenti[7]
+        elena   = utenti[8]
 
         # ══════════════════════════════════════════════════════════════════════
         # CORSI
         # ══════════════════════════════════════════════════════════════════════
         corsi = [
-            # [0] Corso GOL di Mario — ID 1
+            # [0] Corso GOL di Mario
             Corso(codice="GOL-2025-001",
                   titolo="GOL - Orientamento al Lavoro (livello base)",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
@@ -158,7 +157,7 @@ def seed():
                   data_inizio=date(2025, 1, 7),
                   data_fine=date(2025, 6, 30),
                   descrizione="Percorso GOL per disoccupati — livello base"),
-            # [1] Corso FSE di Mario — ID 2
+            # [1] Corso FSE di Mario
             Corso(codice="FSE-2025-001",
                   titolo="FSE - Competenze Digitali Avanzate",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
@@ -167,7 +166,7 @@ def seed():
                   data_inizio=date(2025, 3, 3),
                   data_fine=date(2025, 9, 30),
                   descrizione="Corso FSE finanziato — competenze informatiche"),
-            # [2] Corso IFTS di Mario — ID 3
+            # [2] Corso IFTS di Mario
             Corso(codice="IFTS-2025-001",
                   titolo="IFTS - Tecnico Superiore per l'Automazione",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
@@ -176,7 +175,7 @@ def seed():
                   data_inizio=date(2025, 9, 15),
                   data_fine=date(2026, 6, 30),
                   descrizione="Percorso IFTS biennale"),
-            # [3] Corso a pagamento di Luca — ID 4
+            # [3] Corso a pagamento di Luca
             Corso(codice="PAG-2025-001",
                   titolo="Corso Excel Avanzato - Aziende",
                   tipo_finanziamento=TipoFinanziamento.A_PAGAMENTO,
@@ -185,7 +184,7 @@ def seed():
                   data_inizio=date(2025, 2, 1),
                   data_fine=date(2025, 4, 30),
                   descrizione="Formazione Excel per aziende private"),
-            # [4] Corso GOL di Elena (Asti) — ID 5
+            # [4] Corso GOL di Elena (Asti)
             Corso(codice="GOL-2025-002",
                   titolo="GOL - Orientamento al Lavoro (Asti)",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
@@ -194,7 +193,7 @@ def seed():
                   data_inizio=date(2025, 2, 1),
                   data_fine=date(2025, 7, 31),
                   descrizione="Percorso GOL sede Asti"),
-            # [5] Corso misto di Mario — ID 6
+            # [5] Corso misto di Mario
             Corso(codice="MIX-2026-001",
                   titolo="Corso Misto - Formazione Continua",
                   tipo_finanziamento=TipoFinanziamento.MISTO,
@@ -211,23 +210,21 @@ def seed():
         ids = [c.id for c in corsi]
         print(f"   ✅ {len(corsi)} corsi creati (ID: {', '.join(map(str, ids))})")
 
-        c_gol   = corsi[0]   # ID 1
-        c_fse   = corsi[1]   # ID 2
-        c_ifts  = corsi[2]   # ID 3
-        c_pag   = corsi[3]   # ID 4
-        c_mix   = corsi[5]   # ID 6
+        c_gol  = corsi[0]
+        c_fse  = corsi[1]
+        c_ifts = corsi[2]
+        c_pag  = corsi[3]
+        c_mix  = corsi[5]
 
         # ══════════════════════════════════════════════════════════════════════
-        # PRENOTAZIONI CON TUTTI GLI STATI
-        # Ogni prenotazione ha:
-        #   - la Prenotazione stessa (tipo + stato)
-        #   - i SlotOrario collegati
-        #   - la RichiestaPrenotazione (con eventuale note_rifiuto)
+        # HELPERS PRENOTAZIONI
         # ══════════════════════════════════════════════════════════════════════
+
+        def now_naive():
+            return datetime.now(timezone.utc).replace(tzinfo=None)
 
         def crea_singola(aula, corso, richiedente, data, h_ini, h_fin,
                          stato_pren, stato_rich, note_rifiuto=None, note=None):
-            """Helper: crea prenotazione singola + slot + richiesta."""
             p = PrenotazioneSingola(
                 aula_id=aula.id, corso_id=corso.id,
                 richiedente_id=richiedente.id,
@@ -238,21 +235,19 @@ def seed():
                 prenotazione_id=p.id, data=data,
                 ora_inizio=time(h_ini, 0), ora_fine=time(h_fin, 0),
             ))
+            gestita = stato_rich in [StatoRichiesta.APPROVATA, StatoRichiesta.RIFIUTATA]
             r = RichiestaPrenotazione(
                 prenotazione_id=p.id, stato=stato_rich,
                 ha_conflitti=(stato_pren == StatoPrenotazione.CONFLITTO),
                 note_rifiuto=note_rifiuto,
-                segreteria_id=giulia.id if stato_rich in [StatoRichiesta.APPROVATA,
-                                                           StatoRichiesta.RIFIUTATA] else None,
-                data_gestione=datetime.utcnow() if stato_rich in [StatoRichiesta.APPROVATA,
-                                                                    StatoRichiesta.RIFIUTATA] else None,
+                segreteria_id=giulia.id if gestita else None,
+                data_gestione=now_naive() if gestita else None,
             )
             db.add(r); db.flush()
             return p
 
         def crea_massiva_slot(aula, corso, richiedente, date_list, h_ini, h_fin,
                               stato_pren, stato_rich, note_rifiuto=None, note=None):
-            """Helper: crea prenotazione massiva + n slot + richiesta."""
             p = PrenotazioneMassiva(
                 aula_id=aula.id, corso_id=corso.id,
                 richiedente_id=richiedente.id,
@@ -268,76 +263,71 @@ def seed():
                     prenotazione_id=p.id, data=d,
                     ora_inizio=time(h_ini, 0), ora_fine=time(h_fin, 0),
                 ))
+            gestita = stato_rich in [StatoRichiesta.APPROVATA, StatoRichiesta.RIFIUTATA]
             r = RichiestaPrenotazione(
                 prenotazione_id=p.id, stato=stato_rich,
                 ha_conflitti=(stato_pren == StatoPrenotazione.CONFLITTO),
                 note_rifiuto=note_rifiuto,
-                segreteria_id=giulia.id if stato_rich in [StatoRichiesta.APPROVATA,
-                                                           StatoRichiesta.RIFIUTATA] else None,
-                data_gestione=datetime.utcnow() if stato_rich in [StatoRichiesta.APPROVATA,
-                                                                    StatoRichiesta.RIFIUTATA] else None,
+                segreteria_id=giulia.id if gestita else None,
+                data_gestione=now_naive() if gestita else None,
             )
             db.add(r); db.flush()
             return p
 
         oggi = date.today()
 
-        # ── Lunedì prossimo per calcoli ───────────────────────────────────────
         def lunedi_da(d, offset_settimane=0):
-            """Restituisce il lunedì della settimana d + offset settimane."""
             lun = d - timedelta(days=d.weekday())
             return lun + timedelta(weeks=offset_settimane)
 
-        lun0 = lunedi_da(oggi, 0)   # lunedì di questa settimana
-        lun1 = lunedi_da(oggi, 1)   # lunedì prossima settimana
+        lun1 = lunedi_da(oggi, 1)
         lun2 = lunedi_da(oggi, 2)
         lun4 = lunedi_da(oggi, 4)
-        lun8 = lunedi_da(oggi, 8)
 
         # ══════════════════════════════════════════════════════════════════════
-        # PRENOTAZIONI CONFERMATE (storia passata + futuro pianificato)
+        # PRENOTAZIONI CONFERMATE
         # ══════════════════════════════════════════════════════════════════════
         print("\n   📅 Creazione prenotazioni...")
 
-        # 1. GOL mattina — confermata — Aula 1 Svizzera
+        # 1. GOL mattina — confermata — Aula Gialla Svizzera
         crea_singola(a_sv1, c_gol, mario,
                      oggi + timedelta(days=1), 9, 13,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                      note="Prima sessione orientamento")
 
-        # 2. FSE pomeriggio — confermata — Aula 2 Svizzera
+        # 2. FSE pomeriggio — confermata — Aula Arancio Svizzera
         crea_singola(a_sv2, c_fse, mario,
                      oggi + timedelta(days=1), 14, 18,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                      note="Modulo competenze digitali")
 
-        # 3. GOL massiva — 6 lunedì mattina — confermata — Aula 3 Svizzera
+        # 3. GOL massiva — 6 lunedì mattina — confermata — Aula Verde Svizzera
         lunedi_gol = [lun1 + timedelta(weeks=i) for i in range(6)]
         crea_massiva_slot(a_sv3, c_gol, mario,
                           lunedi_gol, 9, 13,
                           StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                           note="Ciclo settimanale GOL — lunedì mattina")
 
-        # 4. FSE massiva — 8 mercoledì pomeriggio — confermata — Aula 4 Svizzera
+        # 4. FSE massiva — 8 mercoledì pomeriggio — confermata — Aula Azzurra Svizzera
         mercoledi_fse = [lun1 + timedelta(days=2, weeks=i) for i in range(8)]
         crea_massiva_slot(a_sv4, c_fse, mario,
                           mercoledi_fse, 14, 18,
                           StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                           note="FSE digitale — mercoledì pomeriggio")
 
-        # 5. Corso misto — confermata — Aula 5 Svizzera
+        # 5. Corso misto — confermata — Aula Viola Svizzera
         crea_singola(a_sv5, c_mix, mario,
                      lun2, 9, 17,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                      note="Giornata intera — corso misto")
 
-        # 6. Excel Luca — confermata — Aula 1 Svizzera (mattina diversa)
+        # 6. Excel Luca — confermata — Aula Gialla Svizzera
         crea_singola(a_sv1, c_pag, luca,
                      oggi + timedelta(days=3), 9, 13,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                      note="Azienda TechCorp — prima sessione")
 
-        # 7. Excel Luca massiva — 4 giovedì — confermata — Aula 2 Svizzera
+        # 7. Excel Luca massiva — 4 giovedì — confermata — Aula Arancio Svizzera
         giovedi_excel = [lun1 + timedelta(days=3, weeks=i) for i in range(4)]
         crea_massiva_slot(a_sv2, c_pag, luca,
                           giovedi_excel, 14, 17,
@@ -345,7 +335,7 @@ def seed():
                           note="Moduli pomeridiani Excel avanzato")
 
         # ══════════════════════════════════════════════════════════════════════
-        # PRENOTAZIONI IN ATTESA (da gestire dalla segreteria)
+        # PRENOTAZIONI IN ATTESA
         # ══════════════════════════════════════════════════════════════════════
 
         # 8. IFTS singola in attesa
@@ -366,7 +356,7 @@ def seed():
                           StatoPrenotazione.IN_ATTESA, StatoRichiesta.INVIATA,
                           note="Secondo ciclo GOL — venerdì mattina")
 
-        # 11. Excel Luca in attesa (pomeriggio distinto)
+        # 11. Excel Luca in attesa
         crea_singola(a_sv4, c_pag, luca,
                      lun4 + timedelta(days=2), 14, 17,
                      StatoPrenotazione.IN_ATTESA, StatoRichiesta.INVIATA,
@@ -374,10 +364,9 @@ def seed():
 
         # ══════════════════════════════════════════════════════════════════════
         # PRENOTAZIONI CON CONFLITTO
-        # (stessa aula, stesso giorno, orario sovrapposto a una confermata)
         # ══════════════════════════════════════════════════════════════════════
 
-        # 12. Conflitto su Aula 3 Svizzera — stesso giorno di #3 (lunedì 1)
+        # 12. Conflitto su Aula Verde — stesso giorno di #3
         p_conf = PrenotazioneSingola(
             aula_id=a_sv3.id, corso_id=c_fse.id,
             richiedente_id=luca.id,
@@ -389,14 +378,14 @@ def seed():
             prenotazione_id=p_conf.id, data=lunedi_gol[0],
             ora_inizio=time(10, 0), ora_fine=time(14, 0),
         ))
-        r_conf = RichiestaPrenotazione(
+        db.add(RichiestaPrenotazione(
             prenotazione_id=p_conf.id,
             stato=StatoRichiesta.INVIATA,
             ha_conflitti=True,
-        )
-        db.add(r_conf); db.flush()
+        ))
+        db.flush()
 
-        # 13. Secondo conflitto — Aula 4, mercoledì 1
+        # 13. Conflitto su Aula Azzurra — mercoledì 1
         p_conf2 = PrenotazioneSingola(
             aula_id=a_sv4.id, corso_id=c_mix.id,
             richiedente_id=mario.id,
@@ -408,48 +397,49 @@ def seed():
             prenotazione_id=p_conf2.id, data=mercoledi_fse[0],
             ora_inizio=time(13, 0), ora_fine=time(17, 0),
         ))
-        r_conf2 = RichiestaPrenotazione(
+        db.add(RichiestaPrenotazione(
             prenotazione_id=p_conf2.id,
             stato=StatoRichiesta.INVIATA,
             ha_conflitti=True,
-        )
-        db.add(r_conf2); db.flush()
+        ))
+        db.flush()
 
         # ══════════════════════════════════════════════════════════════════════
-        # PRENOTAZIONI RIFIUTATE (con motivo — per testare Test 9)
+        # PRENOTAZIONI RIFIUTATE
         # ══════════════════════════════════════════════════════════════════════
 
-        # 14. GOL rifiutata — Aula 5 già occupata in quella data
+        # 14. GOL rifiutata
         crea_singola(a_sv5, c_gol, mario,
                      oggi - timedelta(days=7), 9, 13,
                      StatoPrenotazione.RIFIUTATA, StatoRichiesta.RIFIUTATA,
-                     note_rifiuto="Aula 5 già prenotata per attività istituzionale in quella giornata. Richiedere aula alternativa.",
+                     note_rifiuto="Aula Viola già prenotata per attività istituzionale. Richiedere aula alternativa.",
                      note="Tentativo settimana scorsa")
 
-        # 15. FSE rifiutata per capienza insufficiente
+        # 15. FSE rifiutata per capienza
         crea_singola(a_sv1, c_fse, luca,
                      oggi - timedelta(days=3), 14, 18,
                      StatoPrenotazione.RIFIUTATA, StatoRichiesta.RIFIUTATA,
-                     note_rifiuto="Capienza Aula 1 insufficiente per 20 partecipanti FSE. Utilizzare Aula 2 o Aula 3.",
+                     note_rifiuto="Capienza Aula Gialla insufficiente per 20 partecipanti FSE. Utilizzare Aula Verde o Aula Viola.",
                      note="Richiesta capienza errata")
 
-        # 16. IFTS rifiutata — data fuori periodo corso
+        # 16. IFTS rifiutata — data fuori periodo
         crea_singola(a_sv2, c_ifts, mario,
                      oggi - timedelta(days=14), 9, 17,
                      StatoPrenotazione.RIFIUTATA, StatoRichiesta.RIFIUTATA,
-                     note_rifiuto="La data richiesta è antecedente all'avvio ufficiale del percorso IFTS (15/09/2025). Prenotare da settembre in poi.",
+                     note_rifiuto="La data è antecedente all'avvio ufficiale del percorso IFTS (15/09/2025). Prenotare da settembre.",
                      note="Giornata intera IFTS — anticipata")
 
         # ══════════════════════════════════════════════════════════════════════
-        # PRENOTAZIONE SEDE CUNEO (per test multi-sede)
+        # PRENOTAZIONI MULTI-SEDE
         # ══════════════════════════════════════════════════════════════════════
 
+        # Cuneo — confermata
         crea_singola(a_cu1, c_gol, elena,
                      lun1, 9, 13,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
                      note="GOL Cuneo — avvio percorso")
 
-        # massiva Asti
+        # Asti massiva — in attesa
         martedi_asti = [lun1 + timedelta(days=1, weeks=i) for i in range(4)]
         p_asti = PrenotazioneMassiva(
             aula_id=a_as1.id, corso_id=corsi[4].id,
@@ -483,7 +473,8 @@ def seed():
         n_slot = db.query(SlotOrario).count()
 
         print(f"\n✅ Seeding completato!")
-        print(f"   • {n_pren} prenotazioni  ({db.query(Prenotazione).filter_by(stato=StatoPrenotazione.CONFERMATA).count()} conf. / "
+        print(f"   • {n_pren} prenotazioni  ("
+              f"{db.query(Prenotazione).filter_by(stato=StatoPrenotazione.CONFERMATA).count()} conf. / "
               f"{db.query(Prenotazione).filter_by(stato=StatoPrenotazione.IN_ATTESA).count()} attesa / "
               f"{db.query(Prenotazione).filter_by(stato=StatoPrenotazione.CONFLITTO).count()} conflitto / "
               f"{db.query(Prenotazione).filter_by(stato=StatoPrenotazione.RIFIUTATA).count()} rifiutata)")

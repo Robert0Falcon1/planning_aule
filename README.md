@@ -125,7 +125,7 @@ Il file `.env` nella root del progetto contiene le impostazioni principali:
 SECRET_KEY=cambia_questa_chiave_in_produzione
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=480
-DATABASE_URL=sqlite:///./prenotazione_aule.db
+DATABASE_URL=mysql+pymysql://utente:password@localhost:3306/prenotazione_aule
 ```
 
 > ⚠️ **In produzione**: sostituire `SECRET_KEY` con una stringa casuale lunga almeno 32 caratteri e cambiare `DATABASE_URL` con la stringa di connessione MySQL.

@@ -2,7 +2,6 @@
 Configurazione centralizzata dell'applicazione.
 Legge le variabili d'ambiente dal file .env
 """
-
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -15,13 +14,24 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 480
 
-    # Configurazione Database
-    database_url: str = "sqlite:///./prenotazione_aule.db"
+    # Configurazione Database (campi individuali da .env)
+    db_host: str = "localhost"
+    db_port: int = 3306
+    db_name: str = "prenotazione_aule"
+    db_user: str = "root"
+    db_password: str = ""
 
     # Informazioni applicazione
     app_name: str = "Sistema Prenotazione Aule"
     app_version: str = "1.0.0"
     debug: bool = True
+
+    @property
+    def database_url(self) -> str:
+        return (
+            f"mysql+pymysql://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
 
     class Config:
         env_file = ".env"
@@ -30,9 +40,7 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Restituisce l'istanza singleton delle impostazioni (cached)."""
     return Settings()
 
 
-# Istanza globale delle impostazioni
 settings = get_settings()
