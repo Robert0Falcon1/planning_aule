@@ -51,3 +51,16 @@ class Catalogo(Base):
     created_at                      = Column(DateTime, nullable=False, server_default=func.now())
     updated_at                      = Column(DateTime, nullable=False, server_default=func.now(),
                                              onupdate=func.now())
+    
+# CORSO / CATALOGO (possibili campi comuni per ereditarietà)
+# titolo / titolo_percorso
+# ore_totali / ore_corso_minime, ore_corso_massime
+# ore_stage / ore_stage_minime, ore_stage_massime
+# data_inizio_corso / data_inizio_validita
+# data_fine_presunta / data_fine_validita
+# created_at / data_creazione
+# stato_del_corso / stato
+
+# CATALOGO / REPERTORIO  (possibili campi comuni per astrazione) > "CATAFRATTO" (ABC)
+
+#

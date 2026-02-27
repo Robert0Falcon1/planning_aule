@@ -23,7 +23,7 @@ GLI OBIETTIVI
     -FORNIRE FOTOGRAFIE PRECISE DI CIO’ CHE ACCADE IN OGNI SEDE 
 
 I RUOLI
-    -RESPONSABILE CORSO: Richiede la prenotazione dell’aula per il suo corso  
+    -RESPONSABILE_CORSO: Richiede la prenotazione dell’aula per il suo corso  
     -RESPONSABILE DI SEDE: Verifica la situazione delle prenotazioni per la sua sede
     -SEGRETERIA DI SEDE: Valida e inserisce le prenotazioni (volendo le rifiuta?)
     -SEGRETERIA DIDATTICA: Verifica la situazione delle prenotazioni per i suoi corsi
@@ -36,4 +36,57 @@ COSA DOVRA’ CONSENTIRE IL SISTEMA
     -VISUALIZZARE SLOT LIBERI PER AULA
     -SEGNALARE COME PROBLEMA, MA CONSENTIRE RICHIESTA PRENOTAZIONE PER SLOT GIA’ BLOCCATI
     -LAVORARE ON CLOUD
-    -CONSENTIRE PERMESSI E AZIONI DIVERSIFICATE A SECONDA DEI RUOLI
+    -CONSENTIRE PERMESSI E AZIONI DIVERSIFICATE A SECONDA DEI RUOLI 
+    
+
+
+------ versione corretta ------
+
+
+SENSO
+    - Saturare gli spazi
+    - Raccogliere dti per valutare l'uso degli spazi
+    - Chiarire modalità di prenotazione
+
+OBIETTIVO
+    - Rendere agile il processo di prenotazione
+    - Ridurre il margine di errore umano
+    - Ottimizzare gli spazi
+    - Omogenizzare lo strumento di lavoro tra le sedi
+    - Dare uno strumento di supervisione a:
+        COORDINAMENTO
+        RESPONSABILE_SEDE
+        Qualità
+    - Dare uno strumento a RESPONSABILE_SEDE per ottenere fotografie della situazione dei corsi attivi e pianificati dai RESPONSABILE_CORSO coinvolti
+
+LOGICHE
+    - Proattività del RESPONSABILE_CORSO
+    - Controllo Sede per il RESPONSABILE_SEDE
+    - SEGRETERIA_DIDATTICA:
+        Visualizza le prenotazioni della sede del corso
+    - SEGRETERIA_SEDE:
+        Visualizza prenotazioni
+        Prenota aule NON per attività didattiche (oppure RESPONSABILE_SEDE?)
+
+RUOLI
+    RESPONSABILE_CORSO
+    SEGRETERIA_SEDE
+    RESPONSABILE_SEDE
+    SEGRETERIA_DIDATTICA
+    COORDINAMENTO
+
+    - RESPONSABILE_CORSO ha facoltà di 
+        Prenotare le aule
+        Contattare le proprie prenotazioni
+        Disdire prenotazioni non ??
+    
+    - RESPONSABILE_SEDE
+        Visualizza le prenotazioni della sede
+        Può indicare eventuali problemi legati a una prenotazione
+
+    - COORDINAMENTO
+        Riceve la situazione complessiva del libero e del prenotato
+        Raccoglie dati per valutazioni ??
+        Raccoglie situazioni di prenotazioni ??
+
+(Situazione da rivedere con Stefano R. - Lunedì mattina)

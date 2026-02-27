@@ -86,34 +86,44 @@ def seed():
         # UTENTI
         # ══════════════════════════════════════════════════════════════════════
         utenti = [
+            # Responsabile Corso
             Utente(nome="Mario",   cognome="Rossi",    email="responsabile@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_svizzera.id),
-            Utente(nome="Lucia",   cognome="Bianchi",  email="resp.sede@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_svizzera.id),
-            Utente(nome="Giulia",  cognome="Verdi",    email="segr.sede@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_svizzera.id),
-            Utente(nome="Paolo",   cognome="Neri",     email="segr.did@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.SEGRETERIA_DIDATTICA, sede_id=s_svizzera.id),
-            Utente(nome="Anna",    cognome="Blu",      email="coord@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.COORDINAMENTO,        sede_id=None),
             Utente(nome="Luca",    cognome="Ferrari",  email="responsabile2@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_svizzera.id),
-            Utente(nome="Carla",   cognome="Esposito", email="resp.cuneo@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_cuneo.id),
-            Utente(nome="Roberto", cognome="Marino",   email="segr.cuneo@test.it",
-                   password_hash=hash_password("test"),
-                   ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_cuneo.id),
             Utente(nome="Elena",   cognome="Conti",    email="resp.asti@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_asti.id),
+
+            # Responsabile di Sede
+            Utente(nome="Lucia",   cognome="Bianchi",  email="resp.sede@test.it",
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_svizzera.id),
+            Utente(nome="Carla",   cognome="Esposito", email="resp.cuneo@test.it",
+                    password_hash=hash_password("test"),
+                    ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_cuneo.id),
+
+            # Segreteria di Sede
+            Utente(nome="Giulia",  cognome="Verdi",    email="segr.sede@test.it",
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_svizzera.id),
+            Utente(nome="Roberto", cognome="Marino",   email="segr.cuneo@test.it",
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_cuneo.id),
+
+            # Segreteria Didattica
+            Utente(nome="Paolo",   cognome="Neri",     email="segr.did@test.it",
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.SEGRETERIA_DIDATTICA, sede_id=s_svizzera.id),
+
+            # Coordinamento
+            Utente(nome="Anna",    cognome="Blu",      email="coord@test.it",
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.COORDINAMENTO,        sede_id=None),
         ]
+
         for u in utenti:
             db.add(u)
         db.flush()
