@@ -6,6 +6,8 @@ Centralizzati in un unico file per semplicità di manutenzione.
 import enum
 
 
+# ── Utenti e accesso ──────────────────────────────────────────────────────────
+
 class RuoloUtente(str, enum.Enum):
     """Ruoli disponibili nel sistema con permessi differenziati."""
     RESPONSABILE_CORSO    = "responsabile_corso"
@@ -14,6 +16,8 @@ class RuoloUtente(str, enum.Enum):
     SEGRETERIA_DIDATTICA  = "segreteria_didattica"
     COORDINAMENTO         = "coordinamento"
 
+
+# ── Prenotazioni ──────────────────────────────────────────────────────────────
 
 class StatoPrenotazione(str, enum.Enum):
     """Ciclo di vita di una prenotazione."""
@@ -48,13 +52,22 @@ class TipoRicorrenza(str, enum.Enum):
 
 class TipoAttrezzatura(str, enum.Enum):
     """Categorie di attrezzatura richiedibile."""
-    PC               = "pc"
-    PROIETTORE       = "proiettore"
-    LAVAGNA          = "lavagna"
-    CASSE_AUDIO      = "casse audio"
-    MICROFONO        = "microfono"
-    WEBCAM           = "webcam"   
+    PC          = "pc"
+    PROIETTORE  = "proiettore"
+    LAVAGNA     = "lavagna"
+    CASSE_AUDIO = "casse audio"
+    MICROFONO   = "microfono"
+    WEBCAM      = "webcam"
 
+
+class TipoConflitto(str, enum.Enum):
+    """Tipologie di conflitto rilevabili nel sistema."""
+    SOVRAPPOSIZIONE_SLOT          = "sovrapposizione_slot"
+    CAPIENZA_SUPERATA             = "capienza_superata"
+    ATTREZZATURA_NON_DISPONIBILE  = "attrezzatura_non_disponibile"
+
+
+# ── Corsi ─────────────────────────────────────────────────────────────────────
 
 class TipoFinanziamento(str, enum.Enum):
     """Modalità di finanziamento dei corsi."""
@@ -63,8 +76,101 @@ class TipoFinanziamento(str, enum.Enum):
     MISTO               = "misto"
 
 
-class TipoConflitto(str, enum.Enum):
-    """Tipologie di conflitto rilevabili nel sistema."""
-    SOVRAPPOSIZIONE_SLOT         = "sovrapposizione_slot"
-    CAPIENZA_SUPERATA            = "capienza_superata"
-    ATTREZZATURA_NON_DISPONIBILE   = "ATTREZZATURA_NON_DISPONIBILE"
+class StatoCorso(str, enum.Enum):
+    """
+    Stati del ciclo di vita di un corso su Sistema Piemonte.
+    Il valore stringa corrisponde al codice numerico del sistema regionale.
+    """
+    APPROVATO    = "15"
+    AVVIATO      = "22"
+    IN_CORSO     = "30"
+    CONCLUSO     = "35"
+    RENDICONTATO = "40"
+    SALDATO      = "60"
+    RINUNCIA     = "rinuncia"
+
+
+class OreAccertamento(str, enum.Enum):
+    """
+    Tipologie di prova di accertamento per allievi stranieri.
+    Ogni prova ha durata fissa di 40 minuti su Sistema Piemonte.
+    """
+    ITALIANO   = "italiano"
+    MATEMATICA = "matematica"
+    INGLESE    = "inglese"
+
+
+# ── Lezioni ───────────────────────────────────────────────────────────────────
+
+class TipoLezione(str, enum.Enum):
+    """Tipologie di lezione registrabili su Sistema Piemonte."""
+    NORMALE                          = "normale"
+    RECUPERO_SOLO_DIDATTICO          = "recupero_solo_didattico"
+    RECUPERO_AMMINISTRATIVO_DIDATTICO = "recupero_amministrativo_e_didattico"
+    FAD                              = "fad"
+
+
+# ── Docenti ───────────────────────────────────────────────────────────────────
+
+class TipologiaDocente(str, enum.Enum):
+    """
+    Tipologia di attività svolta dal docente nel corso.
+    T = Teoria · P = Pratica · S = Stage
+    """
+    T = "T"
+    P = "P"
+    S = "S"
+
+
+# ── Allievi ───────────────────────────────────────────────────────────────────
+
+class Sesso(str, enum.Enum):
+    M = "M"
+    F = "F"
+    A = "A"   # Non specificato / altro
+
+
+class Cittadinanza(str, enum.Enum):
+    COMUNITARIA      = "comunitaria"
+    EXTRA_COMUNITARIA = "extra_comunitaria"
+
+
+class ResidenzaIn(str, enum.Enum):
+    ITALIA = "italia"
+    ESTERO = "estero"
+
+
+class LivelloIstruzione(str, enum.Enum):
+    NESSUN_TITOLO             = "nessun_titolo"
+    LICENZA_ELEMENTARE        = "licenza_elementare"
+    LICENZA_MEDIA             = "licenza_media"
+    QUALIFICA_PROFESSIONALE   = "qualifica_professionale"
+    DIPLOMA_SUPERIORE         = "diploma_superiore"
+    DIPLOMA_TECNICO_SUPERIORE = "diploma_tecnico_superiore"
+    LAUREA_TRIENNALE          = "laurea_triennale"
+    LAUREA_MAGISTRALE         = "laurea_magistrale"
+    DOTTORATO                 = "dottorato"
+
+
+class CondizioneOccupazionale(str, enum.Enum):
+    DISOCCUPATO        = "disoccupato"
+    INOCCUPATO         = "inoccupato"
+    OCCUPATO_DIPENDENTE = "occupato_dipendente"
+    OCCUPATO_AUTONOMO  = "occupato_autonomo"
+    OCCUPATO_CIGO      = "occupato_cigo"
+    OCCUPATO_CIGS      = "occupato_cigs"
+    STUDENTE           = "studente"
+
+
+class DisabilitaVulnerabilita(str, enum.Enum):
+    NESSUNA             = "nessuna"
+    DSA                 = "dsa"
+    DISABILITA          = "disabilita"
+    EES                 = "ees"
+    SVANTAGGIO_CULTURALE = "svantaggio_culturale"
+
+
+class SvantaggioAbitativo(str, enum.Enum):
+    """1 = in condizione di svantaggio · 2 = nessuna condizione."""
+    SVANTAGGIO = "1"
+    NESSUNA    = "2"

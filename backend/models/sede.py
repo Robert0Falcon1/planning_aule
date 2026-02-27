@@ -20,12 +20,14 @@ class Sede(Base):
     citta             = Column(String(100), nullable=False)
     capienza_massima  = Column(Integer, nullable=False, default=0,
                                comment="Numero massimo di persone contemporaneamente presenti in sede")
-    attiva            = Column(Integer, default=1)  # 1=attiva, 0=disattivata
+    attiva            = Column(Integer, default=1)
 
     # ── Relazioni ─────────────────────────────────────────────────────────────
-    aule         = relationship("Aula",         back_populates="sede", cascade="all, delete-orphan")
+    aule         = relationship("Aula",         back_populates="sede",  cascade="all, delete-orphan")
     utenti       = relationship("Utente",       back_populates="sede")
-    attrezzature = relationship("Attrezzatura", back_populates="sede", cascade="all, delete-orphan")
+    attrezzature = relationship("Attrezzatura", back_populates="sede",  cascade="all, delete-orphan")
+    corsi        = relationship("Corso",        back_populates="sede",  foreign_keys="Corso.sede_id")
+    docenti      = relationship("Docente",      secondary="docente_sedi", back_populates="sedi")
 
     def __repr__(self) -> str:
         return f"<Sede {self.nome} - {self.citta}>"
