@@ -26,6 +26,9 @@ class Corso(Base):
     descrizione        = Column(String(1000), nullable=True)
     attivo             = Column(Integer, default=1)
     data_creazione     = Column(DateTime, default=datetime.utcnow)
+    numero_proposta          = Column(String(50), default=None)
+    numero_attivita_id_corso = Column(String(50), default=None, comment="N. Attività Presentazione (A) / ID corso finanziato (B)")
+    id_attivita              = Column(String(50), default=None)
 
     # ── Relazioni ─────────────────────────────────────────────────────────────
     # back_populates="corsi" corrisponde a Utente.corsi definito nella classe base

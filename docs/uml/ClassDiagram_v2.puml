@@ -1,0 +1,569 @@
+@startuml 01_ClassDiagram_v3
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classBackgroundColor #FAFAFA
+skinparam classBorderColor #4A6FA5
+skinparam arrowColor #333
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #7B96D2
+hide empty members
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  UTENTI                                                                  ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Utenti" #EEF2FF {
+
+  ' ── Radice della gerarchia ────────────────────────────────────────────────
+  abstract class Persona {
+    - id       : int
+    - nome     : str
+    - cognome  : str
+    - sede_id  : int
+  }
+
+  ' ── Estensione con credenziali di accesso ─────────────────────────────────
+  abstract class Utente {
+    - email          : str
+    - _password_hash : str
+    - attivo         : bool
+    + login(email, pwd)          : bool
+    + logout()                   : void
+    + get_permessi()             : List[Permesso]
+    + {abstract} get_dashboard() : Dashboard
+  }
+
+  ' ── Ruoli operativi del gestionale ───────────────────────────────────────
+  class ResponsabileCorso {
+    - corsi_assegnati : List[Corso]
+    + richiedi_prenotazione(aula, slot)            : RichiestaPrenotazione
+    + richiedi_prenotazione_massiva(aula, pattern) : List[RichiestaPrenotazione]
+    + richiedi_attrezzatura(prenotazione, eq_list) : void
+    + visualizza_slot_liberi(aula, data)           : List[SlotOrario]
+    + set_ore_selezione_allievi(corso, ore)        : void
+    + get_dashboard()                              : Dashboard
+  }
+
+  class ResponsabileSede {
+    - sede : Sede
+    + visualizza_prenotazioni_sede()    : List[Prenotazione]
+    + verifica_capienza_sede(data)      : int
+    + visualizza_saturazione()          : float
+    + get_dashboard()                   : Dashboard
+  }
+
+  class SegreteriaSede {
+    - sede : Sede
+    + valida_prenotazione(richiesta)          : Prenotazione
+    + rifiuta_prenotazione(richiesta, motivo) : void
+    + inserisci_prenotazione(p)               : void
+    + gestisci_conflitto(richiesta)           : void
+    + get_dashboard()                         : Dashboard
+  }
+
+  class SegreteriaDidattica {
+    - corsi_gestiti : List[Corso]
+    + visualizza_prenotazioni_corsi() : List[Prenotazione]
+    + filtra_per_corso(corso)         : List[Prenotazione]
+    + get_dashboard()                 : Dashboard
+  }
+
+  class Coordinamento {
+    + visualizza_prenotazioni_globali()        : List[Prenotazione]
+    + genera_report_saturazione(sede, periodo) : Report
+    + esporta_report(formato)                  : File
+    + get_dashboard()                          : Dashboard
+  }
+
+  ' ── Gerarchia ─────────────────────────────────────────────────────────────
+  Persona  <|-- Utente
+  Utente   <|-- ResponsabileCorso
+  Utente   <|-- ResponsabileSede
+  Utente   <|-- SegreteriaSede
+  Utente   <|-- SegreteriaDidattica
+  Utente   <|-- Coordinamento
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  SPAZI                                                                   ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Spazi" #FFF8EE {
+
+  class Sede {
+    - id               : int
+    - nome             : str
+    - indirizzo        : str
+    - citta            : str
+    - capienza_massima : int
+    + get_aule()                             : List[Aula]
+    + get_capienza_disponibile(data, fascia) : int
+    + verifica_saturazione(data)             : float
+    + get_prenotazioni_del_giorno(data)      : List[Prenotazione]
+  }
+
+  class Aula {
+    - id                : int
+    - nome              : str
+    - capienza          : int
+    - _sede             : Sede
+    - attrezzature_base : List[Attrezzatura]
+    + get_slot_liberi(data)   : List[SlotOrario]
+    + is_disponibile(slot)    : bool
+    + get_prenotazioni(da, a) : List[Prenotazione]
+    + has_conflitti(slot)     : bool
+  }
+
+  Sede "1" *-- "1..*" Aula : contiene
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  PRENOTAZIONI                                                            ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Prenotazioni" #EFFFEF {
+
+  abstract class Prenotazione {
+    - id              : int
+    - _aula           : Aula
+    - _corso          : Corso
+    - _richiedente    : ResponsabileCorso
+    - data_creazione  : datetime
+    - stato           : StatoPrenotazione
+    - note            : str
+    - google_event_id : str
+    + conferma()             : void
+    + annulla()              : void
+    + {abstract} get_slots() : List[SlotOrario]
+    + ha_conflitti()         : bool
+  }
+
+  class PrenotazioneSingola {
+    - slot : SlotOrario
+    + get_slots() : List[SlotOrario]
+  }
+
+  class PrenotazioneMassiva {
+    - _pattern       : PatternRicorrenza
+    - data_inizio    : date
+    - data_fine      : date
+    - slots_generati : List[SlotOrario]
+    + genera_slots()     : List[SlotOrario]
+    + get_slots()        : List[SlotOrario]
+    + conta_occorrenze() : int
+  }
+
+  class RichiestaPrenotazione {
+    - id              : int
+    - _prenotazione   : Prenotazione
+    - _segreteria     : SegreteriaSede
+    - stato_richiesta : StatoRichiesta
+    - data_richiesta  : datetime
+    - conflitti       : List[Conflitto]
+    + approva()           : Prenotazione
+    + rifiuta(motivo)     : void
+    + segnala_conflitto() : void
+    + ha_conflitti()      : bool
+  }
+
+  class Conflitto {
+    - _prenotazione_esistente : Prenotazione
+    - _richiesta_conflittante : RichiestaPrenotazione
+    - tipo                    : TipoConflitto
+    - descrizione             : str
+    + segnala()       : void
+    + get_dettaglio() : str
+  }
+
+  class SlotOrario {
+    - id         : int
+    - data       : date
+    - ora_inizio : time
+    - ora_fine   : time
+    + get_durata_minuti()   : int
+    + sovrapponi_con(altro) : bool
+    + is_nel_futuro()       : bool
+  }
+
+  class PatternRicorrenza {
+    - tipo_ricorrenza  : TipoRicorrenza
+    - giorni_settimana : List[int]
+    - intervallo       : int
+    + genera_date(inizio, fine) : List[date]
+    + to_rrule_string()         : str
+  }
+
+  Prenotazione        <|-- PrenotazioneSingola
+  Prenotazione        <|-- PrenotazioneMassiva
+  Prenotazione        "1" *-- "1..*" SlotOrario
+  PrenotazioneMassiva "1" *-- "1"    PatternRicorrenza
+  RichiestaPrenotazione "1" o-- "1"    Prenotazione
+  RichiestaPrenotazione "1" *-- "0..*" Conflitto
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  CORSI E RISORSE                                                         ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Corsi e Risorse" #FEF0F0 {
+
+  class Corso {
+    ' ── Identificazione ─────────────────────────────────────────────────
+    - id                               : int
+    - codice                           : str
+    .. formato: B164-{progressivo}-{anno}-{accorpamento} ..
+    - titolo                           : str
+    - descrizione                      : str
+    .. da repertorio regionale ..
+    ' ── Finanziamento / Sistema Piemonte ────────────────────────────────
+    - tipo_finanziamento               : TipoFinanziamento
+    - stato_del_corso                  : StatoCorso
+    - numero_proposta                  : int
+    - id_corso_finanziato              : int
+    .. 15xxxx = GOL · 10xxxx = FSE ..
+    - id_attivita                      : int
+    - criterio_selezione_destinatari   : str
+    ' ── Date ────────────────────────────────────────────────────────────
+    - data_creazione                   : date
+    - data_avvio_corso                 : date
+    - data_inizio_corso                : date
+    - data_fine_presunta               : date
+    - attivo                           : bool
+    ' ── Partecipanti e ore ──────────────────────────────────────────────
+    - num_partecipanti                 : int
+    - ore_totali                       : float
+    - ore_erogate                      : float
+    - ore_stage                        : float
+    - ente_stage                       : str
+    .. da mapping allievi ..
+    - ore_aggiuntive                   : float
+    .. discrezionali dal docente (test ITA/informatica) ..
+    - ore_accertamento_stranieri       : OreAccertamento
+    .. enum fisse: 40 min × prova (ITA/MAT/ENG) ..
+    - ore_selezione_allievi            : float
+    .. inserite dal RC dal frontend, modificabili ..
+    ' ── FK ──────────────────────────────────────────────────────────────
+    - responsabile_id                  : int
+    - sede_id                          : int
+    - docenti                          : List[Docente]
+    - allievi                          : List[Allievo]
+    + get_prenotazioni()               : List[Prenotazione]
+    + is_attivo()                      : bool
+    + get_ore_residue()                : float
+    + inferisci_finanziamento()        : TipoFinanziamento
+    .. da prefisso id_corso_finanziato ..
+  }
+
+  ' ──────────────────────────────────────────────────────────────────────
+  ' Docente: eredita solo da Persona (no credenziali di accesso)
+  ' ──────────────────────────────────────────────────────────────────────
+  class Docente {
+    - codice_fiscale     : str
+    - livello_istruzione : LivelloIstruzione
+    - ore_di_incarico    : float
+    - ore_svolte         : float
+    - tipologia          : TipologiaDocente
+    .. T = Teoria · P = Pratica · S = Stage ..
+    - webinar            : bool
+    .. se True → non occupa aula fisica ..
+    - sedi               : List[Sede]
+    - unita_formative    : List[str]
+    + get_ore_residue()  : float
+    + is_remoto()        : bool
+  }
+
+  ' ──────────────────────────────────────────────────────────────────────
+  ' Allievo: eredita solo da Persona (no credenziali di accesso)
+  ' ──────────────────────────────────────────────────────────────────────
+  class Allievo {
+    ' ── Anagrafica aggiuntiva ────────────────────────────────────────────
+    - codice_fiscale               : str
+    - data_nascita                 : date
+    - nazione_nascita              : str
+    - provincia_nascita            : str
+    - comune_nascita               : str
+    - sesso                        : Sesso
+    ' ── Cittadinanza e residenza ────────────────────────────────────────
+    - cittadinanza                 : Cittadinanza
+    .. COMUNITARIA · EXTRA_COMUNITARIA ..
+    - paese                        : str
+    .. derivato da cittadinanza, lista lato backend ..
+    - residente_in                 : ResidenzaIn
+    - provincia_residenza          : str
+    - comune_residenza             : str
+    - indirizzo                    : str
+    - cap                          : str
+    ' ── Contatti ────────────────────────────────────────────────────────
+    - telefono_prefisso            : str
+    - telefono_numero              : str
+    - email                        : str
+    ' ── Date corso ──────────────────────────────────────────────────────
+    - data_firma_patto_attivazione : date
+    - data_iscrizione              : date
+    - data_inizio_frequenza        : date
+    - data_ritiro                  : date
+    - motivo_ritiro                : str
+    ' ── Registro ────────────────────────────────────────────────────────
+    - posizione_registro_cartaceo  : int
+    .. corrispondenza registro / Sistema Piemonte ..
+    - ore_assenza                  : float
+    - ore_erogate                  : float
+    - uditore                      : bool
+    .. default False ..
+    ' ── Profilo ─────────────────────────────────────────────────────────
+    - livello_istruzione           : LivelloIstruzione
+    - condizione_occupazionale     : CondizioneOccupazionale
+    - disabilita_vulnerabilita     : DisabilitaVulnerabilita
+    - svantaggio_abitativo         : SvantaggioAbitativo
+    .. 1 = svantaggio · 2 = nessuna condizione ..
+    - documenti_allegati           : List[str]
+    + is_ritirato()                : bool
+    + get_percentuale_presenza()   : float
+  }
+
+  ' ──────────────────────────────────────────────────────────────────────
+  class Lezione {
+    - id                  : int
+    - corso_id            : int
+    - data                : date
+    .. inserita due volte su Sistema Piemonte ..
+    - ora_inizio          : time
+    - ora_fine            : time
+    - tipo_lezione        : TipoLezione
+    .. NORMALE · RECUPERO_DIDATTICO · RECUPERO_AMMIN_E_DIDATTICO · FAD ..
+    - note                : str
+    - si_ripete           : bool
+    .. se True → genera PrenotazioneMassiva ..
+    - numero_variazione   : int
+    .. contatore modifiche alla lezione ..
+    - allievi_presenti    : List[Allievo]
+    + get_durata_minuti() : int
+    + is_fad()            : bool
+    .. FAD → nessuna aula richiesta ..
+  }
+
+  ' ──────────────────────────────────────────────────────────────────────
+  class Attrezzatura {
+    - id                   : int
+    - tipo                 : TipoAttrezzatura
+    - descrizione          : str
+    - quantita_disponibile : int
+    - _sede                : Sede
+    + is_disponibile(slot, quantita) : bool
+    + get_disponibilita(data)        : int
+  }
+
+  class RichiestaAttrezzatura {
+    - _prenotazione : Prenotazione
+    - _attrezzatura : Attrezzatura
+    - quantita      : int
+    - stato         : StatoRichiesta
+    - note          : str
+    + approva()       : void
+    + rifiuta(motivo) : void
+  }
+
+  ' ── Ereditarietà da Persona ───────────────────────────────────────────
+  Persona <|-- Docente
+  Persona <|-- Allievo
+
+  ' ── Relazioni interne al pacchetto ───────────────────────────────────
+  Corso         "1"    *--  "0..*" Lezione
+  Corso         "1"    o--  "0..*" Allievo               : iscrive
+  Corso         "1"    o--  "0..*" Docente               : assegna
+  Lezione       "1"    o--  "0..*" Allievo               : registra presenze
+  Docente       "0..*" --   "0..*" Sede                  : opera in
+  Sede          "1"    *--  "0..*" Attrezzatura
+  Prenotazione  "1"    --   "0..*" RichiestaAttrezzatura
+  Attrezzatura  "1"    --   "0..*" RichiestaAttrezzatura
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  SERVIZI                                                                 ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Servizi" #F5F0FF {
+
+  class GoogleCalendarService {
+    - _credentials : OAuth2Credentials
+    - calendar_id  : str
+    + sincronizza_prenotazione(p) : str
+    + rimuovi_evento(event_id)    : void
+    + aggiorna_evento(p)          : void
+    + verifica_connessione()      : bool
+  }
+
+  class NotificationService {
+    - smtp_host : str
+    - smtp_port : int
+    + invia_conferma(dest, p)     : void
+    + invia_rifiuto(dest, motivo) : void
+    + invia_alert_conflitto(p)    : void
+  }
+
+  class Report {
+    - periodo_inizio : date
+    - periodo_fine   : date
+    - sede           : Sede
+    - dati           : dict
+    + genera()                : void
+    + get_tasso_saturazione() : float
+    + esporta_csv()           : File
+    + esporta_pdf()           : File
+  }
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  ENUMERAZIONI                                                            ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+package "Enumerazioni" #F9F9F9 {
+
+  ' ── Prenotazioni ─────────────────────────────────────────────────────────
+  enum StatoPrenotazione {
+    IN_ATTESA
+    CONFERMATA
+    RIFIUTATA
+    ANNULLATA
+    CONFLITTO
+  }
+
+  enum StatoRichiesta {
+    INVIATA
+    IN_REVISIONE
+    APPROVATA
+    RIFIUTATA
+  }
+
+  enum TipoRicorrenza {
+    GIORNALIERA
+    SETTIMANALE
+    BISETTIMANALE
+    MENSILE
+  }
+
+  enum TipoConflitto {
+    SOVRAPPOSIZIONE_SLOT
+    CAPIENZA_SUPERATA
+    ATTREZZATURA_NON_DISPONIBILE
+  }
+
+  enum TipoAttrezzatura {
+    PC_PORTATILE
+  }
+
+  ' ── Corsi ────────────────────────────────────────────────────────────────
+  enum TipoFinanziamento {
+    GOL
+    FSE
+    IFTS
+    A_PAGAMENTO
+    MISTO
+    FINANZIATO_PUBBLICO
+  }
+
+  enum StatoCorso {
+    APPROVATO    = "15"
+    AVVIATO      = "22"
+    IN_CORSO     = "30"
+    CONCLUSO     = "35"
+    RENDICONTATO = "40"
+    SALDATO      = "60"
+    RINUNCIA
+  }
+
+  enum OreAccertamento {
+    .. durate fisse per allievi stranieri ..
+    ITALIANO   = 40
+    MATEMATICA = 40
+    INGLESE    = 40
+  }
+
+  ' ── Lezioni ──────────────────────────────────────────────────────────────
+  enum TipoLezione {
+    NORMALE
+    RECUPERO_SOLO_DIDATTICO
+    RECUPERO_AMMINISTRATIVO_E_DIDATTICO
+    FAD
+  }
+
+  ' ── Docenti ──────────────────────────────────────────────────────────────
+  enum TipologiaDocente {
+    T
+    .. Teoria ..
+    P
+    .. Pratica ..
+    S
+    .. Stage ..
+  }
+
+  ' ── Allievi ──────────────────────────────────────────────────────────────
+  enum Sesso {
+    M
+    F
+    A
+  }
+
+  enum Cittadinanza {
+    COMUNITARIA
+    EXTRA_COMUNITARIA
+  }
+
+  enum ResidenzaIn {
+    ITALIA
+    ESTERO
+  }
+
+  enum LivelloIstruzione {
+    NESSUN_TITOLO
+    LICENZA_ELEMENTARE
+    LICENZA_MEDIA
+    QUALIFICA_PROFESSIONALE
+    DIPLOMA_SUPERIORE
+    DIPLOMA_TECNICO_SUPERIORE
+    LAUREA_TRIENNALE
+    LAUREA_MAGISTRALE
+    DOTTORATO
+  }
+
+  enum CondizioneOccupazionale {
+    DISOCCUPATO
+    INOCCUPATO
+    OCCUPATO_DIPENDENTE
+    OCCUPATO_AUTONOMO
+    OCCUPATO_CIGO
+    OCCUPATO_CIGS
+    STUDENTE
+  }
+
+  enum DisabilitaVulnerabilita {
+    NESSUNA
+    DSA
+    DISABILITA
+    EES
+    SVANTAGGIO_CULTURALE
+  }
+
+  enum SvantaggioAbitativo {
+    SVANTAGGIO = 1
+    NESSUNA    = 2
+  }
+}
+
+
+' ╔══════════════════════════════════════════════════════════════════════════╗
+' ║  RELAZIONI TRASVERSALI                                                   ║
+' ╚══════════════════════════════════════════════════════════════════════════╝
+Aula              "1"    o--  "0..*" Prenotazione          : ospita
+Corso             "1"    o--  "0..*" Prenotazione          : pianifica
+ResponsabileCorso "1"    --   "0..*" Prenotazione          : richiede
+SegreteriaSede    "1"    --   "0..*" RichiestaPrenotazione : gestisce
+Utente            "0..*" --   "1"   Sede                   : appartiene a
+Coordinamento     "1"    --   "0..*" Report                : genera
+
+Lezione ..> PrenotazioneMassiva : <<genera se si_ripete>>
+Docente ..> Aula                : <<non richiede se webinar>>
+
+Prenotazione   ..> GoogleCalendarService : <<sync>>
+SegreteriaSede ..> NotificationService   : <<notifica>>
+
+@enduml

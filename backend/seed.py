@@ -15,6 +15,7 @@ from backend.models.slot_orario import SlotOrario
 from datetime import date, time, datetime, timedelta, timezone
 
 
+
 def seed():
     """Popola il database con dati realistici per test completi."""
     crea_tabelle()
@@ -215,6 +216,84 @@ def seed():
         c_ifts = corsi[2]
         c_pag  = corsi[3]
         c_mix  = corsi[5]
+
+        CATALOGO_DEFAULT = [
+            Catalogo(
+                stato=1,
+                profilo_formativo="Addetto magazzino e logistica",
+                tipologia_utilizzo_parziale=0,
+                formazione_normata=0,
+                tipologia="Profili professionali",
+                sep="11. Trasporti e logistica",
+                area_professionale="SERVIZI COMMERCIALI",
+                sottoarea_professionale="TRASPORTI",
+                codice_ada=(
+                    "ADA.11.01.18 (ex ADA.13.128.383); "
+                    "ADA.11.01.20 (ex ADA.13.128.385)"
+                ),
+                titolo_ada=(
+                    "Gestione attività di magazzino; "
+                    "Operazioni di movimentazione merci"
+                ),
+                competenze=(
+                    "1 - Eseguire le operazioni di movimentazione delle merci e di conduzione delle "
+                    "attrezzature, nel rispetto degli standard di sicurezza specifici di settore e della "
+                    "sostenibilità ambientale\n"
+                    "2 - Collaborare alla gestione del magazzino\n"
+                    "3 - Collaborare alla gestione dei flussi delle merci"
+                ),
+                professioni_nup_istat=(
+                    "3.3.4.1.0 - Spedizionieri e tecnici dell'organizzazione commerciale\n"
+                    "4.3.1.2.0 - Addetti alla gestione dei magazzini e professioni assimilate\n"
+                    "7.4.4.4.0 - Conduttori di carrelli elevatori\n"
+                    "8.1.3.1.0 - Facchini, addetti allo spostamento merci ed assimilati"
+                ),
+                attivita_economiche_ateco_istat=(
+                    "52.10.10 - Magazzini di custodia e deposito per conto terzi\n"
+                    "52.10.20 - Magazzini frigoriferi per conto terzi\n"
+                    "52.21.40 - Gestione di centri di movimentazione merci (interporti)\n"
+                    "52.24.40 - Movimento merci relativo ad altri trasporti terrestri\n"
+                    "82.92.10 - Imballaggio e confezionamento di generi alimentari\n"
+                    "82.92.20 - Imballaggio e confezionamento di generi non alimentari"
+                ),
+                titolo_percorso="ADDETTO MAGAZZINO E LOGISTICA",
+                titolo_attestato="Addetto magazzino e logistica",
+                certificazione_uscita="QUALIFICA PROFESSIONALE",
+                tipologia_prova_finale="Prova di agenzia validata, con commissione esterna",
+                durata_prova_ore=12.00,
+                prova_ingresso_orientamento="Colloquio motivazionale di orientamento",
+                ore_corso_minime=200.00,
+                ore_stage_minime=150.00,
+                ore_elearning_minime_perc=None,
+                ore_corso_massime=500.00,
+                ore_stage_massime=200.00,
+                ore_elearning_massime_perc=None,
+                normativa_riferimento=(
+                    "Ai sensi del Decreto Legislativo n. 13 del 16 gennaio 2013, "
+                    "del Decreto Interministeriale del 30 giugno 2015 e della "
+                    "L.R. del 24 novembre 2023, n. 32 e s.m.i."
+                ),
+                ore_assenza_massime=166.67,
+                assegnazione_credito_ingresso=1,
+                data_inizio_validita=date(2023, 7, 24),
+                data_fine_validita=None,
+                eta=">= 18",
+                livello_minimo_scolarita="Scuola secondaria di I grado",
+                livello_massimo_scolarita=None,
+                obbligo_scolastico_assolto=1,
+                esperienze_lavorative_pregresse="Non specificato",
+                stato_occupazionale_ammesso="Indifferente",
+            ),
+        ]
+
+        # --- inserimento nel seed ---
+        if db.query(Catalogo).count() == 0:
+            for entry in CATALOGO_DEFAULT:
+                db.add(entry)
+            db.flush()
+            print(f"   ✅ {len(CATALOGO_DEFAULT)} voci catalogo create")
+        else:
+            print("   ⏭️  Catalogo già presente, skip")
 
         # ══════════════════════════════════════════════════════════════════════
         # HELPERS PRENOTAZIONI

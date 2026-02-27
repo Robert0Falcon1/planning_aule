@@ -18,6 +18,8 @@ from backend.models.prenotazione import (Prenotazione, PrenotazioneSingola,
                                           PrenotazioneMassiva, RichiestaPrenotazione,
                                           Conflitto)
 from backend.models.attrezzatura import Attrezzatura, RichiestaAttrezzatura
+from .catalogo import Catalogo
+
 
 __all__ = [
     "RuoloUtente", "StatoPrenotazione", "StatoRichiesta", "TipoPrenotazione",
@@ -26,5 +28,5 @@ __all__ = [
     "SegreteriaSede", "SegreteriaDidattica", "Coordinamento",
     "Corso", "SlotOrario", "Prenotazione", "PrenotazioneSingola",
     "PrenotazioneMassiva", "RichiestaPrenotazione", "Conflitto",
-    "Attrezzatura", "RichiestaAttrezzatura",
+    "Attrezzatura", "RichiestaAttrezzatura", "Catalogo",
 ]
