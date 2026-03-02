@@ -80,6 +80,24 @@ const routes = [
     component: () => import('@/pages/operativo/GestioneConflittiPage.vue'),
     meta: { requiresAuth: true, roles: OPERATIVO },
   },
+  {
+    path: '/prenotazioni/richieste',
+    name: 'RichiestePendenti',
+    component: () => import('@/pages/_archivio/RichiestePendentiPage.vue'),
+    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
+  },
+  {
+    path: '/sede/calendario',
+    name: 'CalendarioSede',
+    component: () => import('@/pages/_archivio/CalendarioSedePage.vue'),
+    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
+  },
+  {
+    path: '/corsi/prenotazioni',
+    name: 'PrenotazioniCorso',
+    component: () => import('@/pages/_archivio/PrenotazioniCorsePage.vue'),
+    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_DIDATTICA] },
+  },
 
   // ──────────────────────────────────────────────────────────────────────────
   // TUTTI — visualizzazione e report (operativo + supervisione)
