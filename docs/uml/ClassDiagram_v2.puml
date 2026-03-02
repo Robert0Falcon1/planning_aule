@@ -233,7 +233,9 @@ package "Corsi e Risorse" #FEF0F0 {
     - ore_totali                       : float
     - ore_erogate                      : float
     - ore_stage                        : float
+    - ore_prova_finale                 : float
     - ente_stage                       : str
+    - avvio_anticipato                 : bool
     .. da mapping allievi ..
     - ore_aggiuntive                   : float
     .. discrezionali dal docente (test ITA/informatica) ..
