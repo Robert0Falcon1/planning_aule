@@ -1,11 +1,30 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Router — Vue Router 4 con lazy-loading e guardie RBAC
+//
+// Due gruppi funzionali (specchio di backend/core/permissions.py):
+//   OPERATIVO    → RC / Segreteria Didattica / Segreteria di Sede
+//   SUPERVISIONE → Responsabile Sede / Coordinamento
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { RUOLI } from '@/utils/constants'
 
+// ── Gruppi funzionali ───────────────────────────────────────────────────────
+const OPERATIVO = [
+  RUOLI.RESPONSABILE_CORSO,
+  RUOLI.SEGRETERIA_DIDATTICA,
+  RUOLI.SEGRETERIA_SEDE,
+]
+
+const SUPERVISIONE = [
+  RUOLI.RESPONSABILE_SEDE,
+  RUOLI.COORDINAMENTO,
+]
+
+const TUTTI = [...OPERATIVO, ...SUPERVISIONE]
+
+// ── Rotte ───────────────────────────────────────────────────────────────────
 const routes = [
   // ── Pubblica ──────────────────────────────────────────────────────────────
   {
@@ -16,8 +35,6 @@ const routes = [
   },
 
   // ── Radice: redirect dinamico in base all'autenticazione ──────────────────
-  // NON usiamo un redirect statico a /dashboard perché vogliamo mandare
-  // al login gli utenti non autenticati senza passare per la guardia intermedia.
   {
     path: '/',
     name: 'Home',
@@ -36,100 +53,69 @@ const routes = [
   },
 
   // ──────────────────────────────────────────────────────────────────────────
-  // RESPONSABILE CORSO
+  // OPERATIVO — prenotazioni e gestione slot
+  // (RC + Segreteria Didattica + Segreteria di Sede)
   // ──────────────────────────────────────────────────────────────────────────
   {
     path: '/prenotazioni/nuova',
     name: 'NuovaPrenotazione',
-    component: () => import('@/pages/responsabile-corso/NuovaPrenotazionePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.RESPONSABILE_CORSO] },
+    component: () => import('@/pages/operativo/NuovaPrenotazionePage.vue'),
+    meta: { requiresAuth: true, roles: OPERATIVO },
   },
   {
     path: '/prenotazioni/massiva',
     name: 'PrenotazioneMassiva',
-    component: () => import('@/pages/responsabile-corso/PrenotazioneMassivaPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.RESPONSABILE_CORSO] },
+    component: () => import('@/pages/operativo/PrenotazioneMassivaPage.vue'),
+    meta: { requiresAuth: true, roles: OPERATIVO },
   },
   {
     path: '/prenotazioni/mie',
     name: 'MiePrenotazioni',
-    component: () => import('@/pages/responsabile-corso/MiePrenotazioniPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.RESPONSABILE_CORSO] },
+    component: () => import('@/pages/operativo/MiePrenotazioniPage.vue'),
+    meta: { requiresAuth: true, roles: OPERATIVO },
   },
+  {
+    path: '/prenotazioni/conflitti',
+    name: 'GestioneConflitti',
+    component: () => import('@/pages/operativo/GestioneConflittiPage.vue'),
+    meta: { requiresAuth: true, roles: OPERATIVO },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // TUTTI — visualizzazione e report (operativo + supervisione)
+  // ──────────────────────────────────────────────────────────────────────────
   {
     path: '/aule/slot-liberi',
     name: 'SlotLiberi',
-    component: () => import('@/pages/responsabile-corso/SlotLiberiPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.RESPONSABILE_CORSO] },
+    component: () => import('@/pages/supervisione/SlotLiberiPage.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
   },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // SEGRETERIA DI SEDE
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    path: '/segreteria/richieste',
-    name: 'RichiestePendenti',
-    component: () => import('@/pages/segreteria-sede/RichiestePendentiPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
-  },
-  {
-    path: '/segreteria/conflitti',
-    name: 'GestioneConflitti',
-    component: () => import('@/pages/segreteria-sede/GestioneConflittiPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
-  },
-  {
-    path: '/segreteria/calendario',
-    name: 'CalendarioSede',
-    component: () => import('@/pages/segreteria-sede/CalendarioSedePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // RESPONSABILE DI SEDE
-  // ──────────────────────────────────────────────────────────────────────────
   {
     path: '/sede/prenotazioni',
     name: 'PrenotazioniSede',
-    component: () => import('@/pages/responsabile-sede/PrenotazioniSedePage.vue'),
-    meta: {
-      requiresAuth: true,
-      roles: [RUOLI.RESPONSABILE_SEDE, RUOLI.SEGRETERIA_SEDE],
-    },
+    component: () => import('@/pages/supervisione/PrenotazioniSedePage.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
   },
   {
     path: '/sede/saturazione',
     name: 'SaturazioneSpazi',
-    component: () => import('@/pages/responsabile-sede/SaturazioneSpazi.vue'),
-    meta: {
-      requiresAuth: true,
-      roles: [RUOLI.RESPONSABILE_SEDE, RUOLI.COORDINAMENTO],
-    },
+    component: () => import('@/pages/supervisione/SaturazioneSpazi.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
   },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // SEGRETERIA DIDATTICA
-  // ──────────────────────────────────────────────────────────────────────────
   {
-    path: '/didattica/corsi',
-    name: 'PrenotazioniCorso',
-    component: () => import('@/pages/segreteria-didattica/PrenotazioniCorsePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_DIDATTICA] },
+    path: '/report',
+    name: 'Report',
+    component: () => import('@/pages/supervisione/ReportPage.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
   },
 
   // ──────────────────────────────────────────────────────────────────────────
-  // COORDINAMENTO
+  // COORDINAMENTO — admin (solo Coordinamento)
   // ──────────────────────────────────────────────────────────────────────────
   {
     path: '/coordinamento/globale',
     name: 'VistaGlobale',
     component: () => import('@/pages/coordinamento/VistaGlobalePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.COORDINAMENTO] },
-  },
-  {
-    path: '/coordinamento/report',
-    name: 'Report',
-    component: () => import('@/pages/coordinamento/ReportSaturazionePage.vue'),
     meta: { requiresAuth: true, roles: [RUOLI.COORDINAMENTO] },
   },
   {

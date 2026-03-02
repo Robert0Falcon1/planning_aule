@@ -83,20 +83,16 @@ def lista_prenotazioni(
     )
 
     # Filtri per ruolo (RBAC a livello di dati)
-    if utente.ruolo == RuoloUtente.RESPONSABILE_CORSO:
-        query = query.filter(Prenotazione.richiedente_id == utente.id)
-    elif utente.ruolo in [RuoloUtente.SEGRETERIA_SEDE, RuoloUtente.RESPONSABILE_SEDE]:
-        query = (query.join(Aula)
-                 .filter(Aula.sede_id == utente.sede_id))
-    elif utente.ruolo == RuoloUtente.SEGRETERIA_DIDATTICA:
-        # FIX: vedeva solo i corsi dove era responsabile (sempre vuoto perché
-        # responsabile_id appartiene al Responsabile Corso, non alla Segreteria).
-        # Ora vede tutte le prenotazioni della propria sede, coerente con il
-        # suo ruolo di monitoraggio del piano didattico.
+    if utente.ruolo in GRUPPO_OPERATIVO:
+    # Vede le prenotazioni della propria sede + le proprie
         if utente.sede_id:
-            query = (query.join(Aula)
-                     .filter(Aula.sede_id == utente.sede_id))
-    # COORDINAMENTO: vede tutto, nessun filtro aggiuntivo
+            query = query.join(Aula).filter(Aula.sede_id == utente.sede_id)
+        elif utente.ruolo in GRUPPO_SUPERVISIONE:
+            # Vede tutte le prenotazioni della sede (o tutte, per coordinamento)
+            if utente.ruolo == RuoloUtente.COORDINAMENTO:
+                pass  # vede tutto
+            elif utente.sede_id:
+                query = query.join(Aula).filter(Aula.sede_id == utente.sede_id)                
 
     # Filtri opzionali dalla querystring
     if sede_id:

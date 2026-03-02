@@ -1,82 +1,76 @@
 """
 Sistema RBAC (Role-Based Access Control).
 Definisce quali azioni ogni ruolo può eseguire nel sistema.
+
+Due gruppi funzionali:
+  OPERATIVO    → RC / Segreteria Didattica / Segreteria di Sede
+                 (prenotano, modificano, confermano/disdiscono)
+  SUPERVISIONE → Responsabile Sede / Coordinamento
+                 (visualizzano, report, saturazione)
 """
 
 from backend.models.enums import RuoloUtente
 
-# ── Matrice dei permessi per ruolo ────────────────────────────────────────────
-# Ogni chiave è un'azione del sistema; il valore è la lista di ruoli autorizzati
+# ── Gruppi funzionali ─────────────────────────────────────────────────────────
+
+GRUPPO_OPERATIVO = [
+    RuoloUtente.RESPONSABILE_CORSO,
+    RuoloUtente.SEGRETERIA_DIDATTICA,
+    RuoloUtente.SEGRETERIA_SEDE,
+]
+
+GRUPPO_SUPERVISIONE = [
+    RuoloUtente.RESPONSABILE_SEDE,
+    RuoloUtente.COORDINAMENTO,
+]
+
+TUTTI = GRUPPO_OPERATIVO + GRUPPO_SUPERVISIONE
+
+# ── Matrice dei permessi ──────────────────────────────────────────────────────
 
 PERMESSI: dict[str, list[RuoloUtente]] = {
 
-    # ── Prenotazioni ──────────────────────────────────────────────────────────
-    "prenotazione:richiedere":    [RuoloUtente.RESPONSABILE_CORSO],
-    "prenotazione:validare":      [RuoloUtente.SEGRETERIA_SEDE],
-    "prenotazione:inserire":      [RuoloUtente.SEGRETERIA_SEDE],
-    "prenotazione:rifiutare":     [RuoloUtente.SEGRETERIA_SEDE],
-    "prenotazione:annullare":     [RuoloUtente.RESPONSABILE_CORSO,
-                                   RuoloUtente.SEGRETERIA_SEDE],
-    "prenotazione:vedere_proprie":[RuoloUtente.RESPONSABILE_CORSO],
-    "prenotazione:vedere_sede":   [RuoloUtente.RESPONSABILE_SEDE,
-                                   RuoloUtente.SEGRETERIA_SEDE],
-    "prenotazione:vedere_corsi":  [RuoloUtente.SEGRETERIA_DIDATTICA],
-    "prenotazione:vedere_tutte":  [RuoloUtente.COORDINAMENTO],
+    # ── Prenotazioni (operativo) ──────────────────────────────────────────────
+    "prenotazione:richiedere":    GRUPPO_OPERATIVO,
+    "prenotazione:confermare":    GRUPPO_OPERATIVO,
+    "prenotazione:modificare":    GRUPPO_OPERATIVO,
+    "prenotazione:annullare":     GRUPPO_OPERATIVO,
+    "prenotazione:rifiutare":     GRUPPO_OPERATIVO,
+
+    # ── Visualizzazione prenotazioni (tutti) ──────────────────────────────────
+    "prenotazione:vedere_proprie": GRUPPO_OPERATIVO,
+    "prenotazione:vedere_sede":    TUTTI,
+    "prenotazione:vedere_tutte":   [RuoloUtente.COORDINAMENTO],
 
     # ── Aule e slot ───────────────────────────────────────────────────────────
-    "aula:vedere_slot_liberi":    [RuoloUtente.RESPONSABILE_CORSO,
-                                   RuoloUtente.SEGRETERIA_SEDE,
-                                   RuoloUtente.RESPONSABILE_SEDE,
-                                   RuoloUtente.SEGRETERIA_DIDATTICA,
-                                   RuoloUtente.COORDINAMENTO],
-    "aula:gestire":               [RuoloUtente.SEGRETERIA_SEDE,
-                                   RuoloUtente.COORDINAMENTO],
+    "aula:vedere_slot_liberi":    TUTTI,
+    "aula:gestire":               [RuoloUtente.COORDINAMENTO],
 
     # ── Corsi ─────────────────────────────────────────────────────────────────
     "corso:creare":               [RuoloUtente.SEGRETERIA_DIDATTICA,
                                    RuoloUtente.COORDINAMENTO],
-    "corso:vedere_propri":        [RuoloUtente.RESPONSABILE_CORSO],
-    "corso:vedere_tutti":         [RuoloUtente.SEGRETERIA_DIDATTICA,
-                                   RuoloUtente.COORDINAMENTO],
+    "corso:vedere_propri":        GRUPPO_OPERATIVO,
+    "corso:vedere_tutti":         TUTTI,
 
-    # ── Report e analytics ────────────────────────────────────────────────────
-    "report:sede":                [RuoloUtente.RESPONSABILE_SEDE,
-                                   RuoloUtente.COORDINAMENTO],
+    # ── Report e analytics (supervisione + operativo) ─────────────────────────
+    "report:sede":                TUTTI,
+    "report:saturazione":         TUTTI,
+    "report:export_csv":          TUTTI,
     "report:globale":             [RuoloUtente.COORDINAMENTO],
 
-    # ── Gestione utenti ───────────────────────────────────────────────────────
+    # ── Gestione utenti (solo coordinamento) ──────────────────────────────────
     "utente:creare":              [RuoloUtente.COORDINAMENTO],
     "utente:vedere_tutti":        [RuoloUtente.COORDINAMENTO],
 
-    # ── Attrezzature ─────────────────────────────────────────────────────────
-    "attrezzatura:richiedere":    [RuoloUtente.RESPONSABILE_CORSO],
-    "attrezzatura:gestire":       [RuoloUtente.SEGRETERIA_SEDE,
-                                   RuoloUtente.COORDINAMENTO],
+    # ── Attrezzature ──────────────────────────────────────────────────────────
+    "attrezzatura:richiedere":    GRUPPO_OPERATIVO,
+    "attrezzatura:gestire":       [RuoloUtente.COORDINAMENTO],
 }
 
 
 def ha_permesso(ruolo: RuoloUtente, azione: str) -> bool:
     """
     Verifica se un ruolo è autorizzato a eseguire un'azione.
-
-    Args:
-        ruolo:  Ruolo dell'utente autenticato
-        azione: Stringa dell'azione da verificare (es: "prenotazione:richiedere")
-
-    Returns:
-        True se il ruolo ha il permesso, False altrimenti
     """
     ruoli_autorizzati = PERMESSI.get(azione, [])
     return ruolo in ruoli_autorizzati
-
-
-def richiedi_permesso(azione: str):
-    """
-    Decoratore/factory per verificare i permessi negli endpoint FastAPI.
-    Da usare come dipendenza insieme a get_utente_corrente.
-    """
-    def _verifica(ruolo: RuoloUtente) -> bool:
-        if not ha_permesso(ruolo, azione):
-            return False
-        return True
-    return _verifica

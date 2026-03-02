@@ -11,15 +11,6 @@ from backend.schemas.utente import UtenteCrea, UtenteRisposta
 
 router = APIRouter(prefix="/utenti", tags=["Utenti"])
 
-# Mappa ruolo → classe concreta
-_MAPPA_RUOLO_CLASSE = {
-    RuoloUtente.RESPONSABILE_CORSO:   "ResponsabileCorso",
-    RuoloUtente.RESPONSABILE_SEDE:    "ResponsabileSede",
-    RuoloUtente.SEGRETERIA_SEDE:      "SegreteriaSede",
-    RuoloUtente.SEGRETERIA_DIDATTICA: "SegreteriaDidattica",
-    RuoloUtente.COORDINAMENTO:        "Coordinamento",
-}
-
 
 @router.get("/", response_model=list[UtenteRisposta], summary="Lista utenti")
 def lista_utenti(
