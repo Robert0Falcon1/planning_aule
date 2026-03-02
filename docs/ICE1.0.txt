@@ -8,8 +8,7 @@ LE AULE
         5 aule in C.so Svizzera 161 
     Cuneo:
         2 aule
-    Asti:
-        3 aule
+    Asti:ule
     Novara:
         4 aule
     Biella:
@@ -77,4 +76,26 @@ RUOLI
         Dati sulla saturazione delle aule
 
 
+QUINDI:
+Ristrutturare le dashboard da 5 viste separate (una per ruolo) a 2 viste principali:
+1. Dashboard Operativa + Supervisione → per RESPONSABILE_CORSO / SEGRETERIA_DIDATTICA / SEGRETERIA_DI_SEDE
+2. Dashboard Supervisione → per RESPONSABILE_SEDE / COORDINAMENTO
 
+N.B.
+Non c'è più il bisogno di VALIDARE le prenotazioni! Un ruolo con permessi operativi fa tutto lui
+ma gestisce SOLO LE SUE PRENOTAZIONI
+
+In presenza di un CONFLITTO (due scenari, le figure coinvolte si accordano a voce)
+Scenario 1: il responsabile della prenotazione avvenuta per prima cancella la prenotazione e quindi la seconda prenotazione diventa confermata e si risolve il conflitto
+Scenario 2: il responsabile della prenotazione avvenuta per seconda cancella la prenotazione e quindi la prima prenotazione torna confermata e si risolve il conflitto
+
+I ruoli con permessi operativi vedranno:
+
+Dashboard Operativa + Dashboard Supervisione
+Gestione delle proprie prenotazioni e visione globale di tutte le aule di tutte le sedi
+Stato sede per sede delle varie aule PER GIORNO (OGGI di default) + possibilità di export in CSV dei dati raccolti relativi a saturazione aule e situazione globale divisa per giorno 
+
+I ruoli con permessi di supervisione avranno:
+
+Dashboard Supervisione
+Stato sede per sede delle varie aule PER GIORNO (OGGI di default) + possibilità di export in CSV dei dati raccolti relativi a saturazione aule e situazione globale divisa per giorno
