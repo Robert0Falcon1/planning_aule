@@ -63,4 +63,4 @@ class Catalogo(Base):
 
 # CATALOGO / REPERTORIO  (possibili campi comuni per astrazione) > "CATAFRATTO" (ABC)
 
-#
+# Catafratto astratto

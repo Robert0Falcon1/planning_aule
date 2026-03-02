@@ -55,23 +55,23 @@ def seed():
         # AULE
         # ══════════════════════════════════════════════════════════════════════
         aule = [
-            Aula(nome="Aula 1",      capienza=25, sede_id=s_liv53.id),
-            Aula(nome="Aula 2",      capienza=21, sede_id=s_liv53.id),
+            Aula(nome="Aula 1",       capienza=25, sede_id=s_liv53.id),
+            Aula(nome="Aula 2",       capienza=21, sede_id=s_liv53.id),
             Aula(nome="Aula Gialla",  capienza=18, sede_id=s_svizzera.id),
             Aula(nome="Aula Arancio", capienza=21, sede_id=s_svizzera.id),
             Aula(nome="Aula Verde",   capienza=25, sede_id=s_svizzera.id),
             Aula(nome="Aula Azzurra", capienza=20, sede_id=s_svizzera.id),
             Aula(nome="Aula Viola",   capienza=25, sede_id=s_svizzera.id),
-            Aula(nome="Aula 1",      capienza=15, sede_id=s_cuneo.id),
-            Aula(nome="Aula 1",      capienza=21, sede_id=s_asti.id),
-            Aula(nome="Aula 2",      capienza=16, sede_id=s_asti.id),
-            Aula(nome="Aula 1",      capienza=21, sede_id=s_novara.id),
-            Aula(nome="Aula 2",      capienza=17, sede_id=s_novara.id),
-            Aula(nome="Aula 3",      capienza=22, sede_id=s_novara.id),
-            Aula(nome="Aula 1",      capienza=24, sede_id=s_biella.id),
-            Aula(nome="Aula 2",      capienza=23, sede_id=s_biella.id),
-            Aula(nome="Aula 3",      capienza=23, sede_id=s_biella.id),
-            Aula(nome="Aula 4",      capienza=31, sede_id=s_biella.id),
+            Aula(nome="Aula 1",       capienza=15, sede_id=s_cuneo.id),
+            Aula(nome="Aula 1",       capienza=21, sede_id=s_asti.id),
+            Aula(nome="Aula 2",       capienza=16, sede_id=s_asti.id),
+            Aula(nome="Aula 1",       capienza=21, sede_id=s_novara.id),
+            Aula(nome="Aula 2",       capienza=17, sede_id=s_novara.id),
+            Aula(nome="Aula 3",       capienza=22, sede_id=s_novara.id),
+            Aula(nome="Aula 1",       capienza=24, sede_id=s_biella.id),
+            Aula(nome="Aula 2",       capienza=23, sede_id=s_biella.id),
+            Aula(nome="Aula 3",       capienza=23, sede_id=s_biella.id),
+            Aula(nome="Aula 4",       capienza=31, sede_id=s_biella.id),
         ]
         for a in aule:
             db.add(a)
@@ -86,7 +86,7 @@ def seed():
         # UTENTI
         # ══════════════════════════════════════════════════════════════════════
         utenti = [
-            # Responsabile Corso
+            # [0] Responsabile Corso
             Utente(nome="Mario",   cognome="Rossi",    email="responsabile@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_svizzera.id),
@@ -97,15 +97,15 @@ def seed():
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_CORSO,   sede_id=s_asti.id),
 
-            # Responsabile di Sede
+            # [3] Responsabile di Sede
             Utente(nome="Lucia",   cognome="Bianchi",  email="resp.sede@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_svizzera.id),
             Utente(nome="Carla",   cognome="Esposito", email="resp.cuneo@test.it",
-                    password_hash=hash_password("test"),
-                    ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_cuneo.id),
+                   password_hash=hash_password("test"),
+                   ruolo=RuoloUtente.RESPONSABILE_SEDE,    sede_id=s_cuneo.id),
 
-            # Segreteria di Sede
+            # [5] Segreteria di Sede
             Utente(nome="Giulia",  cognome="Verdi",    email="segr.sede@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_svizzera.id),
@@ -113,26 +113,25 @@ def seed():
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_SEDE,      sede_id=s_cuneo.id),
 
-            # Segreteria Didattica
+            # [7] Segreteria Didattica
             Utente(nome="Paolo",   cognome="Neri",     email="segr.did@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.SEGRETERIA_DIDATTICA, sede_id=s_svizzera.id),
 
-            # Coordinamento
+            # [8] Coordinamento
             Utente(nome="Anna",    cognome="Blu",      email="coord@test.it",
                    password_hash=hash_password("test"),
                    ruolo=RuoloUtente.COORDINAMENTO,        sede_id=None),
         ]
-
         for u in utenti:
             db.add(u)
         db.flush()
         print(f"   ✅ {len(utenti)} utenti creati")
 
-        mario  = utenti[0]
-        giulia = utenti[2]
-        luca   = utenti[5]
-        elena  = utenti[8]
+        mario  = utenti[0]   # Mario Rossi  — RESPONSABILE_CORSO Svizzera
+        luca   = utenti[1]   # Luca Ferrari — RESPONSABILE_CORSO Svizzera
+        elena  = utenti[2]   # Elena Conti  — RESPONSABILE_CORSO Asti
+        giulia = utenti[5]   # Giulia Verdi — SEGRETERIA_SEDE Svizzera
 
         # ══════════════════════════════════════════════════════════════════════
         # DOCENTI
@@ -163,7 +162,7 @@ def seed():
                     codice_fiscale="TSTMRC90H10L219Q",
                     livello_istruzione=LivelloIstruzione.LAUREA_MAGISTRALE,
                     tipologia=TipologiaDocente.T,
-                    webinar=True,         # Docente remoto
+                    webinar=True,          # Docente remoto
                     ore_di_incarico=40.0,  ore_svolte=0.0,
                     unita_formative="Python per l'automazione,Introduzione AI"),
         ]
@@ -184,8 +183,8 @@ def seed():
         # ══════════════════════════════════════════════════════════════════════
         corsi = [
             # [0] GOL — Mario — Svizzera
-            Corso(codice="GOL-2025-001",
-                  titolo="GOL - Orientamento al Lavoro (livello base)",
+            Corso(codice="SSMTO-2026-01",
+                  titolo="GOL - Segreteria Studio Medico",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
                   stato_del_corso=StatoCorso.IN_CORSO,
                   numero_proposta=1042,
@@ -193,15 +192,18 @@ def seed():
                   responsabile_id=mario.id,
                   sede_id=s_svizzera.id,
                   num_partecipanti=15,
-                  ore_totali=120.0, ore_erogate=48.0,
-                  ore_stage=0.0,
+                  ore_totali=144.0, ore_erogate=48.0,
+                  ore_stage=100.0,
+                  ore_verifica_finale=6.0,
                   ore_selezione_allievi=4.0,
-                  data_inizio_corso=date(2025, 1, 7),
-                  data_fine_presunta=date(2025, 6, 30),
-                  descrizione="Percorso GOL per disoccupati — livello base"),
-            # [1] FSE — Mario — Svizzera
-            Corso(codice="FSE-2025-001",
-                  titolo="FSE - Competenze Digitali Avanzate",
+                  data_inizio_corso=date(2026, 2, 1),
+                  data_fine_presunta=date(2026, 5, 7),
+                  descrizione="Percorso GOL per disoccupati — Segreteria Studio Medico",
+                  avvio_anticipato=False),
+
+            # [1] GOL — Mario — Svizzera
+            Corso(codice="CARRTO-2025-10",
+                  titolo="GOL - Carrellisti",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
                   stato_del_corso=StatoCorso.IN_CORSO,
                   numero_proposta=2018,
@@ -209,40 +211,18 @@ def seed():
                   responsabile_id=mario.id,
                   sede_id=s_svizzera.id,
                   num_partecipanti=20,
-                  ore_totali=80.0, ore_erogate=24.0,
+                  ore_totali=12.0, ore_erogate=9.0,
                   ore_stage=0.0,
-                  ore_aggiuntive=4.0,
+                  ore_prova_finale=4.0,
+                  ore_aggiuntive=0.0,
                   data_inizio_corso=date(2025, 3, 3),
                   data_fine_presunta=date(2025, 9, 30),
-                  descrizione="Corso FSE finanziato — competenze informatiche"),
-            # [2] IFTS — Mario — Svizzera
-            Corso(codice="IFTS-2025-001",
-                  titolo="IFTS - Tecnico Superiore per l'Automazione",
-                  tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
-                  stato_del_corso=StatoCorso.APPROVATO,
-                  responsabile_id=mario.id,
-                  sede_id=s_svizzera.id,
-                  num_partecipanti=25,
-                  ore_totali=800.0, ore_erogate=0.0,
-                  ore_stage=200.0,
-                  data_inizio_corso=date(2025, 9, 15),
-                  data_fine_presunta=date(2026, 6, 30),
-                  descrizione="Percorso IFTS biennale"),
-            # [3] A pagamento — Luca — Svizzera
-            Corso(codice="PAG-2025-001",
-                  titolo="Corso Excel Avanzato - Aziende",
-                  tipo_finanziamento=TipoFinanziamento.A_PAGAMENTO,
-                  stato_del_corso=StatoCorso.CONCLUSO,
-                  responsabile_id=luca.id,
-                  sede_id=s_svizzera.id,
-                  num_partecipanti=12,
-                  ore_totali=24.0, ore_erogate=24.0,
-                  data_inizio_corso=date(2025, 2, 1),
-                  data_fine_presunta=date(2025, 4, 30),
-                  descrizione="Formazione Excel per aziende private"),
-            # [4] GOL Asti — Elena
-            Corso(codice="GOL-2025-002",
-                  titolo="GOL - Orientamento al Lavoro (Asti)",
+                  descrizione="Percorso GOL per disoccupati — Carrellisti",
+                  avvio_anticipato=False),
+
+            # [2] FSE Asti — Elena
+            Corso(codice="VERAT2026-01",
+                  titolo="FSE - Manutentore del Verde (Asti)",
                   tipo_finanziamento=TipoFinanziamento.FINANZIATO_PUBBLICO,
                   stato_del_corso=StatoCorso.IN_CORSO,
                   numero_proposta=1058,
@@ -250,41 +230,27 @@ def seed():
                   responsabile_id=elena.id,
                   sede_id=s_asti.id,
                   num_partecipanti=18,
-                  ore_totali=120.0, ore_erogate=32.0,
+                  ore_totali=172.0, ore_erogate=32.0,
+                  ore_prova_finale=8.0,
                   ore_stage=0.0,
                   ore_selezione_allievi=3.0,
                   data_inizio_corso=date(2025, 2, 1),
                   data_fine_presunta=date(2025, 7, 31),
-                  descrizione="Percorso GOL sede Asti"),
-            # [5] Misto 2026 — Mario — Svizzera
-            Corso(codice="MIX-2026-001",
-                  titolo="Corso Misto - Formazione Continua",
-                  tipo_finanziamento=TipoFinanziamento.MISTO,
-                  stato_del_corso=StatoCorso.AVVIATO,
-                  responsabile_id=mario.id,
-                  sede_id=s_svizzera.id,
-                  num_partecipanti=16,
-                  ore_totali=60.0, ore_erogate=0.0,
-                  data_inizio_corso=date(2026, 1, 12),
-                  data_fine_presunta=date(2026, 12, 18),
-                  descrizione="Percorso formazione continua anno 2026"),
+                  descrizione="Corso FSE finanziato - Manutentore del verde",
+                  avvio_anticipato=False),
         ]
         for c in corsi:
             db.add(c)
         db.flush()
 
-        c_gol  = corsi[0]
-        c_fse  = corsi[1]
-        c_ifts = corsi[2]
-        c_pag  = corsi[3]
-        c_mix  = corsi[5]
+        c_gol = corsi[0]   # GOL Segreteria Studio Medico — Mario — Svizzera
+        c_fse = corsi[1]   # GOL Carrellisti              — Mario — Svizzera
+        c_mix = corsi[2]   # FSE Manutentore del Verde    — Elena — Asti
 
         # Assegna docenti ai corsi
-        c_gol.docenti  = [docenti[0], docenti[2]]   # Francesca (T) + Simona (S)
-        c_fse.docenti  = [docenti[1], docenti[3]]   # Giorgio (P) + Marco webinar (T)
-        c_pag.docenti  = [docenti[1]]               # Giorgio (P)
-        c_mix.docenti  = [docenti[0]]               # Francesca (T)
-        corsi[4].docenti = [docenti[0]]             # GOL Asti — Francesca
+        c_gol.docenti = [docenti[0], docenti[2]]   # Francesca (T) + Simona (S)
+        c_fse.docenti = [docenti[1], docenti[3]]   # Giorgio (P) + Marco webinar (T)
+        c_mix.docenti = [docenti[0]]               # Francesca (T)
         db.flush()
 
         ids = [c.id for c in corsi]
@@ -294,8 +260,8 @@ def seed():
         # ALLIEVI
         # ══════════════════════════════════════════════════════════════════════
         allievi_gol = [
-            Allievo(nome="Sara",     cognome="Colombo",
-                    codice_fiscale="CLMSR A95C46L219Z",
+            Allievo(nome="Sara",  cognome="Colombo",
+                    codice_fiscale="CLMSRA95C46L219Z",
                     data_nascita=date(1995, 3, 6),
                     sesso=Sesso.F,
                     cittadinanza=Cittadinanza.COMUNITARIA,
@@ -310,7 +276,7 @@ def seed():
                     svantaggio_abitativo=SvantaggioAbitativo.NESSUNA,
                     ore_erogate=48.0, ore_assenza=4.0,
                     posizione_registro_cartaceo=1),
-            Allievo(nome="Ahmed",    cognome="Ben Ali",
+            Allievo(nome="Ahmed", cognome="Ben Ali",
                     codice_fiscale="BNLHMD88T10Z330K",
                     data_nascita=date(1988, 12, 10),
                     nazione_nascita="Tunisia", sesso=Sesso.M,
@@ -325,11 +291,10 @@ def seed():
                     condizione_occupazionale=CondizioneOccupazionale.DISOCCUPATO,
                     disabilita_vulnerabilita=DisabilitaVulnerabilita.NESSUNA,
                     svantaggio_abitativo=SvantaggioAbitativo.SVANTAGGIO,
-                   # ore_accertamento_stranieri=True,   # allievo straniero
                     ore_erogate=48.0, ore_assenza=8.0,
                     posizione_registro_cartaceo=2),
-            Allievo(nome="Marta",    cognome="Ferrara",
-                    codice_fiscale="FRRMRT 90D50H501P",
+            Allievo(nome="Marta", cognome="Ferrara",
+                    codice_fiscale="FRRMRT90D50H501P",
                     data_nascita=date(1990, 4, 10),
                     sesso=Sesso.F,
                     cittadinanza=Cittadinanza.COMUNITARIA,
@@ -346,7 +311,7 @@ def seed():
         ]
 
         allievi_fse = [
-            Allievo(nome="Davide",   cognome="Greco",
+            Allievo(nome="Davide", cognome="Greco",
                     codice_fiscale="GRCDVD85M20L219R",
                     data_nascita=date(1985, 8, 20),
                     sesso=Sesso.M,
@@ -362,7 +327,7 @@ def seed():
                     svantaggio_abitativo=SvantaggioAbitativo.NESSUNA,
                     ore_erogate=24.0, ore_assenza=0.0,
                     posizione_registro_cartaceo=1),
-            Allievo(nome="Chiara",   cognome="Martini",
+            Allievo(nome="Chiara", cognome="Martini",
                     codice_fiscale="MRTCHR92P50L219Y",
                     data_nascita=date(1992, 9, 10),
                     sesso=Sesso.F,
@@ -379,10 +344,9 @@ def seed():
                     posizione_registro_cartaceo=2),
         ]
 
-        # Un allievo ritirato nel GOL per esempio
         allievo_ritirato = Allievo(
             nome="Fabio", cognome="Serra",
-            codice_fiscale="SRRF BZ79A01H501W",
+            codice_fiscale="SRRFBZ79A01H501W",
             data_nascita=date(1979, 1, 1),
             sesso=Sesso.M,
             cittadinanza=Cittadinanza.COMUNITARIA,
@@ -534,6 +498,7 @@ def seed():
         # ══════════════════════════════════════════════════════════════════════
         print("\n   📅 Creazione prenotazioni...")
 
+        # ── Confermate ────────────────────────────────────────────────────────
         crea_singola(a_sv1, c_gol, mario,
                      oggi + timedelta(days=1), 9, 13,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
@@ -552,25 +517,20 @@ def seed():
         mercoledi_fse = [lun1 + timedelta(days=2, weeks=i) for i in range(8)]
         crea_massiva_slot(a_sv4, c_fse, mario, mercoledi_fse, 14, 18,
                           StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
-                          note="FSE digitale — mercoledì pomeriggio")
+                          note="FSE Carrellisti — mercoledì pomeriggio")
 
         crea_singola(a_sv5, c_mix, mario, lun2, 9, 17,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
-                     note="Giornata intera — corso misto")
+                     note="Giornata intera — FSE Asti")
 
-        crea_singola(a_sv1, c_pag, luca,
-                     oggi + timedelta(days=3), 9, 13,
+        crea_singola(a_cu1, c_gol, elena, lun1, 9, 13,
                      StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
-                     note="Azienda TechCorp — prima sessione")
+                     note="GOL Cuneo — avvio percorso")
 
-        giovedi_excel = [lun1 + timedelta(days=3, weeks=i) for i in range(4)]
-        crea_massiva_slot(a_sv2, c_pag, luca, giovedi_excel, 14, 17,
-                          StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
-                          note="Moduli pomeridiani Excel avanzato")
-
-        crea_singola(a_sv3, c_ifts, mario, lun4, 9, 13,
+        # ── In attesa ─────────────────────────────────────────────────────────
+        crea_singola(a_sv3, c_gol, mario, lun4, 9, 13,
                      StatoPrenotazione.IN_ATTESA, StatoRichiesta.INVIATA,
-                     note="Laboratorio IFTS — primo incontro")
+                     note="Laboratorio GOL — secondo ciclo")
 
         crea_singola(a_sv5, c_mix, mario,
                      lun4 + timedelta(days=1), 14, 18,
@@ -581,12 +541,12 @@ def seed():
                           StatoPrenotazione.IN_ATTESA, StatoRichiesta.INVIATA,
                           note="Secondo ciclo GOL — venerdì mattina")
 
-        crea_singola(a_sv4, c_pag, luca,
+        crea_singola(a_sv4, c_fse, luca,
                      lun4 + timedelta(days=2), 14, 17,
                      StatoPrenotazione.IN_ATTESA, StatoRichiesta.INVIATA,
-                     note="Sessione extra Excel — mercoledì")
+                     note="Sessione extra FSE — mercoledì")
 
-        # Conflitti
+        # ── Conflitti ─────────────────────────────────────────────────────────
         p_conf = PrenotazioneSingola(
             aula_id=a_sv3.id, corso_id=c_fse.id, richiedente_id=luca.id,
             stato=StatoPrenotazione.CONFLITTO,
@@ -611,7 +571,7 @@ def seed():
                                       stato=StatoRichiesta.INVIATA, ha_conflitti=True))
         db.flush()
 
-        # Rifiutate
+        # ── Rifiutate ─────────────────────────────────────────────────────────
         crea_singola(a_sv5, c_gol, mario,
                      oggi - timedelta(days=7), 9, 13,
                      StatoPrenotazione.RIFIUTATA, StatoRichiesta.RIFIUTATA,
@@ -624,27 +584,23 @@ def seed():
                      note_rifiuto="Capienza Aula Gialla insufficiente per 20 partecipanti FSE.",
                      note="Richiesta capienza errata")
 
-        crea_singola(a_sv2, c_ifts, mario,
+        crea_singola(a_sv2, c_mix, mario,
                      oggi - timedelta(days=14), 9, 17,
                      StatoPrenotazione.RIFIUTATA, StatoRichiesta.RIFIUTATA,
-                     note_rifiuto="Data antecedente all'avvio IFTS (15/09/2025). Prenotare da settembre.",
-                     note="Giornata intera IFTS — anticipata")
+                     note_rifiuto="Data antecedente all'avvio del corso. Verificare le date.",
+                     note="Giornata intera — anticipata")
 
-        # Multi-sede
-        crea_singola(a_cu1, c_gol, elena, lun1, 9, 13,
-                     StatoPrenotazione.CONFERMATA, StatoRichiesta.APPROVATA,
-                     note="GOL Cuneo — avvio percorso")
-
+        # ── Asti massiva ──────────────────────────────────────────────────────
         martedi_asti = [lun1 + timedelta(days=1, weeks=i) for i in range(4)]
         p_asti = PrenotazioneMassiva(
-            aula_id=a_as1.id, corso_id=corsi[4].id,
+            aula_id=a_as1.id, corso_id=c_mix.id,
             richiedente_id=elena.id,
             stato=StatoPrenotazione.IN_ATTESA,
             tipo_ricorrenza=TipoRicorrenza.SETTIMANALE,
             giorni_settimana="2",
             data_inizio_range=martedi_asti[0],
             data_fine_range=martedi_asti[-1],
-            note="GOL Asti — martedì mattina",
+            note="FSE Asti — martedì mattina",
         )
         db.add(p_asti); db.flush()
         for d in martedi_asti:
@@ -671,7 +627,7 @@ def seed():
                 ora_inizio=time(9, 0),
                 ora_fine=time(13, 0),
                 tipo_lezione=TipoLezione.NORMALE,
-                si_ripete=(i == 0),   # La prima lezione è ricorrente
+                si_ripete=(i == 0),
                 numero_variazione=0,
                 note=f"Lezione {i+1} — orientamento GOL",
             )
@@ -679,10 +635,10 @@ def seed():
             lezioni_gol.append(lez)
         db.flush()
 
-        # Registra presenze: tutti tranne il ritirato nelle ultime 2 lezioni
+        # Registra presenze
         for lez in lezioni_gol:
             lez.allievi_presenti = [allievi_gol[0], allievi_gol[1], allievi_gol[2]]
-        # Prima lezione: allievo ritirato era presente
+        # Prime due lezioni: allievo ritirato era ancora presente
         lezioni_gol[0].allievi_presenti.append(allievo_ritirato)
         lezioni_gol[1].allievi_presenti.append(allievo_ritirato)
         db.flush()
@@ -720,11 +676,11 @@ def seed():
         # ══════════════════════════════════════════════════════════════════════
         # RIEPILOGO
         # ══════════════════════════════════════════════════════════════════════
-        n_pren  = db.query(Prenotazione).count()
-        n_slot  = db.query(SlotOrario).count()
-        n_lez   = db.query(Lezione).count()
-        n_doc   = db.query(Docente).count()
-        n_all   = db.query(Allievo).count()
+        n_pren = db.query(Prenotazione).count()
+        n_slot = db.query(SlotOrario).count()
+        n_lez  = db.query(Lezione).count()
+        n_doc  = db.query(Docente).count()
+        n_all  = db.query(Allievo).count()
 
         print(f"\n✅ Seeding completato!")
         print(f"   • {n_pren} prenotazioni  ("

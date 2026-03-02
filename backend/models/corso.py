@@ -70,6 +70,7 @@ class Corso(Base):
                                         comment="Ore totali previste dal progetto formativo")
     ore_erogate               = Column(Float, nullable=False, default=0.0)
     ore_stage                 = Column(Float, nullable=True)
+    ore_verifica_finale       = Column(Float, nullable=True)
     ente_stage                = Column(String(255), nullable=True,
                                         comment="Derivato da mapping allievi")
     ore_aggiuntive            = Column(Float, nullable=True,
@@ -78,6 +79,9 @@ class Corso(Base):
                                          comment="Tipo prova accertamento: 40 min × prova fissa")
     ore_selezione_allievi     = Column(Float, nullable=True,
                                         comment="Inserite dal RC dal frontend, modificabili")
+    ore_prova_finale          = Column(Float, nullable=True,
+                                        comment="Inserite dal RC dal frontend, modificabili")
+    avvio_anticipato          = Column(Boolean, default=False)
 
     # ── Relazioni ─────────────────────────────────────────────────────────────
     responsabile = relationship(

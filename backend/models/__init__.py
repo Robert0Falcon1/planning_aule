@@ -48,33 +48,3 @@ __all__ = [
     "Attrezzatura", "RichiestaAttrezzatura",
     "Catalogo",
 ]
-
-
-__all__ = [
-    # Enum
-    "RuoloUtente", "StatoPrenotazione", "StatoRichiesta", "TipoPrenotazione",
-    "TipoRicorrenza", "TipoAttrezzatura", "TipoFinanziamento", "TipoConflitto",
-    "StatoCorso", "OreAccertamento", "TipoLezione", "TipologiaDocente",
-    "Sesso", "Cittadinanza", "ResidenzaIn", "LivelloIstruzione",
-    "CondizioneOccupazionale", "DisabilitaVulnerabilita", "SvantaggioAbitativo",
-    # Modelli spazi 
-    "Sede", "Aula",
-    # Modelli persone con ruoli sul Gestionale
-    "Utente", "ResponsabileCorso", "ResponsabileSede", "SegreteriaSede",
-    "SegreteriaDidattica", "Coordinamento", 
-    # Modelli altre figure coinvolte
-    "Docente", "Allievo",
-    # Modelli calendario
-    "Corso", "Lezione",
-    # Modello orario
-    "SlotOrario",
-    # Modelli prenotazioni
-    "Prenotazione", "PrenotazioneSingola", "PrenotazioneMassiva",
-    # Modelli richieste
-    "RichiestaPrenotazione", "Conflitto",
-    # Modelli attrezzatura
-    "Attrezzatura", "RichiestaAttrezzatura",
-    # Modello catalogo
-    "Catalogo",
-]
-
