@@ -4,17 +4,14 @@ Centralizzati in un unico file per semplicità di manutenzione.
 """
 
 import enum
+from enum import Enum
 
 
 # ── Utenti e accesso ──────────────────────────────────────────────────────────
 
-class RuoloUtente(str, enum.Enum):
-    """Ruoli disponibili nel sistema con permessi differenziati."""
-    RESPONSABILE_CORSO    = "responsabile_corso"
-    RESPONSABILE_SEDE     = "responsabile_sede"
-    SEGRETERIA_SEDE       = "segreteria_sede"
-    SEGRETERIA_DIDATTICA  = "segreteria_didattica"
-    COORDINAMENTO         = "coordinamento"
+class RuoloUtente(str, Enum):
+    OPERATIVO = "OPERATIVO"
+    COORDINAMENTO = "COORDINAMENTO"
 
 
 # ── Prenotazioni ──────────────────────────────────────────────────────────────
@@ -174,3 +171,18 @@ class SvantaggioAbitativo(str, enum.Enum):
     """1 = in condizione di svantaggio · 2 = nessuna condizione."""
     SVANTAGGIO = "1"
     NESSUNA    = "2"
+
+class TipoConflitto(str, Enum):
+    """Tipologie conflitto prenotazioni"""
+    OVERLAP_ORARIO = "OVERLAP_ORARIO"
+    DOPPIA_PRENOTAZIONE = "DOPPIA_PRENOTAZIONE"
+    ALTRO = "ALTRO"
+
+
+class StatoRisoluzioneConflitto(str, Enum):
+    """Stato risoluzione conflitto"""
+    NON_RISOLTO = "NON_RISOLTO"
+    RISOLTO_MANTENUTA_1 = "RISOLTO_MANTENUTA_1"
+    RISOLTO_MANTENUTA_2 = "RISOLTO_MANTENUTA_2"
+    RISOLTO_ELIMINATE_ENTRAMBE = "RISOLTO_ELIMINATE_ENTRAMBE"
+    RISOLTO_MANUALE = "RISOLTO_MANUALE"

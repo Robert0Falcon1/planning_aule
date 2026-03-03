@@ -14,12 +14,11 @@ from backend.schemas.prenotazione import (PrenotazioneSingolaInput,
                                            PrenotazioneRisposta,
                                            RichiestaPrenotazioneRisposta)
 from backend.services.booking_service import (crea_prenotazione_singola,
-                                               crea_prenotazione_massiva,
-                                               approva_richiesta,
-                                               rifiuta_richiesta)
+                                               crea_prenotazione_massiva)
 from backend.models.enums import StatoPrenotazione
 from datetime import date
 from typing import Optional
+from backend.services.conflitti_service import ConflittoService
 
 router = APIRouter(prefix="/prenotazioni", tags=["Prenotazioni"])
 
@@ -33,11 +32,29 @@ def nuova_prenotazione_singola(
 ):
     """
     Crea una prenotazione singola per un'aula.
-    Se esistono conflitti vengono segnalati come WARNING ma la richiesta viene comunque creata.
+    NUOVO: Rileva automaticamente conflitti e auto-approva la richiesta.
     """
     prenotazione, _ = crea_prenotazione_singola(db, dati, utente)
+    
+    # NUOVO: Rileva conflitti automaticamente
+    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+    
+    # NUOVO: Auto-approva richiesta (no più workflow approvazione)
+    from datetime import datetime, timezone
+    from backend.models.enums import StatoRichiesta
+    
+    richiesta = RichiestaPrenotazione(
+        prenotazione_id=prenotazione.id,
+        stato=StatoRichiesta.APPROVATA,
+        ha_conflitti=(len(conflitti) > 0),
+        data_richiesta=datetime.now(timezone.utc),
+        data_gestione=datetime.now(timezone.utc)
+    )
+    db.add(richiesta)
+    db.commit()
+    db.refresh(prenotazione)
+    
     return prenotazione
-
 
 @router.post("/massiva", response_model=PrenotazioneRisposta, status_code=201,
              summary="Crea prenotazione massiva (ricorrente)")
@@ -48,11 +65,29 @@ def nuova_prenotazione_massiva(
 ):
     """
     Crea una prenotazione ricorrente generando automaticamente tutti gli slot.
-    Es: tutti i lunedì dalle 9 alle 12 da marzo a giugno.
+    NUOVO: Rileva automaticamente conflitti e auto-approva la richiesta.
     """
     prenotazione, _ = crea_prenotazione_massiva(db, dati, utente)
+    
+    # NUOVO: Rileva conflitti automaticamente
+    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+    
+    # NUOVO: Auto-approva richiesta (no più workflow approvazione)
+    from datetime import datetime, timezone
+    from backend.models.enums import StatoRichiesta
+    
+    richiesta = RichiestaPrenotazione(
+        prenotazione_id=prenotazione.id,
+        stato=StatoRichiesta.APPROVATA,
+        ha_conflitti=(len(conflitti) > 0),
+        data_richiesta=datetime.now(timezone.utc),
+        data_gestione=datetime.now(timezone.utc)
+    )
+    db.add(richiesta)
+    db.commit()
+    db.refresh(prenotazione)
+    
     return prenotazione
-
 
 @router.get("/", response_model=list[PrenotazioneRisposta],
             summary="Lista prenotazioni")
@@ -133,38 +168,6 @@ def dettaglio_prenotazione(
     if not p:
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
     return p
-
-
-@router.post("/richieste/{richiesta_id}/approva",
-             response_model=RichiestaPrenotazioneRisposta,
-             summary="Approva richiesta")
-def approva(
-    richiesta_id: int,
-    db:     Session = Depends(get_db),
-    utente: Utente  = Depends(verifica_permesso("prenotazione:validare"))
-):
-    """Approva una richiesta di prenotazione (solo Segreteria di Sede)."""
-    try:
-        return approva_richiesta(db, richiesta_id, utente)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-@router.post("/richieste/{richiesta_id}/rifiuta",
-             response_model=RichiestaPrenotazioneRisposta,
-             summary="Rifiuta richiesta")
-def rifiuta(
-    richiesta_id: int,
-    motivo: str,
-    db:     Session = Depends(get_db),
-    utente: Utente  = Depends(verifica_permesso("prenotazione:rifiutare"))
-):
-    """Rifiuta una richiesta di prenotazione con motivazione."""
-    try:
-        return rifiuta_richiesta(db, richiesta_id, motivo, utente)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
 
 @router.get("/slot-liberi/{aula_id}", summary="Slot liberi per aula")
 def slot_liberi(

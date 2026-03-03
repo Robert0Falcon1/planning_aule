@@ -33,6 +33,8 @@ class Prenotazione(Base):
     data_creazione  = Column(DateTime, default=datetime.utcnow, nullable=False)
     data_aggiornamento = Column(DateTime, default=datetime.utcnow,
                                  onupdate=datetime.utcnow, nullable=False)
+    # NUOVO CAMPO per conflitti
+    ha_conflitti_attivi = Column(Boolean, default=False, nullable=False)
 
     # ── Colonne per prenotazioni massive ──────────────────────────────────────
     tipo_ricorrenza   = Column(SAEnum(TipoRicorrenza), nullable=True)
@@ -60,9 +62,42 @@ class Prenotazione(Base):
     attrezzature_richieste = relationship("RichiestaAttrezzatura",
                                            back_populates="prenotazione",
                                            cascade="all, delete-orphan")
+                                           
 
     def __repr__(self) -> str:
         return f"<Prenotazione #{self.id} [{self.tipo}] - aula {self.aula_id}>"
+    
+
+    # ===== RELAZIONI CONFLITTI (Sistema 2 ruoli) =====
+    ha_conflitti_attivi = Column(Boolean, default=False, nullable=False)
+    
+    conflitti_come_pren1 = relationship(
+        "ConflittoPrenotazione",
+        foreign_keys="ConflittoPrenotazione.prenotazione_id_1",
+        back_populates="prenotazione_1",
+        cascade="all, delete-orphan"
+    )
+    
+    conflitti_come_pren2 = relationship(
+        "ConflittoPrenotazione",
+        foreign_keys="ConflittoPrenotazione.prenotazione_id_2",
+        back_populates="prenotazione_2",
+        cascade="all, delete-orphan"
+    )
+    
+    @property
+    def conflitti(self):
+        """Tutti i conflitti di questa prenotazione"""
+        return self.conflitti_come_pren1 + self.conflitti_come_pren2
+    
+    @property
+    def ha_conflitti_non_risolti(self) -> bool:
+        """Verifica conflitti attivi non risolti"""
+        from backend.models.enums import StatoRisoluzioneConflitto
+        return any(
+            c.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+            for c in self.conflitti
+        )
 
 
 class PrenotazioneSingola(Prenotazione):
@@ -103,32 +138,8 @@ class RichiestaPrenotazione(Base):
     prenotazione = relationship("Prenotazione",  back_populates="richiesta")
     segreteria   = relationship("Utente",        back_populates="richieste_gestite",
                                 foreign_keys=[segreteria_id])
-    conflitti    = relationship("Conflitto",     back_populates="richiesta",
-                                cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Richiesta #{self.id} [{self.stato}]>"
 
-
-class Conflitto(Base):
-    """
-    Conflitto rilevato tra una richiesta e una prenotazione esistente.
-    Viene segnalato come WARNING ma non blocca la richiesta.
-    """
-    __tablename__ = "conflitti"
-
-    id                      = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    richiesta_id            = Column(Integer, ForeignKey("richieste_prenotazione.id"), nullable=False)
-    prenotazione_conflitta_id = Column(Integer, ForeignKey("prenotazioni.id"), nullable=True,
-                                        comment="Prenotazione già esistente che crea il conflitto")
-    tipo                    = Column(SAEnum(TipoConflitto), nullable=False)
-    descrizione             = Column(Text, nullable=False)
-    data_rilevamento        = Column(DateTime, default=datetime.utcnow)
-
-    # ── Relazioni ─────────────────────────────────────────────────────────────
-    richiesta            = relationship("RichiestaPrenotazione", back_populates="conflitti")
-    prenotazione_conflitta = relationship("Prenotazione",
-                                           foreign_keys=[prenotazione_conflitta_id])
-
-    def __repr__(self) -> str:
-        return f"<Conflitto [{self.tipo}] su richiesta #{self.richiesta_id}>"
+   

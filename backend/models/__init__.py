@@ -15,18 +15,17 @@ from backend.models.enums import (
 )
 from backend.models.sede        import Sede
 from backend.models.aula        import Aula
-from backend.models.utente      import (Utente, ResponsabileCorso, ResponsabileSede,
-                                         SegreteriaSede, SegreteriaDidattica, Coordinamento)
+from backend.models.utente import (Utente, UtenteOperativo, UtenteCoordinamento)
 from backend.models.docente     import Docente
 from backend.models.allievo     import Allievo
 from backend.models.corso       import Corso
 from backend.models.lezione     import Lezione
 from backend.models.slot_orario  import SlotOrario
 from backend.models.prenotazione import (Prenotazione, PrenotazioneSingola,
-                                          PrenotazioneMassiva, RichiestaPrenotazione,
-                                          Conflitto)
+                                          PrenotazioneMassiva, RichiestaPrenotazione)
 from backend.models.attrezzatura import Attrezzatura, RichiestaAttrezzatura
 from backend.models.catalogo     import Catalogo
+from backend.models.conflitto import ConflittoPrenotazione
 
 
 __all__ = [
@@ -38,13 +37,12 @@ __all__ = [
     "CondizioneOccupazionale", "DisabilitaVulnerabilita", "SvantaggioAbitativo",
     # Modelli
     "Sede", "Aula",
-    "Utente", "ResponsabileCorso", "ResponsabileSede",
-    "SegreteriaSede", "SegreteriaDidattica", "Coordinamento",
+    "Utente", "UtenteOperativo", "UtenteCoordinamento",
     "Docente", "Allievo",
     "Corso", "Lezione",
     "SlotOrario",
     "Prenotazione", "PrenotazioneSingola", "PrenotazioneMassiva",
-    "RichiestaPrenotazione", "Conflitto",
+    "RichiestaPrenotazione", "ConflittoPrenotazione",
     "Attrezzatura", "RichiestaAttrezzatura",
     "Catalogo",
 ]

@@ -67,32 +67,24 @@ class Utente(Base):
         foreign_keys="RichiestaPrenotazione.segreteria_id"
     )
 
+    # NUOVA RELAZIONE conflitti risolti
+    conflitti_risolti = relationship(
+        "ConflittoPrenotazione",
+        foreign_keys="ConflittoPrenotazione.risolto_da",
+        back_populates="risolutore"
+    )
+
     def __repr__(self) -> str:
         return f"<Utente {self.email} [{self.ruolo}]>"
 
 
 # ── Sottoclassi per ogni ruolo (solo mapper_args, nessuna relationship) ───────
 
-class ResponsabileCorso(Utente):
-    """Utente che può richiedere prenotazioni per i propri corsi."""
-    __mapper_args__ = {"polymorphic_identity": RuoloUtente.RESPONSABILE_CORSO}
+class UtenteOperativo(Utente):
+    """Utente OPERATIVO: può creare prenotazioni nella propria sede"""
+    __mapper_args__ = {"polymorphic_identity": RuoloUtente.OPERATIVO}
 
 
-class ResponsabileSede(Utente):
-    """Utente con visibilità sullo stato delle aule della propria sede."""
-    __mapper_args__ = {"polymorphic_identity": RuoloUtente.RESPONSABILE_SEDE}
-
-
-class SegreteriaSede(Utente):
-    """Utente che valida e inserisce le prenotazioni nella propria sede."""
-    __mapper_args__ = {"polymorphic_identity": RuoloUtente.SEGRETERIA_SEDE}
-
-
-class SegreteriaDidattica(Utente):
-    """Utente con visibilità sulle prenotazioni legate ai corsi."""
-    __mapper_args__ = {"polymorphic_identity": RuoloUtente.SEGRETERIA_DIDATTICA}
-
-
-class Coordinamento(Utente):
-    """Utente con visibilità globale su tutte le sedi."""
+class UtenteCoordinamento(Utente):
+    """Utente COORDINAMENTO: gestisce tutte le sedi e risolve conflitti"""
     __mapper_args__ = {"polymorphic_identity": RuoloUtente.COORDINAMENTO}

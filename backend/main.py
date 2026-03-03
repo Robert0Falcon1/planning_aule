@@ -9,7 +9,7 @@ from backend.config import settings
 from backend.database import crea_tabelle
 
 # Import di tutti i router
-from backend.routers import auth, utenti, sedi, aule, prenotazioni
+from backend.routers import auth, utenti, sedi, aule, prenotazioni, conflitti
 
 # ── Creazione dell'app FastAPI ────────────────────────────────────────────────
 app = FastAPI(
@@ -36,6 +36,7 @@ app.include_router(utenti.router,       prefix=PREFIX)
 app.include_router(sedi.router,         prefix=PREFIX)
 app.include_router(aule.router,         prefix=PREFIX)
 app.include_router(prenotazioni.router, prefix=PREFIX)
+app.include_router(conflitti.router)
 
 
 # ── Evento di avvio: crea le tabelle se non esistono ─────────────────────────

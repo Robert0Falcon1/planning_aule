@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.core.security import decodifica_token
-from backend.core.permissions import ha_permesso
+from backend.core.permissions import PermissionChecker, check_permission
 from backend.models.utente import Utente
 from backend.models.enums import RuoloUtente
 
@@ -62,18 +62,34 @@ def get_utente_corrente(
 def verifica_permesso(azione: str):
     """
     Factory di dipendenze FastAPI per il controllo RBAC.
-
-    Uso negli endpoint:
-        @router.post("/prenotazioni")
-        def crea(utente = Depends(verifica_permesso("prenotazione:richiedere"))):
-            ...
+    Versione semplificata per sistema 2 ruoli.
+    
+    La maggior parte dei controlli è ora gestita direttamente nei router
+    tramite PermissionChecker e require_coordinamento.
     """
     def _dipendenza(utente: Utente = Depends(get_utente_corrente)) -> Utente:
-        if not ha_permesso(utente.ruolo, azione):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permesso negato. Ruolo '{utente.ruolo}' "
-                       f"non autorizzato per '{azione}'."
-            )
+        # Mapping azioni → permessi nel nuovo sistema
+        if "validare" in azione or "rifiutare" in azione:
+            # Solo COORDINAMENTO (vecchie azioni di approvazione/rifiuto)
+            if not PermissionChecker.is_coordinamento(utente):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Permesso negato: richiesto ruolo COORDINAMENTO"
+                )
+        elif "richiedere" in azione or "creare" in azione:
+            # Tutti possono richiedere/creare prenotazioni
+            pass
+        elif "vedere" in azione or "visualizzare" in azione:
+            # Tutti possono vedere (filtro nei query)
+            pass
+        else:
+            # Default: permetti (controlli specifici nei router)
+            pass
+        
         return utente
     return _dipendenza
+
+
+# Helper aggiuntivi per compatibilità
+GRUPPO_OPERATIVO = [RuoloUtente.OPERATIVO]
+GRUPPO_SUPERVISIONE = [RuoloUtente.COORDINAMENTO]
