@@ -1,0 +1,11 @@
+-- Elimina database
+DROP DATABASE prenotazione_aule;
+
+-- Ricrea vuoto
+CREATE DATABASE prenotazione_aule 
+  CHARACTER SET utf8mb4 
+  COLLATE utf8mb4_unicode_ci;
+
+
+
+python -m database.seed
