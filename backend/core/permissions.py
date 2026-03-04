@@ -2,11 +2,9 @@
 Sistema Permessi - Versione 2 Ruoli
 """
 
-from typing import Optional
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, status, Depends
 
-from backend.models import Utente, Prenotazione, Sede
+from backend.models import Utente, Prenotazione
 from backend.models.enums import RuoloUtente
 
 
@@ -66,16 +64,6 @@ class PermissionChecker:
     def can_export_data(utente: Utente) -> bool:
         """Solo COORDINAMENTO può esportare dati"""
         return PermissionChecker.is_coordinamento(utente)
-
-
-def require_coordinamento(utente: Utente):
-    """Dependency: richiede ruolo COORDINAMENTO"""
-    if not PermissionChecker.is_coordinamento(utente):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accesso negato: richiesto ruolo COORDINAMENTO"
-        )
-    return utente
 
 
 def check_permission(condition: bool, error_message: str = "Accesso negato"):

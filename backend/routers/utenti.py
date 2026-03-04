@@ -20,13 +20,12 @@ def lista_utenti(
     """Restituisce tutti gli utenti (solo Coordinamento)."""
     return db.query(Utente).all()
 
-
 @router.post("/", response_model=UtenteRisposta, status_code=201,
              summary="Crea utente")
 def crea_utente(
     dati: UtenteCrea,
-    db:   Session = Depends(get_db),
-    _:    Utente  = Depends(verifica_permesso("utente:creare"))
+    db: Session = Depends(get_db),
+    _: Utente = Depends(verifica_permesso("utente:creare"))
 ):
     """Crea un nuovo utente nel sistema (solo Coordinamento)."""
     esistente = db.query(Utente).filter(Utente.email == dati.email).first()
@@ -36,15 +35,17 @@ def crea_utente(
             detail=f"Email '{dati.email}' già registrata"
         )
 
+    # Sistema 2 ruoli: istanza base Utente con campo ruolo ENUM
     utente = Utente(
         nome=dati.nome,
         cognome=dati.cognome,
         email=dati.email,
         password_hash=hash_password(dati.password),
-        ruolo=dati.ruolo,
+        ruolo=dati.ruolo,  # ENUM diretto
         sede_id=dati.sede_id,
         attivo=True,
     )
+    
     db.add(utente)
     db.commit()
     db.refresh(utente)

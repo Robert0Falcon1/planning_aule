@@ -15,7 +15,7 @@ from backend.models.enums import (
 )
 from backend.models.sede        import Sede
 from backend.models.aula        import Aula
-from backend.models.utente import (Utente, UtenteOperativo, UtenteCoordinamento)
+from backend.models.utente import Utente
 from backend.models.docente     import Docente
 from backend.models.allievo     import Allievo
 from backend.models.corso       import Corso

@@ -3,7 +3,7 @@ Servizio Gestione Conflitti - Sistema Automatico
 """
 
 from typing import List, Optional
-from datetime import date, time
+from datetime import date, time, datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
@@ -144,57 +144,88 @@ class ConflittoService:
     def resolve_conflict(
         db: Session,
         conflitto_id: int,
-        risolto_da_user_id: int,
+        risolto_da_id: int,
         azione: str,
-        note: Optional[str] = None
+        note: str = None
     ) -> ConflittoPrenotazione:
-        """Risolve un conflitto"""
-
+        """
+        Risolve un conflitto con diverse azioni possibili.
+        
+        Azioni:
+        - mantieni_1: mantiene prenotazione_1, elimina prenotazione_2
+        - mantieni_2: mantiene prenotazione_2, elimina prenotazione_1  
+        - elimina_entrambe: elimina entrambe le prenotazioni
+        - manuale: segna come risolto senza eliminazioni
+        """
+        # Recupera conflitto
         conflitto = db.query(ConflittoPrenotazione).filter(
             ConflittoPrenotazione.id == conflitto_id
         ).first()
-
+        
         if not conflitto:
             raise ValueError(f"Conflitto {conflitto_id} non trovato")
-
+        
         if conflitto.is_risolto:
             raise ValueError(f"Conflitto {conflitto_id} già risolto")
-
-        def elimina_prenotazione_con_richiesta(prenotazione):
-            if not prenotazione:
-                return
-
-            # Elimina prima la richiesta associata
-            richiesta = db.query(RichiestaPrenotazione).filter(
-                RichiestaPrenotazione.prenotazione_id == prenotazione.id
+        
+        # ⭐ AGGIORNA CONFLITTO PRIMA DELLE ELIMINAZIONI ⭐
+        conflitto.risolto_da_id = risolto_da_id
+        conflitto.risolto_il = datetime.now(timezone.utc).replace(tzinfo=None)
+        conflitto.note_risoluzione = note
+        
+        # Esegui azione
+        if azione == "mantieni_1":
+            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
+            db.flush()  # Salva prima di eliminare
+            
+            # Elimina prenotazione 2
+            richiesta_2 = db.query(RichiestaPrenotazione).filter(
+                RichiestaPrenotazione.prenotazione_id == conflitto.prenotazione_2.id
             ).first()
-
-            if richiesta:
-                db.delete(richiesta)
-
-            # Poi elimina la prenotazione
-            db.delete(prenotazione)
-
-        if azione == 'mantieni_1':
-            elimina_prenotazione_con_richiesta(conflitto.prenotazione_2)
-            stato = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
-
-        elif azione == 'mantieni_2':
-            elimina_prenotazione_con_richiesta(conflitto.prenotazione_1)
-            stato = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
-
-        elif azione == 'elimina_entrambe':
-            elimina_prenotazione_con_richiesta(conflitto.prenotazione_1)
-            elimina_prenotazione_con_richiesta(conflitto.prenotazione_2)
-            stato = StatoRisoluzioneConflitto.RISOLTO_ELIMINATE_ENTRAMBE
-
-        elif azione == 'manuale':
-            stato = StatoRisoluzioneConflitto.RISOLTO_MANUALE
-
+            if richiesta_2:
+                db.delete(richiesta_2)
+            
+            db.delete(conflitto.prenotazione_2)
+            
+        elif azione == "mantieni_2":
+            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
+            db.flush()  # Salva prima di eliminare
+            
+            # Elimina prenotazione 1
+            richiesta_1 = db.query(RichiestaPrenotazione).filter(
+                RichiestaPrenotazione.prenotazione_id == conflitto.prenotazione_1.id
+            ).first()
+            if richiesta_1:
+                db.delete(richiesta_1)
+            
+            db.delete(conflitto.prenotazione_1)
+            
+        elif azione == "elimina_entrambe":
+            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_ELIMINATE_ENTRAMBE
+            db.flush()  # Salva prima di eliminare
+            
+            # Elimina entrambe le richieste
+            richiesta_1 = db.query(RichiestaPrenotazione).filter(
+                RichiestaPrenotazione.prenotazione_id == conflitto.prenotazione_1.id
+            ).first()
+            if richiesta_1:
+                db.delete(richiesta_1)
+                
+            richiesta_2 = db.query(RichiestaPrenotazione).filter(
+                RichiestaPrenotazione.prenotazione_id == conflitto.prenotazione_2.id
+            ).first()
+            if richiesta_2:
+                db.delete(richiesta_2)
+            
+            db.delete(conflitto.prenotazione_1)
+            db.delete(conflitto.prenotazione_2)
+            
+        elif azione == "manuale":
+            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANUALE
+            
         else:
-            raise ValueError(f"Azione '{azione}' non valida")
-
-        conflitto.risolvi(risolto_da_user_id, stato, note)
-
-        db.flush()
+            raise ValueError(f"Azione non valida: {azione}")
+        
+        db.commit()
+        
         return conflitto

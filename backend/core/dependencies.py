@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.core.security import decodifica_token
-from backend.core.permissions import PermissionChecker, check_permission
+from backend.core.permissions import PermissionChecker
 from backend.models.utente import Utente
 from backend.models.enums import RuoloUtente
 
@@ -88,6 +88,17 @@ def verifica_permesso(azione: str):
         
         return utente
     return _dipendenza
+
+def require_coordinamento(utente: Utente = Depends(get_utente_corrente)):
+    """Dependency: richiede ruolo COORDINAMENTO"""
+    from backend.core.permissions import PermissionChecker
+    
+    if not PermissionChecker.is_coordinamento(utente):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accesso negato: richiesto ruolo COORDINAMENTO"
+        )
+    return utente
 
 
 # Helper aggiuntivi per compatibilità
