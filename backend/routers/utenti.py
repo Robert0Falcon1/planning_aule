@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.core.security import hash_password
-from backend.core.dependencies import get_utente_corrente, verifica_permesso
+from backend.core.dependencies import require_coordinamento  # ← CAMBIATO
 from backend.models.utente import Utente
 from backend.models.enums import RuoloUtente
 from backend.schemas.utente import UtenteCrea, UtenteRisposta
@@ -15,19 +15,20 @@ router = APIRouter(prefix="/utenti", tags=["Utenti"])
 @router.get("/", response_model=list[UtenteRisposta], summary="Lista utenti")
 def lista_utenti(
     db: Session = Depends(get_db),
-    _:  Utente  = Depends(verifica_permesso("utente:vedere_tutti"))
+    _: Utente = Depends(require_coordinamento)  # ← CAMBIATO
 ):
-    """Restituisce tutti gli utenti (solo Coordinamento)."""
+    """Restituisce tutti gli utenti (solo COORDINAMENTO)."""
     return db.query(Utente).all()
+
 
 @router.post("/", response_model=UtenteRisposta, status_code=201,
              summary="Crea utente")
 def crea_utente(
     dati: UtenteCrea,
     db: Session = Depends(get_db),
-    _: Utente = Depends(verifica_permesso("utente:creare"))
+    _: Utente = Depends(require_coordinamento)  # ← CAMBIATO
 ):
-    """Crea un nuovo utente nel sistema (solo Coordinamento)."""
+    """Crea un nuovo utente nel sistema (solo COORDINAMENTO)."""
     esistente = db.query(Utente).filter(Utente.email == dati.email).first()
     if esistente:
         raise HTTPException(
@@ -35,17 +36,15 @@ def crea_utente(
             detail=f"Email '{dati.email}' già registrata"
         )
 
-    # Sistema 2 ruoli: istanza base Utente con campo ruolo ENUM
     utente = Utente(
         nome=dati.nome,
         cognome=dati.cognome,
         email=dati.email,
         password_hash=hash_password(dati.password),
-        ruolo=dati.ruolo,  # ENUM diretto
+        ruolo=dati.ruolo,
         sede_id=dati.sede_id,
         attivo=True,
     )
-    
     db.add(utente)
     db.commit()
     db.refresh(utente)
@@ -55,12 +54,13 @@ def crea_utente(
 @router.delete("/{utente_id}", status_code=200, summary="Disattiva utente")
 def disattiva_utente(
     utente_id: int,
-    db:        Session = Depends(get_db),
-    corrente:  Utente  = Depends(verifica_permesso("utente:creare"))
+    db: Session = Depends(get_db),
+    corrente: Utente = Depends(require_coordinamento)  # ← CAMBIATO
 ):
     """
     Soft-delete: imposta attivo=False senza eliminare il record.
     Mantiene l'integrità referenziale con prenotazioni e corsi esistenti.
+    Solo COORDINAMENTO.
     """
     utente = db.query(Utente).filter(Utente.id == utente_id).first()
     if not utente:
@@ -84,10 +84,10 @@ def disattiva_utente(
 @router.patch("/{utente_id}/riattiva", status_code=200, summary="Riattiva utente")
 def riattiva_utente(
     utente_id: int,
-    db:        Session = Depends(get_db),
-    _:         Utente  = Depends(verifica_permesso("utente:creare"))
+    db: Session = Depends(get_db),
+    _: Utente = Depends(require_coordinamento)  # ← CAMBIATO
 ):
-    """Riattiva un utente precedentemente disattivato."""
+    """Riattiva un utente precedentemente disattivato. Solo COORDINAMENTO."""
     utente = db.query(Utente).filter(Utente.id == utente_id).first()
     if not utente:
         raise HTTPException(status_code=404, detail="Utente non trovato")
