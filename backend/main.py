@@ -28,6 +28,7 @@ app.add_middleware(
         "http://127.0.0.1:8501",
         "http://localhost:5173",      # ← Vite dev server
         "http://127.0.0.1:5173",     # ← Vite dev server (alias)
+        "http://192.168.1.YY:5173"   # ← Vite dev server (alias)
     ],
     allow_credentials=True,
     allow_methods=["*"],
