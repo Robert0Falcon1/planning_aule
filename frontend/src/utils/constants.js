@@ -1,9 +1,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Costanti applicazione — specchio degli enum del backend Python
+// Architettura 2 ruoli: OPERATIVO, COORDINAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Ruoli utente disponibili */
+// ── Ruoli ─────────────────────────────────────────────────────────────────────
+
+/** Ruoli utente (nuova architettura a 2 gruppi) */
 export const RUOLI = {
+  OPERATIVO:     'OPERATIVO',
+  COORDINAMENTO: 'COORDINAMENTO',
+}
+
+/** Etichette leggibili per i ruoli */
+export const RUOLI_LABEL = {
+  OPERATIVO:     'Operativo',
+  COORDINAMENTO: 'Coordinamento',
+}
+
+/**
+ * Alias deprecati — mantenuti per non rompere le page in _archivio.
+ * Da rimuovere quando si smonta definitivamente la vecchia struttura a 5 ruoli.
+ * @deprecated
+ */
+export const RUOLI_LEGACY = {
   RESPONSABILE_CORSO:   'responsabile_corso',
   RESPONSABILE_SEDE:    'responsabile_sede',
   SEGRETERIA_SEDE:      'segreteria_sede',
@@ -11,45 +30,34 @@ export const RUOLI = {
   COORDINAMENTO:        'coordinamento',
 }
 
-/** Etichette leggibili per i ruoli */
-export const RUOLI_LABEL = {
-  responsabile_corso:   'Responsabile Corso',
-  responsabile_sede:    'Responsabile di Sede',
-  segreteria_sede:      'Segreteria di Sede',
-  segreteria_didattica: 'Segreteria Didattica',
-  coordinamento:        'Coordinamento',
-}
+// ── Prenotazioni ──────────────────────────────────────────────────────────────
 
 /** Stati possibili di una prenotazione */
 export const STATI_PRENOTAZIONE = {
-  IN_ATTESA:  'in_attesa',
   CONFERMATA: 'confermata',
-  RIFIUTATA:  'rifiutata',
   ANNULLATA:  'annullata',
   CONFLITTO:  'conflitto',
+  // Legacy — rimossi dal workflow ma presenti in dati storici
+  IN_ATTESA: 'in_attesa',
+  RIFIUTATA: 'rifiutata',
 }
 
 /**
- * Configurazione badge Bootstrap per ogni stato.
- * Usa le classi Bootstrap Italia (compatibili BS5).
+ * Configurazione badge Bootstrap Italia per ogni stato.
+ * Compatibile BS5/Bootstrap Italia.
  */
 export const STATI_BADGE = {
-  in_attesa:  { class: 'bg-warning text-dark', label: 'In Attesa', icon: '⏳' },
   confermata: { class: 'bg-success',           label: 'Confermata', icon: '✅' },
-  rifiutata:  { class: 'bg-danger',            label: 'Rifiutata', icon: '❌' },
-  annullata:  { class: 'bg-secondary',         label: 'Annullata', icon: '🚫' },
-  conflitto:  { class: 'bg-danger',            label: 'Conflitto', icon: '⚠️' },
+  annullata:  { class: 'bg-secondary',         label: 'Annullata',  icon: '🚫' },
+  conflitto:  { class: 'bg-danger',            label: 'Conflitto',  icon: '⚠️' },
+  // Legacy
+  in_attesa:  { class: 'bg-warning text-dark', label: 'In Attesa',  icon: '⏳' },
+  rifiutata:  { class: 'bg-danger',            label: 'Rifiutata',  icon: '❌' },
 }
 
-/** Tipi di ricorrenza per prenotazioni massive */
-export const TIPI_RICORRENZA = [
-  { value: 'settimanale',   label: 'Settimanale (ogni settimana)' },
-  { value: 'bisettimanale', label: 'Bisettimanale (ogni 2 settimane)' },
-  { value: 'giornaliera',   label: 'Giornaliera (ogni giorno lavorativo)' },
-  { value: 'mensile',       label: 'Mensile (una volta al mese)' },
-]
+// ── Prenotazioni massive ──────────────────────────────────────────────────────
 
-/** Giorni della settimana (isoWeekday: 1=Lun … 7=Dom) */
+/** Giorni della settimana selezionabili (isoWeekday: 1=Lun … 7=Dom) */
 export const GIORNI_SETTIMANA = [
   { value: 1, label: 'Lunedì' },
   { value: 2, label: 'Martedì' },
@@ -60,9 +68,31 @@ export const GIORNI_SETTIMANA = [
   { value: 7, label: 'Domenica' },
 ]
 
+// ── Corsi ─────────────────────────────────────────────────────────────────────
+
 /** Tipi di finanziamento corso */
 export const TIPI_FINANZIAMENTO = {
   finanziato_pubblico: 'Finanziato pubblico',
   a_pagamento:         'A pagamento',
   misto:               'Misto',
 }
+
+// ── Calendario ────────────────────────────────────────────────────────────────
+
+/** Ore disponibili per slot orari (HH:MM, passo 30 min) */
+export const ORE_SLOT = Array.from({ length: 28 }, (_, i) => {
+  const totalMin = 7 * 60 + i * 30   // dalle 07:00 alle 20:30
+  const h = String(Math.floor(totalMin / 60)).padStart(2, '0')
+  const m = String(totalMin % 60).padStart(2, '0')
+  return `${h}:${m}`
+})
+
+/** Colori per aula nel calendario (riutilizzati ciclicamente) */
+export const COLORI_AULA = [
+  '#0066CC', // blu BI
+  '#008D62', // verde
+  '#A04000', // marrone
+  '#6C3483', // viola
+  '#B7950B', // giallo scuro
+  '#1A5276', // blu scuro
+]

@@ -68,8 +68,8 @@
               <!-- Giorni della settimana -->
               <div class="mb-3">
                 <label class="form-label fw-semibold">Giorni della settimana *</label>
-                <div class="d-flex flex-wrap gap-2 mt-1">
-                  <div v-for="g in GIORNI_SETTIMANA" :key="g.value" class="form-check form-check-inline">
+                <div class="d-flex flex-wrap gap-2 mt-1 align-items-center">
+                  <div v-for="g in GIORNI_SETTIMANA" :key="g.value" class="form-check form-check-inline my-0">
                     <input
                       :id="`g-${g.value}`"
                       v-model="form.giorni_settimana"

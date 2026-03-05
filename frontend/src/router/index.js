@@ -1,32 +1,31 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Router — Vue Router 4 con lazy-loading e guardie RBAC
 //
-// Due gruppi funzionali (specchio di backend/core/permissions.py):
-//   OPERATIVO    → RC / Segreteria Didattica / Segreteria di Sede
-//   SUPERVISIONE → Responsabile Sede / Coordinamento
+// Architettura semplificata a 2 gruppi funzionali:
+//   OPERATIVO      → può prenotare, vedere le proprie prenotazioni, conflitti, sedi
+//   COORDINAMENTO  → tutto ciò che fa OPERATIVO + dashboard aggregata, report,
+//                    grafici, gestione utenti, gestione sedi/aule
+//
+// Specchio di backend/core/permissions.py
 // ─────────────────────────────────────────────────────────────────────────────
-
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { RUOLI } from '@/utils/constants'
 
-// ── Gruppi funzionali ───────────────────────────────────────────────────────
-const OPERATIVO = [
-  RUOLI.RESPONSABILE_CORSO,
-  RUOLI.SEGRETERIA_DIDATTICA,
-  RUOLI.SEGRETERIA_SEDE,
-]
+// ── Costanti ruolo ───────────────────────────────────────────────────────────
+// Definite inline per non dipendere da utils/constants.js durante il boot.
+// Devono essere identiche ai valori restituiti dall'API (campo `ruolo` dell'utente).
+const RUOLO = {
+  OPERATIVO:      'OPERATIVO',
+  COORDINAMENTO:  'COORDINAMENTO',
+}
 
-const SUPERVISIONE = [
-  RUOLI.RESPONSABILE_SEDE,
-  RUOLI.COORDINAMENTO,
-]
+const TUTTI = [RUOLO.OPERATIVO, RUOLO.COORDINAMENTO]
+const SOLO_COORDINAMENTO = [RUOLO.COORDINAMENTO]
 
-const TUTTI = [...OPERATIVO, ...SUPERVISIONE]
-
-// ── Rotte ───────────────────────────────────────────────────────────────────
+// ── Rotte ────────────────────────────────────────────────────────────────────
 const routes = [
-  // ── Pubblica ──────────────────────────────────────────────────────────────
+
+  // ── Pubblica ────────────────────────────────────────────────────────────────
   {
     path: '/login',
     name: 'Login',
@@ -34,116 +33,103 @@ const routes = [
     meta: { public: true },
   },
 
-  // ── Radice: redirect dinamico in base all'autenticazione ──────────────────
+  // ── Radice: redirect dinamico basato su ruolo ────────────────────────────────
   {
     path: '/',
     name: 'Home',
     redirect: () => {
-      const authStore = useAuthStore()
-      return authStore.isAuthenticated ? { name: 'Dashboard' } : { name: 'Login' }
+      const auth = useAuthStore()
+      if (!auth.isAuthenticated) return { name: 'Login' }
+      return auth.ruolo === RUOLO.COORDINAMENTO
+        ? { name: 'DashboardCoordinamento' }
+        : { name: 'DashboardOperativo' }
     },
   },
 
-  // ── Dashboard (dispatcher per ruolo) ──────────────────────────────────────
+  // ── Dashboard OPERATIVO ──────────────────────────────────────────────────────
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/pages/DashboardPage.vue'),
-    meta: { requiresAuth: true },
+    path: '/operativo/dashboard',
+    name: 'DashboardOperativo',
+    component: () => import('@/pages/operativo/DashboardOperativoPage.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
   },
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // OPERATIVO — prenotazioni e gestione slot
-  // (RC + Segreteria Didattica + Segreteria di Sede)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ── Dashboard COORDINAMENTO ─────────────────────────────────────────────────
+  {
+    path: '/coordinamento/dashboard',
+    name: 'DashboardCoordinamento',
+    component: () => import('@/pages/coordinamento/DashboardCoordinamentoPage.vue'),
+    meta: { requiresAuth: true, roles: SOLO_COORDINAMENTO },
+  },
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // CONDIVISE — accessibili da entrambi i ruoli
+  // ────────────────────────────────────────────────────────────────────────────
+
+  {
+    path: '/calendario',
+    name: 'Calendario',
+    component: () => import('@/pages/shared/CalendarioPage.vue'),
+    meta: { requiresAuth: true, roles: TUTTI },
+  },
   {
     path: '/prenotazioni/nuova',
     name: 'NuovaPrenotazione',
+    // NuovaPrenotazionePage gestisce sia singola che massiva tramite tab interni
     component: () => import('@/pages/operativo/NuovaPrenotazionePage.vue'),
-    meta: { requiresAuth: true, roles: OPERATIVO },
-  },
-  {
-    path: '/prenotazioni/massiva',
-    name: 'PrenotazioneMassiva',
-    component: () => import('@/pages/operativo/PrenotazioneMassivaPage.vue'),
-    meta: { requiresAuth: true, roles: OPERATIVO },
+    meta: { requiresAuth: true, roles: TUTTI },
   },
   {
     path: '/prenotazioni/mie',
     name: 'MiePrenotazioni',
     component: () => import('@/pages/operativo/MiePrenotazioniPage.vue'),
-    meta: { requiresAuth: true, roles: OPERATIVO },
-  },
-  {
-    path: '/prenotazioni/conflitti',
-    name: 'GestioneConflitti',
-    component: () => import('@/pages/operativo/GestioneConflittiPage.vue'),
-    meta: { requiresAuth: true, roles: OPERATIVO },
-  },
-  {
-    path: '/prenotazioni/richieste',
-    name: 'RichiestePendenti',
-    component: () => import('@/pages/_archivio/RichiestePendentiPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
-  },
-  {
-    path: '/sede/calendario',
-    name: 'CalendarioSede',
-    component: () => import('@/pages/_archivio/CalendarioSedePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_SEDE] },
-  },
-  {
-    path: '/corsi/prenotazioni',
-    name: 'PrenotazioniCorso',
-    component: () => import('@/pages/_archivio/PrenotazioniCorsePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.SEGRETERIA_DIDATTICA] },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // TUTTI — visualizzazione e report (operativo + supervisione)
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    path: '/aule/slot-liberi',
-    name: 'SlotLiberi',
-    component: () => import('@/pages/supervisione/SlotLiberiPage.vue'),
     meta: { requiresAuth: true, roles: TUTTI },
   },
   {
-    path: '/sede/prenotazioni',
-    name: 'PrenotazioniSede',
-    component: () => import('@/pages/supervisione/PrenotazioniSedePage.vue'),
+    path: '/conflitti',
+    name: 'Conflitti',
+    // ⚠ RINOMINA il tuo GestioneConflittiPage.vue → ConflittiPage.vue
+    // oppure mantieni il vecchio nome e aggiorna solo l'import qui sotto
+    component: () => import('@/pages/shared/ConflittiPage.vue'),
     meta: { requiresAuth: true, roles: TUTTI },
   },
   {
-    path: '/sede/saturazione',
-    name: 'SaturazioneSpazi',
-    component: () => import('@/pages/supervisione/SaturazioneSpazi.vue'),
-    meta: { requiresAuth: true, roles: TUTTI },
-  },
-  {
-    path: '/report',
-    name: 'Report',
-    component: () => import('@/pages/supervisione/ReportPage.vue'),
+    path: '/sedi',
+    name: 'SediAule',
+    component: () => import('@/pages/shared/SediAulePage.vue'),
     meta: { requiresAuth: true, roles: TUTTI },
   },
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // COORDINAMENTO — admin (solo Coordinamento)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // COORDINAMENTO ONLY — supervisione e amministrazione
+  // ────────────────────────────────────────────────────────────────────────────
+
   {
-    path: '/coordinamento/globale',
-    name: 'VistaGlobale',
-    component: () => import('@/pages/coordinamento/VistaGlobalePage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.COORDINAMENTO] },
+    path: '/coordinamento/situazione-oggi',
+    name: 'SituazioneOggi',
+    component: () => import('@/pages/coordinamento/SituazioneOggiPage.vue'),
+    meta: { requiresAuth: true, roles: SOLO_COORDINAMENTO },
+  },
+  {
+    path: '/coordinamento/grafici',
+    name: 'Grafici',
+    component: () => import('@/pages/coordinamento/GraficiPage.vue'),
+    meta: { requiresAuth: true, roles: SOLO_COORDINAMENTO },
   },
   {
     path: '/coordinamento/utenti',
     name: 'GestioneUtenti',
     component: () => import('@/pages/coordinamento/GestioneUtentiPage.vue'),
-    meta: { requiresAuth: true, roles: [RUOLI.COORDINAMENTO] },
+    meta: { requiresAuth: true, roles: SOLO_COORDINAMENTO },
+  },
+  {
+    path: '/coordinamento/sedi',
+    name: 'GestioneSediAule',
+    component: () => import('@/pages/coordinamento/GestioneSediAulePage.vue'),
+    meta: { requiresAuth: true, roles: SOLO_COORDINAMENTO },
   },
 
-  // ── Fallback 404 ──────────────────────────────────────────────────────────
+  // ── Fallback 404 ─────────────────────────────────────────────────────────────
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -151,6 +137,7 @@ const routes = [
   },
 ]
 
+// ── Istanza router ────────────────────────────────────────────────────────────
 const router = createRouter({
   history: createWebHistory(),
   routes,
@@ -159,20 +146,24 @@ const router = createRouter({
 
 // ── Guardia globale ───────────────────────────────────────────────────────────
 router.beforeEach((to) => {
-  const authStore = useAuthStore()
+  const auth = useAuthStore()
 
-  // Rotta pubblica: passa sempre
+  // Rotta pubblica → sempre accessibile
   if (to.meta.public) return true
 
-  // Rotta protetta senza autenticazione → login
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'Login' }
+  // Rotta protetta senza autenticazione → redirect al login
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
-  // Controllo ruolo RBAC
+  // Controllo RBAC: se la rotta ha `roles`, il ruolo dell'utente deve essere incluso
   const rolesRichiesti = to.meta.roles
-  if (rolesRichiesti && !rolesRichiesti.includes(authStore.ruolo)) {
-    return { name: 'Dashboard' }
+  if (rolesRichiesti && !rolesRichiesti.includes(auth.ruolo)) {
+    // Redirect alla dashboard corretta invece di rimbalzare all'infinito
+    const fallback = auth.ruolo === RUOLO.COORDINAMENTO
+      ? { name: 'DashboardCoordinamento' }
+      : { name: 'DashboardOperativo' }
+    return fallback
   }
 
   return true

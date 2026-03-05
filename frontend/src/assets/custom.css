@@ -1,25 +1,44 @@
-/*
- * ─────────────────────────────────────────────────────────────────────────────
- * custom.css — Foglio di stile custom per ICE Planning Aule
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * Bootstrap Italia è già importato in main.js.
- * Aggiungi qui le personalizzazioni SENZA toccare i file del framework.
- *
- * Abilita questo file decommentando la riga in src/main.js:
- *   // import '@/assets/custom.css'
- *
- * Esempi di personalizzazione:
- *
- * :root {
- *   --it-primary:  #005CA3;   -- colore primario PA (default Bootstrap Italia)
- *   --it-accent:   #E30613;   -- accento
- * }
- *
- * .navbar-brand {
- *   font-family: 'Titillium Web', sans-serif;
- * }
- *
- * .card { border-radius: 8px; }
- * ─────────────────────────────────────────────────────────────────────────────
- */
+/* Colori */
+.alert-danger{
+    background-position: 10px 50%;
+    border-left: 8px solid hsl(350, 60%, 50%);
+    color:hsl(350, 60%, 50%);
+}
+.bg-warning {
+    --bs-bg-opacity: 1;
+    background-color: rgb(252 129 9) !important;
+    color: white !important;
+}
+.avatar-coord{
+    background: rgb(252 129 9) !important;
+}
+.login-bg{
+    background: linear-gradient(135deg, #0d7dee 0%, #a4ffbaa6 100%) !important;
+}
+
+/* Logo */
+.logo {
+    max-width: 200px;
+    /* filter: grayscale(1) contrast(10) invert(1); */
+}
+
+/* Bottoni */
+.btn-outline-primary:hover {
+    background-color: var(--bs-primary);
+    color: white !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--bs-secondary);
+    color: white !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--bs-danger);
+    color: white !important;
+}
+
+.btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon {
+    fill: white;
+}
+

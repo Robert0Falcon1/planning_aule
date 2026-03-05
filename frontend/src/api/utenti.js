@@ -1,29 +1,42 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// API — Utenti (solo Coordinamento)
+// API — Utenti
+// Endpoints: GET /utenti/, POST /utenti/, DELETE /utenti/{id}, PATCH /utenti/{id}/riattiva
+// NOTA: non esiste endpoint PATCH per modifica dati utente
 // ─────────────────────────────────────────────────────────────────────────────
 
-import client from './client'
+import { apiGet, apiPost, apiDelete, apiPatch } from './client'
 
-/** Lista completa degli utenti */
 export async function getUtenti() {
-  const res = await client.get('/utenti/')
-  return res.data
+  return apiGet('/utenti/')
 }
 
-/** Crea un nuovo utente */
-export async function creaUtente(dati) {
-  const res = await client.post('/utenti/', dati)
-  return res.data
+/**
+ * Crea utente.
+ * @param {{ nome, cognome, email, ruolo, sede_id?, password }} payload
+ */
+export async function creaUtente(payload) {
+  return apiPost('/utenti/', payload)
 }
 
-/** Disattiva (soft-delete) un utente */
-export async function disattivaUtente(utenteId) {
-  const res = await client.delete(`/utenti/${utenteId}`)
-  return res.data
+/**
+ * Disattiva utente (soft-delete).
+ */
+export async function disattivaUtente(id) {
+  return apiDelete(`/utenti/${id}`)
 }
 
-/** Riattiva un utente precedentemente disattivato */
-export async function riattivaUtente(utenteId) {
-  const res = await client.patch(`/utenti/${utenteId}/riattiva`)
-  return res.data
+/**
+ * Riattiva utente precedentemente disattivato.
+ */
+export async function attivaUtente(id) {
+  return apiPatch(`/utenti/${id}/riattiva`)
+}
+
+// Alias per compatibilità con codice esistente
+export const riattivaUtente = attivaUtente
+
+// NOTA: non esiste endpoint per modificare i dati utente
+export async function modificaUtente(id, payload) {
+  console.warn('modificaUtente: endpoint non disponibile nel backend')
+  throw new Error('Modifica utente non supportata dal backend')
 }

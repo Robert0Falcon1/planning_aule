@@ -1,132 +1,206 @@
 <template>
-  <div>
-    <h2 class="h4 fw-bold mb-4">📅 Nuova Prenotazione Singola</h2>
+  <div class="page-prenotazione">
+    <div class="page-header mb-4">
+      <h2 class="page-title">Nuova Prenotazione</h2>
+    </div>
 
-    <div class="row">
-      <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-4">
-            <form @submit.prevent="handleSubmit" novalidate>
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <button class="nav-link" :class="{ active: tab === 'singola' }" @click="tab = 'singola'">
+          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>
+          Prenotazione singola
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" :class="{ active: tab === 'massiva' }" @click="tab = 'massiva'">
+          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-files'"></use></svg>
+          Prenotazione massiva (ricorrente)
+        </button>
+      </li>
+    </ul>
+
+    <!-- ── SINGOLA ─────────────────────────────────────────────────────────── -->
+    <div v-if="tab === 'singola'">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <form @submit.prevent="submitSingola" novalidate>
+            <div class="row g-3">
 
               <!-- Sede -->
-              <div class="mb-3">
+              <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
-                <select v-model="form.sede_id" class="form-select" @change="onSedeChange">
-                  <option value="">— Seleziona sede —</option>
-                  <option v-for="s in sedi" :key="s.id" :value="s.id">
-                    {{ s.nome }} ({{ s.citta }})
-                  </option>
+                <select v-model="singola.sede_id" class="form-select" :class="{ 'is-invalid': err.sede_id }" @change="onSedeChange">
+                  <option value="">— seleziona —</option>
+                  <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
                 </select>
+                <div class="invalid-feedback">{{ err.sede_id }}</div>
               </div>
 
               <!-- Aula -->
-              <div class="mb-3">
+              <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
-                <select v-model="form.aula_id" class="form-select" :disabled="!form.sede_id">
-                  <option value="">— Seleziona aula —</option>
-                  <option v-for="a in aule" :key="a.id" :value="a.id">
-                    {{ a.nome }} (cap. {{ a.capienza }})
-                  </option>
+                <select v-model="singola.aula_id" class="form-select" :class="{ 'is-invalid': err.aula_id }" :disabled="!singola.sede_id || caricandoAule">
+                  <option value="">{{ caricandoAule ? 'Caricamento…' : '— seleziona sede prima —' }}</option>
+                  <option v-for="a in aule" :key="a.id" :value="a.id">{{ a.nome }} (cap. {{ a.capienza }})</option>
                 </select>
+                <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
 
-              <!-- Corso ID con avviso -->
-              <div class="mb-3">
+              <!-- Corso ID -->
+              <div class="col-12">
                 <label class="form-label fw-semibold">ID Corso *</label>
-                <input
-                  v-model.number="form.corso_id"
-                  type="number"
-                  min="1"
-                  class="form-control"
-                  :class="{ 'is-invalid': erroreCorso }"
-                  placeholder="Es: 1"
-                />
-                <div v-if="erroreCorso" class="invalid-feedback">{{ erroreCorso }}</div>
-                <div class="form-text">
-                  ⚠️ Il corso deve esistere nel sistema. Chiedere all'amministratore l'ID del proprio corso.
-                </div>
+                <input v-model.number="singola.corso_id" type="number" min="1" class="form-control"
+                  :class="{ 'is-invalid': err.corso_id }" placeholder="Inserisci l'ID del corso" />
+                <div class="invalid-feedback">{{ err.corso_id }}</div>
+                <div class="form-text text-muted">Inserisci l'ID numerico del corso dalla piattaforma.</div>
               </div>
 
               <!-- Data -->
-              <div class="mb-3">
+              <div class="col-md-4">
                 <label class="form-label fw-semibold">Data *</label>
-                <input v-model="form.data" type="date" class="form-control" :min="oggi()" />
+                <input v-model="singola.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }" :min="oggiISO" />
+                <div class="invalid-feedback">{{ err.data }}</div>
               </div>
 
-              <!-- Orario -->
-              <div class="row mb-3">
-                <div class="col-6">
-                  <label class="form-label fw-semibold">Ora inizio *</label>
-                  <input v-model="form.ora_inizio" type="time" class="form-control" />
-                </div>
-                <div class="col-6">
-                  <label class="form-label fw-semibold">Ora fine *</label>
-                  <input v-model="form.ora_fine" type="time" class="form-control" />
-                  <div v-if="erroreOrario" class="text-danger small mt-1">{{ erroreOrario }}</div>
-                </div>
+              <!-- Ora inizio -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Ora inizio *</label>
+                <select v-model="singola.ora_inizio" class="form-select" :class="{ 'is-invalid': err.ora_inizio }">
+                  <option value="">—</option>
+                  <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
+                </select>
+                <div class="invalid-feedback">{{ err.ora_inizio }}</div>
+              </div>
+
+              <!-- Ora fine -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Ora fine *</label>
+                <select v-model="singola.ora_fine" class="form-select" :class="{ 'is-invalid': err.ora_fine }">
+                  <option value="">—</option>
+                  <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
+                </select>
+                <div class="invalid-feedback">{{ err.ora_fine }}</div>
               </div>
 
               <!-- Note -->
-              <div class="mb-4">
-                <label class="form-label fw-semibold">Note (opzionale)</label>
-                <textarea v-model="form.note" class="form-control" rows="2" />
+              <div class="col-12">
+                <label class="form-label fw-semibold">Note</label>
+                <textarea v-model="singola.note" class="form-control" rows="2" placeholder="Opzionale"></textarea>
               </div>
+            </div>
 
-              <!-- Errore dettagliato dal backend -->
-              <div v-if="erroreBackend" class="alert alert-danger py-2 small mb-3">
-                <strong>Errore:</strong> {{ erroreBackend }}
-              </div>
+            <div v-if="esito" class="alert mt-3" :class="esito.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
+              {{ esito.msg }}
+            </div>
 
-              <!-- Submit -->
-              <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary" :disabled="loading">
-                  <span v-if="loading" class="progress-spinner progress-spinner-sm me-2" role="status" />
-                  {{ loading ? 'Invio in corso…' : '📤 Invia Richiesta' }}
-                </button>
-                <router-link :to="{ name: 'MiePrenotazioni' }" class="btn btn-outline-secondary">
-                  Annulla
-                </router-link>
-              </div>
-            </form>
-          </div>
+            <div class="mt-4 d-flex gap-2">
+              <button type="submit" class="btn btn-primary" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+                Conferma prenotazione
+              </button>
+              <button type="button" class="btn btn-outline-secondary" @click="resetSingola">Pulisci</button>
+            </div>
+          </form>
         </div>
       </div>
+    </div>
 
-      <!-- Pannello laterale -->
-      <div class="col-lg-5 mt-4 mt-lg-0">
-        <!-- Guida -->
-        <div class="card border-0 bg-light mb-3">
-          <div class="card-body">
-            <h6 class="fw-bold">💡 Come funziona</h6>
-            <ol class="small text-muted mb-0">
-              <li class="mb-1">Scegli sede e aula</li>
-              <li class="mb-1">Inserisci l'ID del tuo corso</li>
-              <li class="mb-1">Indica data e orario</li>
-              <li class="mb-1">Invia: la Segreteria validerà la richiesta</li>
-            </ol>
-          </div>
-        </div>
+    <!-- ── MASSIVA ─────────────────────────────────────────────────────────── -->
+    <div v-else>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-4">
+            Prenota la stessa aula in modo ricorrente (es. ogni lunedì e mercoledì per un mese).
+          </p>
+          <form @submit.prevent="submitMassiva" novalidate>
+            <div class="row g-3">
 
-        <!-- Slot occupati in anteprima -->
-        <div v-if="form.aula_id && form.data" class="card border-0 shadow-sm">
-          <div class="card-header bg-white small fw-semibold">
-            🔍 Occupazioni il {{ formatData(form.data) }}
-          </div>
-          <div class="card-body p-2">
-            <LoadingSpinner v-if="loadingSlot" />
-            <div v-else-if="slotOccupati.length === 0" class="text-success small p-2">
-              ✅ Aula libera in questa data
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Sede *</label>
+                <select v-model="massiva.sede_id" class="form-select" @change="onSedeChangeMassiva">
+                  <option value="">— seleziona —</option>
+                  <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Aula *</label>
+                <select v-model="massiva.aula_id" class="form-select" :disabled="!massiva.sede_id">
+                  <option value="">— seleziona sede prima —</option>
+                  <option v-for="a in auleMassiva" :key="a.id" :value="a.id">{{ a.nome }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">ID Corso *</label>
+                <input v-model.number="massiva.corso_id" type="number" min="1" class="form-control" placeholder="ID numerico corso" />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Ora inizio *</label>
+                <select v-model="massiva.ora_inizio" class="form-select">
+                  <option value="">—</option>
+                  <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Ora fine *</label>
+                <select v-model="massiva.ora_fine" class="form-select">
+                  <option value="">—</option>
+                  <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Data inizio *</label>
+                <input v-model="massiva.data_inizio" type="date" class="form-control" :min="oggiISO" />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Data fine *</label>
+                <input v-model="massiva.data_fine" type="date" class="form-control" :min="massiva.data_inizio || oggiISO" />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tipo ricorrenza *</label>
+                <select v-model="massiva.tipo_ricorrenza" class="form-select">
+                  <option value="giornaliera">Giornaliera</option>
+                  <option value="settimanale">Settimanale</option>
+                  <option value="bisettimanale">Bisettimanale</option>
+                  <option value="mensile">Mensile</option>
+                </select>
+              </div>
+
+              <!-- Giorni settimana (solo se settimanale/bisettimanale) -->
+              <div v-if="massiva.tipo_ricorrenza === 'settimanale' || massiva.tipo_ricorrenza === 'bisettimanale'" class="col-12">
+                <label class="form-label fw-semibold">Giorni della settimana *</label>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                  <div v-for="(nome, idx) in nomiGiorni" :key="idx" class="form-check form-check-inline my-0">
+                    <input class="form-check-input" type="checkbox" :id="`g${idx}`" :value="idx"
+                      v-model="massiva.giorni_settimana" />
+                    <label class="form-check-label" :for="`g${idx}`">{{ nome }}</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Note</label>
+                <textarea v-model="massiva.note" class="form-control" rows="2" placeholder="Opzionale"></textarea>
+              </div>
             </div>
-            <ul v-else class="list-unstyled small mb-0">
-              <li
-                v-for="s in slotOccupati"
-                :key="`${s.prenotazione_id}-${s.ora_inizio}`"
-                class="text-danger px-2 py-1 border-bottom"
-              >
-                🚫 {{ formatOra(s.ora_inizio) }} – {{ formatOra(s.ora_fine) }}
-              </li>
-            </ul>
-          </div>
+
+            <div v-if="esitoMassiva" class="alert mt-3" :class="esitoMassiva.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
+              {{ esitoMassiva.msg }}
+            </div>
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary" :disabled="loadingMassiva">
+                <span v-if="loadingMassiva" class="spinner-border spinner-border-sm me-1"></span>
+                Crea prenotazioni ricorrenti
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -134,98 +208,148 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue'
-import { useRouter }                       from 'vue-router'
-import { useUiStore }                      from '@/stores/ui'
-import { getSedi }                         from '@/api/sedi'
-import { getAule, getSlotOccupati }        from '@/api/aule'
-import { creaPrenotazioneSingola }         from '@/api/prenotazioni'
-import { formatData, formatOra, oggi }     from '@/utils/formatters'
-import { estraiErrore }                    from '@/utils/errori'
-import LoadingSpinner                      from '@/components/ui/LoadingSpinner.vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { getSedi } from '@/api/sedi'
+import { getAuleBySede } from '@/api/aule'
+import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
+import { oggi } from '@/utils/formatters'
+import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const router  = useRouter()
-const uiStore = useUiStore()
+const route  = useRoute()
+const tab    = ref(route.query.tipo === 'massiva' ? 'massiva' : 'singola')
+const oggiISO = oggi()
 
-const sedi         = ref([])
-const aule         = ref([])
-const loading      = ref(false)
-const loadingSlot  = ref(false)
-const slotOccupati = ref([])
+const loading        = ref(false)
+const loadingMassiva = ref(false)
+const caricandoAule  = ref(false)
+const sedi           = ref([])
+const aule           = ref([])
+const auleMassiva    = ref([])
+const esito          = ref(null)
+const esitoMassiva   = ref(null)
 
-// Errori specifici per campo e errore backend generico
-const erroreCorso   = ref('')
-const erroreOrario  = ref('')
-const erroreBackend = ref('')
+const nomiGiorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
 
-const form = reactive({
-  sede_id:    '',
-  aula_id:    '',
-  corso_id:   '',
-  data:       oggi(),
-  ora_inizio: '09:00',
-  ora_fine:   '13:00',
-  note:       '',
+// Slot orari ogni 30 minuti dalle 07:00 alle 21:00
+const oreSlot = Array.from({ length: 29 }, (_, i) => {
+  const totalMin = 7 * 60 + i * 30
+  return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
 })
 
-onMounted(async () => { sedi.value = await getSedi() })
+const singola = reactive({
+  sede_id: '', aula_id: '', corso_id: null,
+  data: '', ora_inizio: '08:00', ora_fine: '13:00', note: '',
+})
+const err = reactive({
+  sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '', ora_fine: '',
+})
+const massiva = reactive({
+  sede_id: '', aula_id: '', corso_id: null,
+  data_inizio: '', data_fine: '',
+  ora_inizio: '08:00', ora_fine: '13:00',
+  tipo_ricorrenza: 'settimanale',
+  giorni_settimana: [],
+  note: '',
+})
 
 async function onSedeChange() {
-  form.aula_id = ''
-  aule.value   = []
-  if (form.sede_id) aule.value = await getAule(form.sede_id)
-}
-
-// Aggiorna anteprima slot occupati al cambio aula o data
-watch([() => form.aula_id, () => form.data], async ([aulaId, data]) => {
-  if (!aulaId || !data) { slotOccupati.value = []; return }
-  loadingSlot.value = true
+  singola.aula_id = ''; aule.value = []
+  if (!singola.sede_id) return
+  caricandoAule.value = true
   try {
-    slotOccupati.value = await getSlotOccupati(aulaId, data, data)
+    const data = await getAuleBySede(singola.sede_id)
+    aule.value = data || []
   } finally {
-    loadingSlot.value = false
+    caricandoAule.value = false
   }
-})
-
-function valida() {
-  erroreCorso.value  = ''
-  erroreOrario.value = ''
-  erroreBackend.value = ''
-
-  if (!form.aula_id)  { uiStore.avviso('Seleziona una sede e un\'aula.'); return false }
-  if (!form.corso_id) { erroreCorso.value = 'Inserisci l\'ID del corso.'; return false }
-  if (!form.data)     { uiStore.avviso('Seleziona una data.'); return false }
-  if (!form.ora_inizio || !form.ora_fine) { uiStore.avviso('Inserisci orario di inizio e fine.'); return false }
-  if (form.ora_fine <= form.ora_inizio) {
-    erroreOrario.value = 'L\'ora di fine deve essere successiva all\'ora di inizio.'
-    return false
-  }
-  return true
 }
 
-async function handleSubmit() {
-  if (!valida()) return
+async function onSedeChangeMassiva() {
+  massiva.aula_id = ''; auleMassiva.value = []
+  if (!massiva.sede_id) return
+  const data = await getAuleBySede(massiva.sede_id)
+  auleMassiva.value = data || []
+}
 
-  loading.value = true
-  erroreBackend.value = ''
+function validaSingola() {
+  err.sede_id   = singola.sede_id     ? '' : 'Obbligatorio'
+  err.aula_id   = singola.aula_id     ? '' : 'Obbligatorio'
+  err.corso_id  = singola.corso_id    ? '' : 'Obbligatorio'
+  err.data      = singola.data        ? '' : 'Obbligatorio'
+  err.ora_inizio = singola.ora_inizio ? '' : 'Obbligatorio'
+  err.ora_fine   = singola.ora_fine   ? '' : 'Obbligatorio'
+  if (singola.ora_inizio && singola.ora_fine && singola.ora_inizio >= singola.ora_fine)
+    err.ora_fine = 'Deve essere dopo l\'ora di inizio'
+  return !Object.values(err).some(Boolean)
+}
+
+async function submitSingola() {
+  if (!validaSingola()) return
+  loading.value = true; esito.value = null
   try {
-    await creaPrenotazioneSingola({
-      aula_id:  Number(form.aula_id),
-      corso_id: Number(form.corso_id),
+    await creaPrenotazione({
+      aula_id:  singola.aula_id,
+      corso_id: singola.corso_id,
       slot: {
-        data:       form.data,
-        ora_inizio: form.ora_inizio,
-        ora_fine:   form.ora_fine,
+        data:       singola.data,
+        ora_inizio: singola.ora_inizio,
+        ora_fine:   singola.ora_fine,
       },
-      note: form.note || null,
+      note: singola.note || undefined,
     })
-    uiStore.successo('Richiesta inviata! La Segreteria la esaminerà a breve.')
-    router.push({ name: 'MiePrenotazioni' })
-  } catch (err) {
-    // Mostra il messaggio reale del backend (gestisce sia stringhe che array 422)
-    erroreBackend.value = estraiErrore(err)
+    esito.value = { tipo: 'ok', msg: '✓ Prenotazione confermata con successo.' }
+    resetSingola()
+  } catch (e) {
+    esito.value = { tipo: 'err', msg: e.message || 'Errore durante la creazione.' }
   } finally {
     loading.value = false
   }
 }
+
+async function submitMassiva() {
+  loadingMassiva.value = true; esitoMassiva.value = null
+  try {
+    const payload = {
+      aula_id:         massiva.aula_id,
+      corso_id:        massiva.corso_id,
+      data_inizio:     massiva.data_inizio,
+      data_fine:       massiva.data_fine,
+      ora_inizio:      massiva.ora_inizio,
+      ora_fine:        massiva.ora_fine,
+      tipo_ricorrenza: massiva.tipo_ricorrenza,
+      note:            massiva.note || undefined,
+    }
+    if (massiva.giorni_settimana.length) payload.giorni_settimana = massiva.giorni_settimana
+    await creaPrenotazioneMassiva(payload)
+    esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
+    massiva.giorni_settimana = []
+  } catch (e) {
+    esitoMassiva.value = { tipo: 'err', msg: e.message || 'Errore durante la creazione massiva.' }
+  } finally {
+    loadingMassiva.value = false
+  }
+}
+
+function resetSingola() {
+  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: null, data: '', ora_inizio: '08:00', ora_fine: '13:00', note: '' })
+  Object.keys(err).forEach(k => (err[k] = ''))
+  aule.value = []
+}
+
+onMounted(async () => {
+  const data = await getSedi()
+  sedi.value = data || []
+  // Pre-popola da query params (link da SediAulePage)
+  if (route.query.sede_id) {
+    singola.sede_id = Number(route.query.sede_id)
+    await onSedeChange()
+  }
+  if (route.query.aula_id) singola.aula_id = Number(route.query.aula_id)
+  if (route.query.data)    singola.data    = route.query.data
+})
 </script>
+
+<style scoped>
+.page-title { font-size: 1.4rem; font-weight: 700; }
+</style>

@@ -1,90 +1,94 @@
 <template>
-  <!--
-    Pagina di login a schermo intero.
-    Usa le classi Bootstrap Italia per il layout a due colonne (hero + form).
-  -->
-  <div class="it-hero-wrapper bg-primary d-flex align-items-center min-vh-100">
-    <div class="container">
-      <div class="row justify-content-center">
+  <div
+    class="login-bg d-flex align-items-center justify-content-center min-vh-100"
+  >
+    <div class="login-card card border-0 shadow-lg">
+      <div class="card-body px-5 pt-5 pb-4">
+        <!-- Logo / Brand -->
+        <div class="text-center mb-4">
+          <div class="mx-auto mb-3">
+            <img class="logo" src="/public/img/logo_ICE.png" />
+          </div>
+          <p class="text-muted small">Planning Aule v1.0</p>
+        </div>
 
-        <!-- Card login -->
-        <div class="col-12 col-sm-10 col-md-8 col-lg-5">
-          <div class="card shadow-lg border-0">
-            <div class="card-body p-5">
+        <!-- Alert errore -->
+        <div
+          v-if="auth.errore"
+          class="alert alert-danger py-2 small mb-3"
+          role="alert"
+        >
+          {{ auth.errore }}
+        </div>
 
-              <!-- Intestazione -->
-              <div class="text-center mb-4">
-                <h1 class="h3 fw-bold text-primary">🏫 ICE Planning Aule</h1>
-                <p class="text-muted small">Accedi con le tue credenziali aziendali</p>
-              </div>
+        <!-- Form -->
+        <form @submit.prevent="doLogin" novalidate>
+          <div class="form-group mb-3">
+            <label for="username" class="form-label fw-semibold"></label>
+            <input
+              id="username"
+              v-model="form.username"
+              type="text"
+              class="form-control"
+              :class="{ 'is-invalid': errori.username }"
+              autocomplete="username"
+              placeholder="Inserisci username"
+            />
+            <div class="invalid-feedback">{{ errori.username }}</div>
+          </div>
 
-              <!-- Form di login -->
-              <form @submit.prevent="handleLogin" novalidate>
-
-                <!-- Email -->
-                <div class="mb-3">
-                  <label for="email" class="form-label fw-semibold">Email</label>
-                  <input
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    class="form-control"
-                    :class="{ 'is-invalid': errori.email }"
-                    placeholder="nome@inforcoop.it"
-                    autocomplete="username"
-                    required
-                  />
-                  <div v-if="errori.email" class="invalid-feedback">{{ errori.email }}</div>
-                </div>
-
-                <!-- Password -->
-                <div class="mb-4">
-                  <label for="password" class="form-label fw-semibold">Password</label>
-                  <input
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    class="form-control"
-                    :class="{ 'is-invalid': errori.password }"
-                    placeholder="••••••••"
-                    autocomplete="current-password"
-                    required
-                  />
-                  <div v-if="errori.password" class="invalid-feedback">{{ errori.password }}</div>
-                </div>
-
-                <!-- Messaggio di errore login -->
-                <div v-if="erroreLogin" class="alert alert-danger py-2 small mb-3">
-                  {{ erroreLogin }}
-                </div>
-
-                <!-- Submit -->
-                <button
-                  type="submit"
-                  class="btn btn-primary w-100"
-                  :disabled="loading"
-                >
-                  <span v-if="loading" class="progress-spinner progress-spinner-sm me-2" role="status" />
-                  {{ loading ? 'Accesso in corso…' : 'Entra →' }}
-                </button>
-              </form>
-
-              <!-- Credenziali di test (solo in sviluppo) -->
-              <div v-if="isDev" class="mt-4 p-3 bg-light rounded small">
-                <p class="fw-semibold mb-1">🔑 Credenziali di test:</p>
-                <div
-                  v-for="utente in utentiTest"
-                  :key="utente.email"
-                  class="d-flex justify-content-between align-items-center py-1 border-bottom cursor-pointer"
-                  style="cursor: pointer"
-                  @click="compilaTest(utente)"
-                >
-                  <span>{{ utente.label }}</span>
-                  <code class="text-primary small">{{ utente.email }}</code>
-                </div>
-              </div>
+          <div class="form-group mb-4">
+            <label for="password" class="form-label fw-semibold"></label>
+            <div class="input-group">
+              <input
+                id="password"
+                v-model="form.password"
+                :type="showPwd ? 'text' : 'password'"
+                class="form-control"
+                :class="{ 'is-invalid': errori.password }"
+                autocomplete="current-password"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                class="btn"
+                @click="showPwd = !showPwd"
+                tabindex="-1"
+              >
+                <svg class="icon icon-sm">
+                  <use
+                    :href="`${sprites}#${showPwd ? 'it-password-invisible' : 'it-password-visible'}`"
+                  ></use>
+                </svg>
+              </button>
+              <div class="invalid-feedback">{{ errori.password }}</div>
             </div>
           </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            :disabled="auth.loading"
+          >
+            <span
+              v-if="auth.loading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            Accedi
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid position-absolute" style="bottom: 0; z-index:-1">
+    <div class="row">
+      <div class="col-12">
+        <div class="row py-3 mx-auto">
+          <small class="text-center text-small">
+            Planning Aule v1.0 — InforCoopEcipa Piemonte
+          </small>
         </div>
       </div>
     </div>
@@ -92,58 +96,53 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter }     from 'vue-router'
-import { useAuthStore }  from '@/stores/auth'
+import { reactive, ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import sprites from "bootstrap-italia/dist/svg/sprites.svg?url";
 
-const authStore  = useAuthStore()
-const router     = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
+const route = useRoute();
 
-// ── Stato del form ─────────────────────────────────────────────────────────
-const form = reactive({ email: '', password: '' })
-const errori     = reactive({ email: '', password: '' })
-const erroreLogin = ref('')
-const loading     = ref(false)
+const form = reactive({ username: "", password: "" });
+const errori = reactive({ username: "", password: "" });
+const showPwd = ref(false);
 
-// Mostra i test users solo in sviluppo (Vite usa import.meta.env)
-const isDev = import.meta.env.DEV
-
-/** Utenti di test per compilazione rapida */
-const utentiTest = [
-  { label: 'Responsabile Corso',   email: 'responsabile@test.it', password: 'Test1234!' },
-  { label: 'Segreteria Sede',      email: 'segr.sede@test.it',    password: 'Test1234!' },
-  { label: 'Responsabile Sede',    email: 'resp.sede@test.it',    password: 'Test1234!' },
-  { label: 'Segreteria Didattica', email: 'segr.did@test.it',     password: 'Test1234!' },
-  { label: 'Coordinamento',        email: 'coord@test.it',        password: 'Test1234!' },
-]
-
-/** Compila il form con le credenziali di test al click */
-function compilaTest(utente) {
-  form.email    = utente.email
-  form.password = utente.password
-}
-
-// ── Validazione client-side ────────────────────────────────────────────────
 function valida() {
-  errori.email    = form.email    ? '' : 'Inserisci l\'email'
-  errori.password = form.password ? '' : 'Inserisci la password'
-  return !errori.email && !errori.password
+  errori.username = form.username.trim() ? "" : "Username obbligatorio";
+  errori.password = form.password ? "" : "Password obbligatoria";
+  return !errori.username && !errori.password;
 }
 
-// ── Submit ─────────────────────────────────────────────────────────────────
-async function handleLogin() {
-  erroreLogin.value = ''
-  if (!valida()) return
-
-  loading.value = true
-  try {
-    await authStore.login(form.email, form.password)
-    router.push({ name: 'Dashboard' })
-  } catch (err) {
-    const msg = err.response?.data?.detail ?? 'Errore di accesso. Riprova.'
-    erroreLogin.value = msg
-  } finally {
-    loading.value = false
+async function doLogin() {
+  if (!valida()) return;
+  const ok = await auth.login(form.username, form.password);
+  if (ok) {
+    const redirect = route.query.redirect || "/";
+    router.push(redirect);
   }
 }
 </script>
+
+<style scoped>
+.login-bg {
+  background: linear-gradient(135deg, #0066cc 0%, #004080 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: #0066cc;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

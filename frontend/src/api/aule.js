@@ -1,42 +1,32 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// API — Aule e slot orari
+// API — Aule
+// Schema: { id, nome, capienza, sede_id, note }
+// NOTA: il backend NON ha campo "attiva" nelle aule
 // ─────────────────────────────────────────────────────────────────────────────
 
-import apiClient from './client'
+import { apiGet, apiPost } from './client'
 
-/**
- * Restituisce le aule, opzionalmente filtrate per sede.
- * @param {number|null} sedeId
- * @returns {Promise<Aula[]>}
- */
-export async function getAule(sedeId = null) {
-  const params = sedeId ? { sede_id: sedeId } : {}
-  const response = await apiClient.get('/aule/', { params })
-  return response.data
+/** @param {{ sede_id? }} params */
+export async function getAule(params = {}) {
+  const qs = params.sede_id ? `?sede_id=${params.sede_id}` : ''
+  return apiGet(`/aule/${qs}`)
 }
 
-/**
- * Crea una nuova aula (Segreteria Sede o Coordinamento).
- * @param {{ nome, capienza, sede_id, note }} dati
- * @returns {Promise<Aula>}
- */
-export async function creaAula(dati) {
-  const response = await apiClient.post('/aule/', dati)
-  return response.data
+export async function getAuleBySede(sedeId) {
+  return apiGet(`/aule/?sede_id=${sedeId}`)
 }
 
-/**
- * Restituisce gli slot già occupati per un'aula in un range di date.
- * Utile per mostrare la disponibilità prima di prenotare.
- *
- * @param {number} aulaId
- * @param {string} dataDal  YYYY-MM-DD
- * @param {string} dataAl   YYYY-MM-DD
- * @returns {Promise<SlotOccupato[]>}
- */
-export async function getSlotOccupati(aulaId, dataDal, dataAl) {
-  const response = await apiClient.get(`/prenotazioni/slot-liberi/${aulaId}`, {
-    params: { data_dal: dataDal, data_al: dataAl },
-  })
-  return response.data
+export async function getAula(id) {
+  return apiGet(`/aule/${id}`)
+}
+
+/** @param {{ nome, capienza, sede_id, note? }} payload */
+export async function creaAula(payload) {
+  return apiPost('/aule/', payload)
+}
+
+// NOTA: il backend non espone PUT/PATCH per aule
+export async function modificaAula(id, payload) {
+  console.warn('modificaAula: endpoint non disponibile nel backend')
+  throw new Error('Modifica aula non supportata dal backend')
 }

@@ -5,8 +5,8 @@
       <div class="container-fluid">
         <div class="row py-3">
           <div class="col-12 text-center">
-            <small class="text-muted">
-              ICE Planning Aule v1.0 — InforCoopEcipa Piemonte
+            <small class="text-white">
+              Planning Aule v1.0 — InforCoopEcipa Piemonte
             </small>
           </div>
         </div>

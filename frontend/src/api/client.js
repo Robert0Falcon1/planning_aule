@@ -1,45 +1,68 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Client HTTP centralizzato — Axios con intercettori JWT
-// Tutte le chiamate al backend FastAPI passano da qui.
-// ─────────────────────────────────────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
-import axios from 'axios'
+function getToken() {
+  return localStorage.getItem('ice_token')
+}
 
-/** Istanza Axios configurata per il backend FastAPI */
-const apiClient = axios.create({
-  baseURL: '/api/v1',          // Il proxy Vite inoltrerà a http://localhost:8000
-  timeout: 10_000,             // 10 secondi di timeout
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-})
+async function request(method, path, body = null, params = null) {
+  const headers = { 'Content-Type': 'application/json' }
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
-// ── Interceptor di richiesta: aggiunge il token JWT se presente ───────────────
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error),
-)
+  let url = `${BASE_URL}${path}`
+  if (params) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))
+    )
+    if (qs.toString()) url += `?${qs}`
+  }
 
-// ── Interceptor di risposta: gestisce 401 (token scaduto) ────────────────────
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Rimuove il token scaduto e reindirizza al login
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user_data')
-      // Evita importazioni circolari: usa window.location
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  },
-)
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+  })
 
-export default apiClient
+  if (!res.ok) {
+    let msg = `Errore ${res.status}`
+    try {
+      const err = await res.json()
+      msg = err.detail || err.message || msg
+    } catch (_) {}
+    throw new Error(msg)
+  }
+
+  // 204 No Content
+  if (res.status === 204) return null
+  return res.json()
+}
+
+export const apiGet    = (path, params)       => request('GET',    path, null, params)
+export const apiPost   = (path, body)          => request('POST',   path, body)
+export const apiPut    = (path, body)          => request('PUT',    path, body)
+export const apiPatch  = (path, body)          => request('PATCH',  path, body)
+export const apiDelete = (path)                => request('DELETE', path)
+
+/** Scarica un blob (CSV, PDF) */
+export async function apiDownload(path, filename, params = null) {
+  const headers = {}
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  let url = `${BASE_URL}${path}`
+  if (params) {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))
+    )
+    if (qs.toString()) url += `?${qs}`
+  }
+
+  const res = await fetch(url, { headers })
+  if (!res.ok) throw new Error(`Download fallito (${res.status})`)
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}

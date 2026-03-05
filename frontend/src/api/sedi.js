@@ -1,34 +1,30 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // API — Sedi
+// Schema: { id, nome, indirizzo, citta, capienza_massima }
 // ─────────────────────────────────────────────────────────────────────────────
 
-import apiClient from './client'
+import { apiGet, apiPost } from './client'
 
-/**
- * Restituisce l'elenco di tutte le sedi attive.
- * @returns {Promise<Sede[]>}
- */
 export async function getSedi() {
-  const response = await apiClient.get('/sedi/')
-  return response.data
+  return apiGet('/sedi/')
 }
 
-/**
- * Restituisce il dettaglio di una sede.
- * @param {number} sedeId
- * @returns {Promise<Sede>}
- */
-export async function getSede(sedeId) {
-  const response = await apiClient.get(`/sedi/${sedeId}`)
-  return response.data
+export async function getSede(id) {
+  return apiGet(`/sedi/${id}`)
 }
 
-/**
- * Crea una nuova sede (solo Coordinamento).
- * @param {{ nome, indirizzo, citta, capienza_massima }} dati
- * @returns {Promise<Sede>}
- */
-export async function creaSede(dati) {
-  const response = await apiClient.post('/sedi/', dati)
-  return response.data
+/** @param {{ nome, indirizzo, citta, capienza_massima? }} payload */
+export async function creaSede(payload) {
+  return apiPost('/sedi/', payload)
+}
+
+// NOTA: il backend non espone PUT/PATCH per sedi — modificaSede non disponibile
+export async function modificaSede(id, payload) {
+  console.warn('modificaSede: endpoint non disponibile nel backend')
+  throw new Error('Modifica sede non supportata dal backend')
+}
+
+export async function eliminaSede(id) {
+  console.warn('eliminaSede: endpoint non disponibile nel backend')
+  throw new Error('Eliminazione sede non supportata dal backend')
 }
