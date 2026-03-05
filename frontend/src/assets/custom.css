@@ -19,8 +19,12 @@
 /* Logo */
 .logo {
     max-width: 200px;
-    /* filter: grayscale(1) contrast(10) invert(1); */
 }
+
+.filter-logo{
+    filter: grayscale(1) contrast(10) invert(1);
+}
+
 
 /* Bottoni */
 .btn-outline-primary:hover {

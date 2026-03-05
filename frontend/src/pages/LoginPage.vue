@@ -7,7 +7,7 @@
         <!-- Logo / Brand -->
         <div class="text-center mb-4">
           <div class="mx-auto mb-3">
-            <img class="logo" src="/public/img/logo_ICE.png" />
+            <img class="logo" src="/img/logo_ICE.png" />
           </div>
           <p class="text-muted small">Planning Aule v1.0</p>
         </div>

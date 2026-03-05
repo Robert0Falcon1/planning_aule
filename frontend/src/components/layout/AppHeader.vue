@@ -5,7 +5,7 @@
       <div class="it-header-slim-wrapper-content">
         <span class="navbar-brand">
           <!-- <strong>InforCoopEcipa Piemonte</strong> -->
-           <img class="logo" src="/public/img/logo_ICE.png">
+           <img class="logo filter-logo" src="/img/logo_ICE.png">
         </span>
         <div class="header-slim-right-zone">
           <span class="badge bg-primary me-3">
