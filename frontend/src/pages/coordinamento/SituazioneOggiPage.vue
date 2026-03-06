@@ -76,7 +76,7 @@
                   <td><code class="small">{{ slot.corsoId }}</code></td>
                   <td class="text-nowrap">{{ slot.oraInizio }} – {{ slot.oraFine }}</td>
                   <td>
-                    <span class="badge" :class="slot.tipo === 'massiva' ? 'bg-info text-dark' : 'bg-secondary'">
+                    <span class="badge" :class="slot.tipo === 'massiva' ? 'bg-info' : 'bg-secondary'">
                       {{ slot.tipo }}
                     </span>
                   </td>

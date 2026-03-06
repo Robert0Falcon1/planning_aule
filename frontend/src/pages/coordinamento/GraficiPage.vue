@@ -76,22 +76,41 @@
         </div>
       </div>
 
-      <!-- Grafico 2: Distribuzione per sede (aula_id) -->
+      <!-- Grafico 2: Distribuzione per aula (accordion per sede) -->
       <div class="col-12 col-xl-4">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0">
+          <div class="card-header bg-white border-0 card-header bg-white border-0 ps-3">
             <h5 class="card-title mb-0">Distribuzione per aula</h5>
           </div>
-          <div class="card-body">
-            <div v-if="!datiSede.length" class="text-muted text-center py-4 small">Nessun dato</div>
-            <div v-else>
-              <div v-for="(item, i) in datiSede" :key="i" class="mb-2">
-                <div class="d-flex justify-content-between mb-1">
-                  <small class="fw-semibold">{{ item.label }}</small>
-                  <small>{{ item.pct }}%</small>
-                </div>
-                <div class="progress" style="height:8px">
-                  <div class="progress-bar" :style="{ width: item.pct + '%', background: coloriSede[i % coloriSede.length] }"></div>
+          <div class="card-body p-0">
+            <div v-if="!datiPerSede.length" class="text-muted text-center py-4 small">Nessun dato</div>
+            <div v-else class="accordion accordion-flush" id="accordionSedi">
+              <div v-for="(sede, si) in datiPerSede" :key="sede.nome" class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                  <button class="accordion-button py-2 px-3 small fw-semibold no-decoration"
+                    :class="{ collapsed: si !== 0 }"
+                    type="button"
+                    @click="toggleAccordion(sede.nome)">
+                    <!-- <span class="sede-dot me-2" :style="{ background: coloriSede[si % coloriSede.length] }"></span> -->
+                    {{ sede.nome }}
+                    <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} slot</span>
+                  </button>
+                </h2>
+                <div :class="{ show: accordionAperto === sede.nome || (si === 0 && accordionAperto === null) }"
+                  class="accordion-collapse collapse">
+                  <div class="accordion-body py-2 px-3">
+                    <div v-for="(aula, ai) in sede.aule" :key="aula.aulaId" class="mb-2">
+                      <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-semibold text-truncate" style="max-width:150px">{{ aula.nome }}</small>
+                        <small class="text-nowrap ms-1">{{ aula.slot }} <span class="text-muted">slot ({{ aula.pct }}%)</span></small>
+                      </div>
+                      <div class="progress" style="height:6px">
+                        <div class="progress-bar"
+                          :style="{ width: aula.pct + '%', background: coloriSede[si % coloriSede.length] }">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -147,6 +166,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Riepilogo testuale -->
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="row text-center g-3">
+              <div class="col-6 col-md-3">
+                <div class="fs-2 fw-bold text-primary">{{ totPrenotazioni }}</div>
+                <div class="small text-muted">Prenotazioni totali</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="fs-2 fw-bold text-success">{{ totConfermate }}</div>
+                <div class="small text-muted">Confermate</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="fs-2 fw-bold text-danger">{{ totConflitti }}</div>
+                <div class="small text-muted">Con conflitti</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -167,6 +208,11 @@ const granularity  = ref('mese')
 const range        = ref('6')
 const filtroSede   = ref('')
 const topN         = ref(10)
+const accordionAperto = ref(null)   // null = primo aperto di default
+
+function toggleAccordion(nome) {
+  accordionAperto.value = accordionAperto.value === nome ? '__chiudi__' : nome
+}
 
 const granularita = [
   { val: 'settimana', label: 'Settimana' },
@@ -228,6 +274,35 @@ const datiSede = computed(() => {
   const tot = Object.values(map).reduce((s, v) => s + v, 0) || 1
   return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 8)
     .map(([label, valore]) => ({ label, valore, pct: Math.round(valore / tot * 100) }))
+})
+
+// Distribuzione per aula raggruppata per sede (accordion)
+const datiPerSede = computed(() => {
+  // Conta slot confermati per aula_id
+  const map = {}
+  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
+    const k = s.aula_id
+    map[k] = (map[k] || 0) + 1
+  }
+  // Raggruppa per sede
+  const sediMap = {}
+  for (const [aulaId, slot] of Object.entries(map)) {
+    const id = Number(aulaId)
+    const nomeSede = sedeDiAula(id) || 'Altra sede'
+    if (!sediMap[nomeSede]) sediMap[nomeSede] = { nome: nomeSede, aule: [], totSlot: 0 }
+    sediMap[nomeSede].aule.push({ aulaId: id, nome: nomeAula(id), slot })
+    sediMap[nomeSede].totSlot += slot
+  }
+  // Calcola % dentro ogni sede e ordina
+  return Object.values(sediMap)
+    .sort((a, b) => b.totSlot - a.totSlot)
+    .map(sede => {
+      const maxSlot = Math.max(...sede.aule.map(a => a.slot), 1)
+      sede.aule = sede.aule
+        .sort((a, b) => b.slot - a.slot)
+        .map(a => ({ ...a, pct: Math.round(a.slot / maxSlot * 100) }))
+      return sede
+    })
 })
 
 // Top corsi per corso_id
@@ -322,4 +397,7 @@ onMounted(async () => {
 .bar-val  { font-size: .7rem; font-weight: 700; color: #333; margin-bottom: 2px; }
 .bar-fill { width: 100%; background: #0066cc; opacity: .85; border-radius: 3px 3px 0 0; transition: height .3s; }
 .bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }
+/* .sede-dot { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; } */
+.accordion-button:not(.collapsed) { box-shadow: none; background: #f8f9fa; }
+.accordion-button:focus { box-shadow: none; }
 </style>

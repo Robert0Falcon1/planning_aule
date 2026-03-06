@@ -107,7 +107,9 @@ body {
 .alert-warning {
     background-image: none !important;
 }
-
+.no-decoration:hover{
+    text-decoration: none !important;
+}
 .alert {
     /* padding-left: 1rem !important; */
 }
