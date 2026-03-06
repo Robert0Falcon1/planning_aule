@@ -1,14 +1,15 @@
 <template>
   <div class="page-calendario">
 
-    <!-- Header ───────────────────────────────────────────────────────────── -->
+    <!-- Header -->
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Calendario</h2>
       <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
 
-        <!-- Vista -->
         <div class="btn-group btn-group-sm">
-          <button class="btn simplebtn" :class="vista === 'settimana' ? 'btn-primary' : 'btn-outline-primary'"
+          <button class="btn simplebtn" :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
+            @click="vista = '4giorni'">4 giorni</button>
+          <button class="btn simplebtn btn-no-border-x" :class="vista === 'settimana' ? 'btn-primary' : 'btn-outline-primary'"
             @click="vista = 'settimana'">
             <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>Settimana
           </button>
@@ -18,7 +19,6 @@
           </button>
         </div>
 
-        <!-- Navigazione -->
         <button class="btn" @click="sposta(-1)">
           <svg class="icon icon-sm"><use :href="sprites + '#it-chevron-left'"></use></svg>
         </button>
@@ -28,13 +28,11 @@
         </button>
         <button class="btn btn-outline-primary btn-sm" @click="vaiOggi">Oggi</button>
 
-        <!-- Filtro sede -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="onSedeChange">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
 
-        <!-- Filtro aula -->
         <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto">
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
@@ -50,31 +48,47 @@
       <div class="spinner-border text-primary" role="status"></div>
     </div>
 
-    <!-- ── VISTA SETTIMANALE ──────────────────────────────────────────────── -->
-    <div v-else-if="vista === 'settimana'" class="card border-0 shadow-sm">
+    <!-- ── VISTA GRIGLIA (4 giorni + settimana) ── -->
+    <div v-else-if="vista !== 'mese'" class="card border-0 shadow-sm">
       <div class="card-body p-0">
-        <div class="cal-grid">
-          <div class="cal-header">
-            <div class="cal-time-col"></div>
-            <div v-for="(g, i) in giorniSettimana" :key="i"
-              class="cal-day-header" :class="{ 'cal-day-today': isToday(g) }">
-              <span class="cal-day-name">{{ nomGiorno(g) }}</span>
-              <span class="cal-day-num"
-                :class="isToday(g) ? 'badge bg-primary rounded-circle' : ''">{{ g.getDate() }}</span>
+        <div class="cal-week">
+          <!-- Intestazione -->
+          <div class="cal-week-header" :style="headerGridStyle">
+            <div class="cal-gutter-head"></div>
+            <div v-for="(g, i) in giorniVista" :key="i"
+              class="cal-day-head" :class="{ 'is-today': isToday(g) }">
+              <span class="cal-dow">{{ nomGiorno(g) }}</span>
+              <span class="cal-dnum" :class="isToday(g) ? 'badge bg-primary rounded-circle' : ''">
+                {{ g.getDate() }}
+              </span>
             </div>
           </div>
-          <div class="cal-body">
-            <div v-for="ora in oreGiornata" :key="ora" class="cal-row">
-              <div class="cal-time-label">{{ String(ora).padStart(2,'0') }}:00</div>
-              <div v-for="(g, gi) in giorniSettimana" :key="gi"
-                class="cal-cell" :class="{ 'cal-cell-today': isToday(g) }">
-                <div v-for="ev in eventiCella(g, ora)" :key="ev.prenId + '-' + ev.slotIdx"
-                  class="cal-event" :class="coloreEvento(ev)"
-                  :title="`#${ev.prenId} — ${nomeAulaFn(ev.aulaId)} — Corso ${ev.corsoId}`">
-                  <span class="cal-event-time">{{ ev.oraInizio }}–{{ ev.oraFine }}</span>
-                  <span class="cal-event-title">{{ nomeAulaFn(ev.aulaId) }}</span>
-                  <span class="cal-event-room">Corso {{ ev.corsoId }}</span>
-                </div>
+          <!-- Corpo -->
+          <div class="cal-week-body" :style="bodyGridStyle">
+            <!-- Etichette ore -->
+            <div class="cal-gutter">
+              <div v-for="ora in oreGiornata" :key="ora" class="cal-gutter-slot">
+                <span class="cal-ora-label">{{ String(ora).padStart(2,'0') }}:00</span>
+              </div>
+            </div>
+            <!-- Colonne giorno -->
+            <div v-for="(g, gi) in giorniVista" :key="gi"
+              class="cal-day-col" :class="{ 'is-today': isToday(g) }"
+              :style="{ height: altezzaTotale + 'px' }">
+              <div v-for="ora in oreGiornata" :key="ora"
+                class="cal-bg-line" :style="{ top: (ora - ORA_INIZIO) * SLOT_H + 'px' }"></div>
+              <div class="cal-bg-line cal-bg-line--end"
+                :style="{ top: oreGiornata.length * SLOT_H + 'px' }"></div>
+              <div v-if="isToday(g) && nowTop >= 0" class="cal-now-line" :style="{ top: nowTop + 'px' }">
+                <span class="cal-now-dot"></span>
+              </div>
+              <div v-for="ev in eventiLayoutGiorno(g)" :key="ev.prenId + '-' + ev.slotIdx"
+                class="cal-ev" :class="coloreEvento(ev)"
+                :style="evStyle(ev)"
+                @mouseenter="e => mostraPopover(e, ev)"
+                @mouseleave="chiudiPopover">
+                <span class="cal-ev-time">{{ ev.oraInizio }}–{{ ev.oraFine }}</span>
+                <span class="cal-ev-title">{{ nomeAulaFn(ev.aulaId) }}</span>
               </div>
             </div>
           </div>
@@ -82,15 +96,13 @@
       </div>
     </div>
 
-    <!-- ── VISTA MENSILE ─────────────────────────────────────────────────── -->
+    <!-- ── VISTA MENSILE ── -->
     <div v-else class="card border-0 shadow-sm">
       <div class="card-body p-0">
         <div class="mes-grid">
-          <!-- Intestazione giorni -->
           <div class="mes-header">
             <div v-for="n in nomiGiorni" :key="n" class="mes-dow">{{ n }}</div>
           </div>
-          <!-- Celle -->
           <div class="mes-body">
             <div v-for="(cella, ci) in celleMese" :key="ci"
               class="mes-cell"
@@ -103,13 +115,14 @@
                 {{ cella.d.getDate() }}
               </span>
               <div class="mes-events">
-                <div v-for="(ev, ei) in eventiGiorno(cella.d).slice(0, 3)" :key="ei"
+                <div v-for="(ev, ei) in eventiGiornoMese(cella.d).slice(0, 3)" :key="ei"
                   class="mes-event" :class="coloreEvento(ev)"
-                  :title="`${nomeAulaFn(ev.aulaId)} — Corso ${ev.corsoId} — ${ev.oraInizio}–${ev.oraFine}`">
-                  <span class="text-truncate">{{ nomeAulaFn(ev.aulaId) }}</span>
+                  @mouseenter="e => mostraPopover(e, ev)"
+                  @mouseleave="chiudiPopover">
+                  <span class="text-truncate">{{ ev.oraInizio }} {{ nomeAulaFn(ev.aulaId) }}</span>
                 </div>
-                <div v-if="eventiGiorno(cella.d).length > 3" class="mes-event-more">
-                  +{{ eventiGiorno(cella.d).length - 3 }} altri
+                <div v-if="eventiGiornoMese(cella.d).length > 3" class="mes-event-more">
+                  +{{ eventiGiornoMese(cella.d).length - 3 }} altri
                 </div>
               </div>
             </div>
@@ -125,11 +138,36 @@
         {{ l.label }}
       </span>
     </div>
+
+    <!-- ── POPOVER EVENTO ── -->
+    <Teleport to="body">
+      <div v-if="popover.visible" class="cal-popover"
+        :style="{ top: popover.y + 'px', left: popover.x + 'px' }"
+        @mouseenter="cancellaChiudiPopover"
+        @mouseleave="chiudiPopover">
+        <div class="cal-popover-header" :class="coloreEvento(popover.ev)">
+          <span class="fw-bold">{{ popover.ev?.oraInizio }} – {{ popover.ev?.oraFine }}</span>
+          <span v-if="popover.ev?.haConflitti" class="badge bg-danger ms-2">Conflitto</span>
+        </div>
+        <div class="cal-popover-body">
+          <div class="mb-1">
+            <svg class="icon icon-sm me-1 text-primary"><use :href="sprites + '#it-map-marker'"></use></svg>
+            <strong>{{ nomeAulaFn(popover.ev?.aulaId) }}</strong>
+          </div>
+          <div class="mb-1 text-muted small">{{ sedeDiAulaFn(popover.ev?.aulaId) }}</div>
+          <div>
+            <svg class="icon icon-sm me-1 text-secondary"><use :href="sprites + '#it-list'"></use></svg>
+            Corso ID: <code>{{ popover.ev?.corsoId }}</code>
+          </div>
+          <div class="mt-1 text-muted small">Prenotazione #{{ popover.ev?.prenId }}</div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getCalendario } from '@/api/prenotazioni'
@@ -137,54 +175,88 @@ import { useAule } from '@/composables/useAule'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const loading    = ref(false)
-const filtroSede = ref('')
-const filtroAula = ref('')
-const vista      = ref('settimana')   // 'settimana' | 'mese'
-const sedi       = ref([])
-const aule       = ref([])
+const ORA_INIZIO   = 7
+const ORA_FINE     = 21
+const SLOT_H       = 56
+const GAP          = 2
+const altezzaTotale = (ORA_FINE - ORA_INIZIO) * SLOT_H
+
+const loading      = ref(false)
+const filtroSede   = ref('')
+const filtroAula   = ref('')
+const vista        = ref('settimana')
+const sedi         = ref([])
+const aule         = ref([])
 const prenotazioni = ref([])
-const dataRef    = ref(oggi())
+const dataRef      = ref(oggi())
+const nowTop       = ref(-1)
 
-const { nomeAula: nomeAulaFn, carica: caricaAule } = useAule()
+const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+const nomiGiorni  = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']
+const oreGiornata = Array.from({ length: ORA_FINE - ORA_INIZIO }, (_, i) => i + ORA_INIZIO)
 
-const nomiGiorni = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']
+// ── Popover ───────────────────────────────────────────────────────────────────
+const popover = reactive({ visible: false, ev: null, x: 0, y: 0 })
+let popoverTimer = null
 
-// ── Filtro aule per sede ──────────────────────────────────────────────────────
-const auleFiltrate = computed(() =>
-  filtroSede.value
-    ? aule.value.filter(a => a.sede_id == filtroSede.value)
-    : aule.value
-)
-
-function onSedeChange() {
-  filtroAula.value = ''   // reset filtro aula quando cambia sede
+function mostraPopover(e, ev) {
+  cancellaChiudiPopover()
+  const rect = e.currentTarget.getBoundingClientRect()
+  // Posiziona a destra dell'elemento, con fallback a sinistra se fuori schermo
+  let x = rect.right + window.scrollX + 8
+  if (x + 260 > window.innerWidth) x = rect.left + window.scrollX - 268
+  const y = Math.min(rect.top + window.scrollY, window.innerHeight + window.scrollY - 180)
+  popover.ev      = ev
+  popover.x       = x
+  popover.y       = y
+  popover.visible = true
 }
 
-// ── Periodo ───────────────────────────────────────────────────────────────────
-const giorniSettimana = computed(() => {
+function chiudiPopover() {
+  popoverTimer = setTimeout(() => { popover.visible = false }, 120)
+}
+function cancellaChiudiPopover() {
+  if (popoverTimer) { clearTimeout(popoverTimer); popoverTimer = null }
+}
+
+// ── Ora corrente ──────────────────────────────────────────────────────────────
+function aggiornaNow() {
+  const now = new Date()
+  nowTop.value = (now.getHours() + now.getMinutes() / 60 - ORA_INIZIO) * SLOT_H
+}
+setInterval(aggiornaNow, 60000)
+
+// ── Filtri ────────────────────────────────────────────────────────────────────
+const auleFiltrate = computed(() =>
+  filtroSede.value ? aule.value.filter(a => a.sede_id == filtroSede.value) : aule.value
+)
+function onSedeChange() { filtroAula.value = '' }
+
+// ── Giorni visibili per vista ─────────────────────────────────────────────────
+const nGiorni = computed(() => vista.value === '4giorni' ? 4 : 7)
+
+const giorniVista = computed(() => {
   const lun = new Date(inizioSettimana(dataRef.value) + 'T00:00:00')
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: nGiorni.value }, (_, i) => {
     const d = new Date(lun); d.setDate(lun.getDate() + i); return d
   })
 })
 
-const oreGiornata = Array.from({ length: 13 }, (_, i) => i + 7)
+// Grid dinamico in base al numero di colonne
+const headerGridStyle = computed(() => ({
+  gridTemplateColumns: `52px repeat(${nGiorni.value}, 1fr)`
+}))
+const bodyGridStyle = computed(() => ({
+  gridTemplateColumns: `52px repeat(${nGiorni.value}, 1fr)`
+}))
 
-function inizioMese() {
-  const d = new Date(dataRef.value + 'T00:00:00'); d.setDate(1); return d
-}
-function fineMese() {
-  const d = inizioMese(); d.setMonth(d.getMonth() + 1); d.setDate(0); return d
-}
+// ── Periodo mensile ───────────────────────────────────────────────────────────
+function inizioMese() { const d = new Date(dataRef.value + 'T00:00:00'); d.setDate(1); return d }
+function fineMese()   { const d = inizioMese(); d.setMonth(d.getMonth() + 1); d.setDate(0); return d }
 
 const celleMese = computed(() => {
-  const ini  = inizioMese()
-  const fin  = fineMese()
-  const oggiStr = oggi()
-  // Aggiungi celle dei giorni precedenti per allineare al lunedì
-  const cells = []
-  const primoGiorno = ini.getDay() === 0 ? 6 : ini.getDay() - 1
+  const ini = inizioMese(), fin = fineMese(), oggiStr = oggi()
+  const cells = [], primoGiorno = ini.getDay() === 0 ? 6 : ini.getDay() - 1
   for (let i = primoGiorno; i > 0; i--) {
     const d = new Date(ini); d.setDate(d.getDate() - i)
     cells.push({ d, corrente: false, oggi: false, weekend: d.getDay() === 0 || d.getDay() === 6 })
@@ -193,7 +265,6 @@ const celleMese = computed(() => {
     const d = new Date(ini); d.setDate(g)
     cells.push({ d, corrente: true, oggi: d.toISOString().slice(0,10) === oggiStr, weekend: d.getDay() === 0 || d.getDay() === 6 })
   }
-  // Riempi righe incomplete fino a multiplo di 7
   while (cells.length % 7 !== 0) {
     const d = new Date(fin); d.setDate(fin.getDate() + (cells.length - fin.getDate() - primoGiorno + 1))
     cells.push({ d, corrente: false, oggi: false, weekend: d.getDay() === 0 || d.getDay() === 6 })
@@ -202,68 +273,54 @@ const celleMese = computed(() => {
 })
 
 const labelPeriodo = computed(() => {
-  if (vista.value === 'settimana') {
-    const ini = giorniSettimana.value[0]
-    const fin = giorniSettimana.value[6]
-    const opt = { day: 'numeric', month: 'short' }
-    return `${ini.toLocaleDateString('it-IT', opt)} – ${fin.toLocaleDateString('it-IT', opt)} ${fin.getFullYear()}`
-  } else {
-    return new Date(dataRef.value + 'T00:00:00')
-      .toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
-  }
+  if (vista.value === 'mese')
+    return new Date(dataRef.value + 'T00:00:00').toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+  const ini = giorniVista.value[0], fin = giorniVista.value[giorniVista.value.length - 1]
+  const opt = { day: 'numeric', month: 'short' }
+  return `${ini.toLocaleDateString('it-IT', opt)} – ${fin.toLocaleDateString('it-IT', opt)} ${fin.getFullYear()}`
 })
 
 function isToday(d) { return d.toISOString().slice(0,10) === oggi() }
 function nomGiorno(d) { return d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase() }
 
 function sposta(n) {
-  if (vista.value === 'settimana') {
-    dataRef.value = aggiungiGiorni(dataRef.value, n * 7)
-  } else {
-    const d = new Date(dataRef.value + 'T00:00:00')
-    d.setMonth(d.getMonth() + n)
+  if (vista.value === 'mese') {
+    const d = new Date(dataRef.value + 'T00:00:00'); d.setMonth(d.getMonth() + n)
     dataRef.value = d.toISOString().slice(0,10)
+  } else {
+    dataRef.value = aggiungiGiorni(dataRef.value, n * nGiorni.value)
   }
 }
 function vaiOggi() { dataRef.value = oggi() }
 
-// ── Eventi filtrati ────────────────────────────────────────────────────────────
+// ── Orari decimali ────────────────────────────────────────────────────────────
+function oraDec(hhmm) {
+  if (!hhmm) return ORA_INIZIO
+  const [h, m] = hhmm.split(':').map(Number)
+  return h + (m || 0) / 60
+}
+
+// ── Lista eventi filtrati ─────────────────────────────────────────────────────
 const eventiFiltrati = computed(() => {
   const list = []
   for (const p of prenotazioni.value) {
     if (filtroAula.value && p.aula_id != filtroAula.value) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]; if (!slot?.data) continue
+      const oraInizio = slot.ora_inizio?.slice(0, 5) || ''
+      const oraFine   = slot.ora_fine?.slice(0, 5)   || ''
       list.push({
-        prenId:      p.id,
-        slotIdx:     si,
-        aulaId:      p.aula_id,
-        corsoId:     p.corso_id,
-        stato:       p.stato,
-        haConflitti: p.richiesta?.ha_conflitti || false,
-        data:        slot.data,
-        oraInizio:   slot.ora_inizio?.slice(0,5) || '',
-        oraFine:     slot.ora_fine?.slice(0,5)   || '',
-        oraH:        parseInt(slot.ora_inizio?.slice(0,2) || '0'),
+        prenId: p.id, slotIdx: si, aulaId: p.aula_id, corsoId: p.corso_id,
+        stato: p.stato, haConflitti: p.richiesta?.ha_conflitti || false,
+        data: slot.data, oraInizio, oraFine,
+        _ini: oraDec(oraInizio), _fin: oraDec(oraFine),
       })
     }
   }
   return list
 })
 
-// Mappa "YYYY-MM-DD|HH" → eventi (per vista settimanale)
-const eventiPerCella = computed(() => {
-  const map = {}
-  for (const ev of eventiFiltrati.value) {
-    const key = `${ev.data}|${ev.oraH}`
-    if (!map[key]) map[key] = []
-    map[key].push(ev)
-  }
-  return map
-})
-
-// Mappa "YYYY-MM-DD" → eventi (per vista mensile)
-const eventiPerGiorno = computed(() => {
+const eventiPerData = computed(() => {
   const map = {}
   for (const ev of eventiFiltrati.value) {
     if (!map[ev.data]) map[ev.data] = []
@@ -272,26 +329,67 @@ const eventiPerGiorno = computed(() => {
   return map
 })
 
-function eventiCella(giorno, ora) {
-  return eventiPerCella.value[`${giorno.toISOString().slice(0,10)}|${ora}`] || []
+// ── Algoritmo anti-overlap ────────────────────────────────────────────────────
+function calcolaLayout(eventi) {
+  if (!eventi.length) return []
+  const sorted = [...eventi].sort((a, b) =>
+    a._ini !== b._ini ? a._ini - b._ini : (b._fin - b._ini) - (a._fin - a._ini)
+  )
+  const columns = []
+  const result = sorted.map(ev => {
+    let col = columns.findIndex(endTime => endTime <= ev._ini)
+    if (col === -1) { col = columns.length; columns.push(0) }
+    columns[col] = ev._fin
+    return { ...ev, _col: col }
+  })
+  result.forEach(ev => {
+    let maxCol = ev._col
+    result.forEach(other => {
+      if (other._ini < ev._fin && other._fin > ev._ini) maxCol = Math.max(maxCol, other._col)
+    })
+    ev._cols = maxCol + 1
+  })
+  return result
 }
-function eventiGiorno(d) {
-  return eventiPerGiorno.value[d.toISOString().slice(0,10)] || []
+
+const layoutPerData = computed(() => {
+  const map = {}
+  for (const [data, evs] of Object.entries(eventiPerData.value)) map[data] = calcolaLayout(evs)
+  return map
+})
+
+function eventiLayoutGiorno(g) { return layoutPerData.value[g.toISOString().slice(0,10)] || [] }
+function eventiGiornoMese(g)   { return eventiPerData.value[g.toISOString().slice(0,10)] || [] }
+
+function evStyle(ev) {
+  const ini    = Math.max(ev._ini, ORA_INIZIO)
+  const fin    = Math.min(ev._fin, ORA_FINE)
+  const top    = (ini - ORA_INIZIO) * SLOT_H
+  const height = Math.max((fin - ini) * SLOT_H - 1, 18)
+  const cols   = ev._cols || 1, col = ev._col || 0
+  const W = 100 / cols
+  return {
+    position: 'absolute',
+    top:    `${top}px`,
+    height: `${height}px`,
+    left:   `calc(${col * W}% + ${col > 0 ? GAP : 1}px)`,
+    width:  `calc(${W}% - ${col > 0 ? GAP : 1}px)`,
+    zIndex: col + 1,
+    boxSizing: 'border-box',
+  }
 }
 
 function coloreEvento(ev) {
-  if (!ev) return 'cal-event--confirmed'
+  if (!ev) return 'cal-ev--confirmed'
   const s = (ev.stato || '').toLowerCase().trim()
-  if (s === 'annullata' || s === 'rifiutata') return 'cal-event--cancelled'
-  if (ev.haConflitti || s === 'conflitto')    return 'cal-event--cancelled'
-  if (s === 'in_attesa')                      return 'cal-event--pending'
-  return 'cal-event--confirmed'
+  if (s === 'annullata' || s === 'rifiutata' || ev.haConflitti || s === 'conflitto')
+    return 'cal-ev--cancelled'
+  return 'cal-ev--confirmed'
 }
 
 const legenda = [
   { label: 'Confermata', bg: '#d4edda', border: '#198754' },
-  // { label: 'In attesa',  bg: '#fff3cd', border: '#ffc107' },
-  { label: 'Conflitto', bg: '#f8d7da', border: '#dc3545' },
+  { label: 'Conflitto',  bg: '#f8d7da', border: '#dc3545' },
 ]
 
 // ── Caricamento ───────────────────────────────────────────────────────────────
@@ -299,12 +397,12 @@ async function caricaDati() {
   loading.value = true
   try {
     let ini, fin
-    if (vista.value === 'settimana') {
-      ini = giorniSettimana.value[0].toISOString().slice(0,10)
-      fin = giorniSettimana.value[6].toISOString().slice(0,10)
-    } else {
+    if (vista.value === 'mese') {
       ini = inizioMese().toISOString().slice(0,10)
       fin = fineMese().toISOString().slice(0,10)
+    } else {
+      ini = giorniVista.value[0].toISOString().slice(0,10)
+      fin = giorniVista.value[giorniVista.value.length - 1].toISOString().slice(0,10)
     }
     const data = await getCalendario(ini, fin, filtroSede.value || null)
     prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
@@ -319,6 +417,7 @@ async function caricaDati() {
 watch([dataRef, filtroSede, vista], caricaDati)
 
 onMounted(async () => {
+  aggiornaNow()
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
@@ -330,52 +429,94 @@ onMounted(async () => {
 <style scoped>
 .page-title { font-size: 1.4rem; font-weight: 700; }
 
-/* ── SETTIMANALE ── */
-.cal-grid  { overflow-x: auto; min-width: 700px; }
-.cal-header, .cal-row {
+/* ── GRIGLIA SETTIMANALE / 4 GIORNI ── */
+.cal-week { overflow-x: auto; min-width: 420px; display: flex; flex-direction: column; }
+
+.cal-week-header {
   display: grid;
-  grid-template-columns: 52px repeat(7, 1fr);
-  border-bottom: 1px solid #eee;
+  border-bottom: 2px solid #dee2e6;
+  position: sticky; top: 0; background: #fff; z-index: 10;
 }
-.cal-day-header { padding: .5rem .25rem; text-align: center; border-left: 1px solid #eee; }
-.cal-day-header.cal-day-today { background: #eef4ff; }
-.cal-day-name  { display: block; font-size: .65rem; color: #999; font-weight: 600; }
-.cal-day-num   { font-size: .9rem; font-weight: 700; width: 28px; height: 28px;
+.cal-gutter-head { border-right: 1px solid #dee2e6; }
+.cal-day-head { text-align: center; padding: .4rem .2rem; border-left: 1px solid #eee; }
+.cal-day-head.is-today { background: #eef4ff; }
+.cal-dow  { display: block; font-size: .62rem; color: #999; font-weight: 700; letter-spacing:.04em; }
+.cal-dnum { font-size: .9rem; font-weight: 700; width: 28px; height: 28px;
   display: inline-flex; align-items: center; justify-content: center; }
-.cal-time-col  { border-right: 1px solid #eee; }
-.cal-time-label { padding: .25rem .3rem; font-size: .65rem; color: #999;
-  border-right: 1px solid #eee; white-space: nowrap; }
-.cal-cell      { min-height: 48px; border-left: 1px solid #eee; padding: 2px; }
-.cal-cell-today { background: #f7f9ff; }
+
+.cal-week-body { display: grid; overflow-y: auto; max-height: 70vh; }
+
+.cal-gutter { border-right: 1px solid #dee2e6; }
+.cal-gutter-slot { height: v-bind('SLOT_H + "px"'); display: flex; align-items: flex-start; padding-top: 2px; }
+.cal-ora-label { font-size: .6rem; color: #aaa; padding-left: 4px; white-space: nowrap; }
+
+.cal-day-col { position: relative; border-left: 1px solid #eee; }
+.cal-day-col.is-today { background: #f8fbff; }
+
+.cal-bg-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid #f0f0f0; pointer-events: none; }
+.cal-bg-line--end { border-top: 1px solid #dee2e6; }
+
+.cal-now-line { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid #dc3545; z-index: 5; pointer-events: none; }
+.cal-now-dot  { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; background: #dc3545; border-radius: 50%; }
+
+.cal-ev {
+  position: absolute; border-radius: 4px; padding: 2px 5px;
+  font-size: .68rem; display: flex; flex-direction: column;
+  overflow: hidden; cursor: default;
+  transition: filter .12s, box-shadow .12s;
+}
+.cal-ev:hover { filter: brightness(.9); box-shadow: 0 3px 10px rgba(0,0,0,.18); z-index: 20 !important; }
+.cal-ev-time  { font-weight: 700; font-size: .6rem; line-height: 1.3; white-space: nowrap; }
+.cal-ev-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cal-ev--confirmed { background: #d4edda; border-left: 3px solid #198754; color: #0d4f2b; }
+.cal-ev--cancelled { background: #f8d7da; border-left: 3px solid #dc3545; color: #5c1a1e; }
+
+/* ── POPOVER ── */
+.cal-popover {
+  position: absolute;
+  width: 260px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.18);
+  z-index: 9999;
+  overflow: hidden;
+  pointer-events: auto;
+  animation: popoverIn .12s ease;
+}
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(4px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.cal-popover-header {
+  padding: 8px 12px;
+  font-size: .82rem;
+  display: flex; align-items: center;
+}
+.cal-popover-header.cal-ev--confirmed { background: #d4edda; color: #0d4f2b; }
+.cal-popover-header.cal-ev--cancelled { background: #f8d7da; color: #5c1a1e; }
+.cal-popover-body {
+  padding: 10px 12px;
+  font-size: .82rem;
+  line-height: 1.6;
+}
 
 /* ── MENSILE ── */
-.mes-grid  { overflow-x: auto; min-width: 600px; }
+.mes-grid   { overflow-x: auto; min-width: 600px; }
 .mes-header { display: grid; grid-template-columns: repeat(7, 1fr); }
-.mes-dow   { padding: .4rem; text-align: center; font-size: .7rem; font-weight: 700;
-  color: #888; border-bottom: 2px solid #eee; }
-.mes-body  { display: grid; grid-template-columns: repeat(7, 1fr); }
-.mes-cell  { min-height: 90px; border: 1px solid #eee; padding: 4px;
-  background: #fff; overflow: hidden; }
+.mes-dow    { padding: .4rem; text-align: center; font-size: .7rem; font-weight: 700; color: #888; border-bottom: 2px solid #eee; }
+.mes-body   { display: grid; grid-template-columns: repeat(7, 1fr); }
+.mes-cell   { min-height: 90px; border: 1px solid #eee; padding: 4px; background: #fff; overflow: hidden; }
 .mes-cell--other   { background: #f8f9fa; }
 .mes-cell--other .mes-cell-num { color: #bbb; }
 .mes-cell--today   { background: #f0f5ff; }
 .mes-cell--weekend { background: #fafafa; }
-.mes-cell-num      { font-size: .78rem; font-weight: 700; width: 22px; height: 22px;
+.mes-cell-num { font-size: .78rem; font-weight: 700; width: 22px; height: 22px;
   display: inline-flex; align-items: center; justify-content: center; margin-bottom: 2px; }
 .mes-events { display: flex; flex-direction: column; gap: 2px; }
-.mes-event  { border-radius: 3px; padding: 1px 4px; font-size: .65rem;
-  display: flex; overflow: hidden; cursor: default; }
+.mes-event  { border-radius: 3px; padding: 1px 4px; font-size: .65rem; display: flex; overflow: hidden; cursor: default; }
+.mes-event.cal-ev--confirmed { background: #d4edda; border-left: 3px solid #198754; color: #0d4f2b; }
+.mes-event.cal-ev--cancelled { background: #f8d7da; border-left: 3px solid #dc3545; color: #5c1a1e; }
+.mes-event:hover { filter: brightness(.9); }
 .mes-event-more { font-size: .6rem; color: #888; padding-left: 4px; }
-
-/* ── EVENTI (condivisi) ── */
-.cal-event {
-  border-radius: 4px; padding: 2px 5px; margin-bottom: 2px;
-  font-size: .68rem; display: flex; flex-direction: column; overflow: hidden; cursor: default;
-}
-.cal-event--confirmed { background: #d4edda !important; border-left: 3px solid #198754 !important; color: #0d4f2b !important; }
-.cal-event--pending   { background: #fff3cd !important; border-left: 3px solid #ffc107 !important; color: #664d03 !important; }
-.cal-event--cancelled { background: #f8d7da !important; border-left: 3px solid #dc3545 !important; color: #5c1a1e !important; }
-.cal-event-time  { font-weight: 600; }
-.cal-event-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cal-event-room  { opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
