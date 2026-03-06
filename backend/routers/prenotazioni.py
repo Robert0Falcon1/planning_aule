@@ -207,6 +207,83 @@ def elimina_prenotazione(
     
     return {"message": f"Prenotazione {prenotazione_id} eliminata con successo"}
 
+@router.delete("/{prenotazione_id}/slots/{slot_id}", status_code=200,
+               summary="Annulla singolo slot di una prenotazione massiva")
+def annulla_slot(
+    prenotazione_id: int,
+    slot_id: int,
+    db: Session = Depends(get_db),
+    utente: Utente = Depends(get_utente_corrente)
+):
+    """
+    Annulla un singolo slot di una prenotazione massiva.
+
+    - Imposta slot.annullato = True (non cancella la riga)
+    - Se era l'ultimo slot attivo, elimina l'intera prenotazione
+    - Ricalcola ha_conflitti sulla prenotazione dopo l'annullamento
+    - OPERATIVO: solo proprie prenotazioni
+    - COORDINAMENTO: qualsiasi
+    """
+    
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.slots), joinedload(Prenotazione.richiesta))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+
+    # Verifica permessi
+    if utente.ruolo != RuoloUtente.COORDINAMENTO:
+        if prenotazione.richiedente_id != utente.id:
+            raise HTTPException(status_code=403,
+                                detail="Non hai i permessi per modificare questa prenotazione")
+
+    # Trova lo slot
+    slot = db.query(SlotOrario).filter(
+        SlotOrario.id == slot_id,
+        SlotOrario.prenotazione_id == prenotazione_id,
+    ).first()
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot non trovato")
+    if slot.annullato:
+        raise HTTPException(status_code=400, detail="Slot già annullato")
+
+    # Annulla lo slot
+    slot.annullato = True
+    db.flush()
+
+    # Conta slot ancora attivi
+    slot_attivi = [s for s in prenotazione.slots if not s.annullato]
+
+    if not slot_attivi:
+        # Era l'ultimo — elimina l'intera prenotazione
+        richiesta = db.query(RichiestaPrenotazione).filter(
+            RichiestaPrenotazione.prenotazione_id == prenotazione_id
+        ).first()
+        if richiesta:
+            db.delete(richiesta)
+        db.delete(prenotazione)
+        db.commit()
+        return {
+            "message": f"Slot {slot_id} annullato. Prenotazione {prenotazione_id} eliminata (nessun slot rimasto).",
+            "prenotazione_eliminata": True,
+        }
+
+    # Ricalcola conflitti
+    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+    if prenotazione.richiesta:
+        prenotazione.richiesta.ha_conflitti = len(conflitti) > 0
+
+    db.commit()
+
+    return {
+        "message": f"Slot {slot_id} annullato.",
+        "prenotazione_eliminata": False,
+        "slot_attivi_rimasti": len(slot_attivi),
+        "prenotazione_id": prenotazione_id,
+    }
 
 @router.patch("/{prenotazione_id}", response_model=PrenotazioneRisposta,
               summary="Modifica prenotazione")

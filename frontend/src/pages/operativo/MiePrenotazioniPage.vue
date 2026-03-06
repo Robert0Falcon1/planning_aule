@@ -165,17 +165,21 @@
           in <strong>{{ nomeAulaFn(modalCancella.aulaId) }}</strong>.
         </p>
 
-        <!-- Avviso se massiva -->
-        <div v-if="modalCancella.isMassiva" class="alert alert-warning py-2 small mb-3">
-          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-warning-circle'"></use></svg>
-          <strong>Attenzione:</strong> questo slot fa parte di una prenotazione ricorrente
-          con <strong>{{ modalCancella.totaleSlot }} slot</strong> totali.
-          Non è possibile eliminare un singolo slot — verranno cancellati <strong>tutti</strong>.
+        <!-- Prenotazione massiva: offre scelta -->
+        <div v-if="modalCancella.isMassiva" class="alert alert-info py-2 small mb-3">
+          Questo slot fa parte di una prenotazione ricorrente con
+          <strong>{{ modalCancella.totaleSlot }} slot</strong> totali.
+          Puoi eliminare solo questo slot oppure tutti.
         </div>
 
-        <div class="d-flex gap-2 justify-content-end">
-          <button class="btn btn-secondary" @click="modalCancella = null">Annulla</button>
-          <button class="btn btn-danger" @click="confermaCancellazione" :disabled="!!cancellando">
+        <div class="d-flex gap-2 justify-content-end flex-wrap">
+          <button class="btn btn-outline-secondary" @click="modalCancella = null">Annulla</button>
+          <button v-if="modalCancella.isMassiva"
+            class="btn btn-outline-danger" @click="confermaCancellazione(false)" :disabled="!!cancellando">
+            <span v-if="cancellando" class="spinner-border spinner-border-sm me-1"></span>
+            Solo questo slot
+          </button>
+          <button class="btn btn-danger" @click="confermaCancellazione(true)" :disabled="!!cancellando">
             <span v-if="cancellando" class="spinner-border spinner-border-sm me-1"></span>
             {{ modalCancella.isMassiva ? 'Elimina tutti gli slot' : 'Sì, elimina' }}
           </button>
@@ -188,7 +192,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getMiePrenotazioni, cancellaPrenotazione } from '@/api/prenotazioni'
+import { getMiePrenotazioni, cancellaPrenotazione, annullaSlot } from '@/api/prenotazioni'
 import { getUtenti } from '@/api/utenti'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
@@ -250,6 +254,7 @@ const tuttiGliSlot = computed(() => {
       list.push({
         key:           `${p.id}-${si}`,
         prenId:        p.id,
+        slotId:        slot.id,
         slotIdx:       si,
         aulaId:        p.aula_id,
         corsoId:       p.corso_id,
@@ -311,13 +316,29 @@ function resetFiltri() {
 
 function richiediCancellazione(slot) { modalCancella.value = slot }
 
-async function confermaCancellazione() {
+async function confermaCancellazione(eliminaTutti = true) {
   const slot = modalCancella.value; if (!slot) return
   cancellando.value = slot.prenId
   try {
-    await cancellaPrenotazione(slot.prenId)
-    // Rimuovi tutta la prenotazione dalla lista (tutti i suoi slot spariscono)
-    prenotazioni.value = prenotazioni.value.filter(p => p.id !== slot.prenId)
+    if (!eliminaTutti && slot.isMassiva) {
+      // Annulla solo questo slot via nuovo endpoint
+      const res = await annullaSlot(slot.prenId, slot.slotId)
+      if (res.prenotazione_eliminata) {
+        // Era l'ultimo slot — rimuovi l'intera prenotazione
+        prenotazioni.value = prenotazioni.value.filter(p => p.id !== slot.prenId)
+      } else {
+        // Marca lo slot come annullato nella lista locale
+        const pren = prenotazioni.value.find(p => p.id === slot.prenId)
+        if (pren) {
+          const s = pren.slots.find(s => s.id === slot.slotId)
+          if (s) s.annullato = true
+        }
+      }
+    } else {
+      // Elimina l'intera prenotazione
+      await cancellaPrenotazione(slot.prenId)
+      prenotazioni.value = prenotazioni.value.filter(p => p.id !== slot.prenId)
+    }
     modalCancella.value = null
   } catch (e) {
     alert(`Errore: ${e.message}`)

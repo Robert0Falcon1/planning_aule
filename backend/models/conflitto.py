@@ -32,7 +32,15 @@ class ConflittoPrenotazione(Base):
         nullable=False,
         index=True
     )
-    
+
+    slot_id_1 = Column(Integer, ForeignKey("slot_orari.id"), nullable=True,
+                    comment="Slot specifico di prenotazione_1 che causa il conflitto")
+    slot_id_2 = Column(Integer, ForeignKey("slot_orari.id"), nullable=True,
+                    comment="Slot specifico di prenotazione_2 che causa il conflitto")
+
+    slot_1 = relationship("SlotOrario", foreign_keys=[slot_id_1])
+    slot_2 = relationship("SlotOrario", foreign_keys=[slot_id_2])
+
     # Tipo di conflitto
     tipo_conflitto = Column(
         SQLEnum(TipoConflitto),
