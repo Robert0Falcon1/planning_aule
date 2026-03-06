@@ -87,7 +87,7 @@
       <div class="col-12">
         <div class="row py-3 mx-auto">
           <small class="text-center text-small">
-            Planning Aule v1.0 — InforCoopEcipa Piemonte
+                © {{ new Date().getFullYear() }} Inforcoop Ecipa Piemonte | Planning Aule v1.0
           </small>
         </div>
       </div>

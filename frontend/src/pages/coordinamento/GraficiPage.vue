@@ -17,7 +17,7 @@
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-        <button class="btn btn-sm btn-success" @click="esporta">
+        <button class="btn btn-sm btn-success" @click="esportaCsv">
           <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-download'"></use></svg>
           CSV
         </button>
@@ -29,6 +29,27 @@
     </div>
 
     <div v-else class="row g-4">
+      <!-- Riepilogo KPI -->
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body py-3">
+            <div class="row text-center g-3">
+              <div class="col-4">
+                <div class="fs-2 fw-bold text-primary">{{ totPrenotazioni }}</div>
+                <div class="small text-muted">Prenotazioni totali</div>
+              </div>
+              <div class="col-4">
+                <div class="fs-2 fw-bold text-success">{{ totConfermate }}</div>
+                <div class="small text-muted">Confermate</div>
+              </div>
+              <div class="col-4">
+                <div class="fs-2 fw-bold text-danger">{{ totConflitti }}</div>
+                <div class="small text-muted">Con conflitti</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Grafico 1: Prenotazioni per periodo -->
       <div class="col-12 col-xl-8">
         <div class="card border-0 shadow-sm h-100">
@@ -37,7 +58,10 @@
           </div>
           <div class="card-body">
             <div v-if="!datiPeriodo.length" class="text-muted text-center py-4 small">Nessun dato</div>
-            <svg v-else :viewBox="`0 0 ${datiPeriodo.length * 60 + 20} 260`" style="width:100%;height:260px" preserveAspectRatio="none">
+            <div v-else style="overflow-x:auto">
+            <svg :viewBox="`0 0 ${Math.max(datiPeriodo.length * 60 + 60, 400)} 260`"
+              :style="`width:${Math.max(datiPeriodo.length * 60 + 60, 400)}px;height:260px;max-width:100%`"
+              preserveAspectRatio="xMinYMin meet">
               <template v-for="(item, i) in datiPeriodo" :key="i">
                 <rect :x="30 + i * 60 + 8" :y="40 + 190 - (item.valore / maxPeriodo) * 190"
                   width="44" :height="(item.valore / maxPeriodo) * 190" rx="3" fill="#0066cc" opacity="0.85" />
@@ -47,15 +71,16 @@
                   text-anchor="middle" font-size="8" fill="#888">{{ item.label }}</text>
               </template>
             </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Grafico 2: Distribuzione per sede -->
+      <!-- Grafico 2: Distribuzione per sede (aula_id) -->
       <div class="col-12 col-xl-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0">
-            <h5 class="card-title mb-0">Distribuzione per sede</h5>
+            <h5 class="card-title mb-0">Distribuzione per aula</h5>
           </div>
           <div class="card-body">
             <div v-if="!datiSede.length" class="text-muted text-center py-4 small">Nessun dato</div>
@@ -74,7 +99,7 @@
         </div>
       </div>
 
-      <!-- Grafico 3: Top corsi -->
+      <!-- Grafico 3: Top corsi (per corso_id) -->
       <div class="col-12 col-xl-7">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
@@ -104,13 +129,13 @@
       <div class="col-12 col-xl-5">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0">
-            <h5 class="card-title mb-0">Saturazione per aula</h5>
+            <h5 class="card-title mb-0">Slot per aula</h5>
           </div>
           <div class="card-body">
-            <div v-for="a in datiAule" :key="a.nome" class="mb-3">
+            <div v-for="(a, i) in datiAule" :key="i" class="mb-3">
               <div class="d-flex justify-content-between mb-1">
                 <small class="fw-semibold">{{ a.nome }} <span class="text-muted fw-normal">({{ a.sede }})</span></small>
-                <small class="fw-bold">{{ a.pct }}%</small>
+                <small class="fw-bold">{{ a.slot }} slot</small>
               </div>
               <div class="progress" style="height:10px">
                 <div class="progress-bar"
@@ -129,40 +154,59 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
-import { getAule } from '@/api/aule'
-import { getPrenotazioni, esportaCsv } from '@/api/prenotazioni'
-import { oggi, aggiungiGiorni, percentuale } from '@/utils/formatters'
+import { useAule } from '@/composables/useAule'
+import { getPrenotazioni } from '@/api/prenotazioni'
+import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const loading     = ref(false)
-const sedi        = ref([])
-const aule        = ref([])
+const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
+const loading      = ref(false)
+const sedi         = ref([])
 const prenotazioni = ref([])
-const granularity = ref('mese')
-const range       = ref('6')
-const filtroSede  = ref('')
-const topN        = ref(10)
+const granularity  = ref('mese')
+const range        = ref('6')
+const filtroSede   = ref('')
+const topN         = ref(10)
 
 const granularita = [
   { val: 'settimana', label: 'Settimana' },
   { val: 'mese',      label: 'Mese' },
 ]
-
 const coloriSede = ['#0066cc','#198754','#ffc107','#dc3545','#6f42c1','#fd7e14']
 
+// ── Helper: estrae la data del primo slot ─────────────────────────────────────
+function dataSlot(p) { return p.slots?.[0]?.data || '' }
+
+// ── Computed ──────────────────────────────────────────────────────────────────
+
+// Espande ogni prenotazione per numero di slot (1 prenotazione massiva = N slot)
+const slotEspansi = computed(() => {
+  const list = []
+  for (const p of prenotazioni.value) {
+    for (const slot of (p.slots || [])) {
+      list.push({ ...p, _slotData: slot.data })
+    }
+  }
+  return list
+})
+
+const confermate = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata'))
+
+// Dati per grafico a barre per periodo (conta slot confermati)
 const datiPeriodo = computed(() => {
   const buckets = {}
-  for (const p of prenotazioni.value.filter(p => p.stato === 'confermata' || p.stato === 'CONFERMATA')) {
-    const d = new Date(p.data)
+  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
+    const d = s._slotData; if (!d) continue
     let key
     if (granularity.value === 'settimana') {
-      const lun = new Date(d); const day = lun.getDay() || 7
-      lun.setDate(lun.getDate() - day + 1)
-      key = lun.toISOString().slice(0, 10)
+      const dt = new Date(d + 'T00:00:00')
+      const day = dt.getDay() || 7
+      dt.setDate(dt.getDate() - day + 1)
+      key = dt.toISOString().slice(0, 10)
     } else {
-      key = p.data?.slice(0, 7)
+      key = d.slice(0, 7)
     }
-    if (key) buckets[key] = (buckets[key] || 0) + 1
+    buckets[key] = (buckets[key] || 0) + 1
   }
   return Object.entries(buckets).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => ({
     label: granularity.value === 'mese'
@@ -174,43 +218,58 @@ const datiPeriodo = computed(() => {
 
 const maxPeriodo = computed(() => Math.max(...datiPeriodo.value.map(x => x.valore), 1))
 
+// Distribuzione per aula_id
 const datiSede = computed(() => {
   const map = {}
-  for (const p of prenotazioni.value.filter(p => p.stato === 'confermata' || p.stato === 'CONFERMATA')) {
-    const nome = p.aula?.sede?.nome || '—'
-    map[nome] = (map[nome] || 0) + 1
+  for (const p of confermate.value) {
+    const k = nomeAula(p.aula_id)
+    map[k] = (map[k] || 0) + (p.slots?.length || 1)
   }
   const tot = Object.values(map).reduce((s, v) => s + v, 0) || 1
-  return Object.entries(map).map(([label, valore]) => ({ label, valore, pct: Math.round(valore / tot * 100) }))
+  return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 8)
+    .map(([label, valore]) => ({ label, valore, pct: Math.round(valore / tot * 100) }))
 })
 
+// Top corsi per corso_id
 const datiCorsi = computed(() => {
   const map = {}
-  for (const p of prenotazioni.value.filter(p => p.stato === 'confermata' || p.stato === 'CONFERMATA')) {
-    const titolo = p.titolo_corso || p.corso?.titolo || 'Sconosciuto'
-    map[titolo] = (map[titolo] || 0) + 1
+  for (const p of confermate.value) {
+    const k = `Corso ${p.corso_id}`
+    map[k] = (map[k] || 0) + 1
   }
-  return Object.entries(map).sort(([, a], [, b]) => b - a).map(([label, valore]) => ({ label, valore }))
+  return Object.entries(map).sort(([,a],[,b]) => b - a).map(([label, valore]) => ({ label, valore }))
 })
 
+// Slot per aula (conta slot totali confermati)
 const datiAule = computed(() => {
-  const totPerAula = {}
-  for (const p of prenotazioni.value) {
-    const id = p.aula_id || p.aula?.id
-    if (!totPerAula[id]) totPerAula[id] = { nome: p.aula?.nome || '?', sede: p.aula?.sede?.nome || '?', tot: 0, conf: 0 }
-    totPerAula[id].tot++
-    if (p.stato === 'confermata' || p.stato === 'CONFERMATA') totPerAula[id].conf++
+  const map = {}
+  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
+    const k = s.aula_id
+    map[k] = (map[k] || 0) + 1
   }
-  return Object.values(totPerAula).map(a => ({ nome: a.nome, sede: a.sede, pct: percentuale(a.conf, a.tot) })).sort((a, b) => b.pct - a.pct)
+  const max = Math.max(...Object.values(map), 1)
+  return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 10)
+    .map(([aulaId, slot]) => ({ aulaId, nome: nomeAula(aulaId), sede: sedeDiAula(aulaId), slot, pct: Math.round(slot / max * 100) }))
 })
+
+// KPI riepilogo
+const totPrenotazioni = computed(() => prenotazioni.value.length)
+const totConfermate   = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata').length)
+const totConflitti    = computed(() => prenotazioni.value.filter(p => p.stato === 'conflitto' || p.richiesta?.ha_conflitti).length)
+
+// ── Caricamento ───────────────────────────────────────────────────────────────
 
 async function carica() {
   loading.value = true
   try {
     const fine   = oggi()
     const inizio = aggiungiGiorni(fine, -parseInt(range.value) * 30)
-    const data   = await getPrenotazioni({ data_dal: inizio, data_al: fine, sede_id: filtroSede.value || undefined })
-    prenotazioni.value = data?.items || data || []
+    const data   = await getPrenotazioni({
+      data_dal: inizio,
+      data_al:  fine,
+      ...(filtroSede.value ? { sede_id: filtroSede.value } : {}),
+    })
+    prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
   } catch (e) {
     console.warn('Grafici:', e.message)
     prenotazioni.value = []
@@ -219,24 +278,48 @@ async function carica() {
   }
 }
 
-async function esporta() {
-  try {
-    const fine   = oggi()
-    const inizio = aggiungiGiorni(fine, -parseInt(range.value) * 30)
-    await esportaCsv({ data_dal: inizio, data_al: fine, sede_id: filtroSede.value || undefined })
-  } catch (e) {
-    alert(`Errore export: ${e.message}`)
+function esportaCsv() {
+  if (!prenotazioni.value.length) { alert('Nessun dato da esportare.'); return }
+  const righe = [['ID', 'Tipo', 'Aula ID', 'Corso ID', 'Stato', 'Ha conflitti', 'Data', 'Ora inizio', 'Ora fine', 'Creata il']]
+  for (const p of prenotazioni.value) {
+    for (const slot of (p.slots || [])) {
+      righe.push([
+        p.id, p.tipo, p.aula_id, p.corso_id, p.stato,
+        p.richiesta?.ha_conflitti ? 'si' : 'no',
+        slot.data || '', slot.ora_inizio || '', slot.ora_fine || '',
+        p.data_creazione?.slice(0, 10) || '',
+      ])
+    }
   }
+  const csv  = righe.map(r => r.join(';')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `prenotazioni_${oggi()}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(async () => {
-  const [dataSedi, dataAule] = await Promise.allSettled([getSedi(), getAule()])
-  sedi.value  = dataSedi.value?.items  || dataSedi.value  || []
-  aule.value  = dataAule.value?.items  || dataAule.value  || []
+  await caricaAule()
+  const data = await getSedi()
+  sedi.value = Array.isArray(data) ? data : []
   carica()
 })
 </script>
 
 <style scoped>
 .page-title { font-size: 1.4rem; font-weight: 700; }
+.bar-chart {
+  display: flex; align-items: flex-end; gap: 6px; height: 220px;
+  padding: 24px 8px 32px; overflow-x: auto;
+}
+.bar-col {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; flex: 1; min-width: 32px; max-width: 64px;
+}
+.bar-val  { font-size: .7rem; font-weight: 700; color: #333; margin-bottom: 2px; }
+.bar-fill { width: 100%; background: #0066cc; opacity: .85; border-radius: 3px 3px 0 0; transition: height .3s; }
+.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }
 </style>

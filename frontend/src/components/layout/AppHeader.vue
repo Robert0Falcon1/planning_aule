@@ -27,7 +27,7 @@
         <div class="col-12 d-flex px-4 mx-2">
           <nav class="navbar navbar-expand-lg" aria-label="Navigazione principale">
             <router-link class="navbar-brand" :to="homePath">
-              <span class="fw-bold text-white">Planning Aule</span>
+              <span class="fw-bold text-white hover-link">Planning Aule</span>
             </router-link>
 
             <button class="navbar-toggler" type="button"

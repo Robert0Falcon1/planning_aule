@@ -62,7 +62,7 @@
               </tbody>
             </table>
           </div>
-          <div class="card-footer bg-white text-end py-2">
+          <div class="card-footer bg-white text-end py-2 px-0 pt-3">
             <button class="btn btn-sm btn-outline-primary" @click="apriModaleAula(null, sede)">
               <svg class="icon icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
               Aggiungi aula a {{ sede.nome }}

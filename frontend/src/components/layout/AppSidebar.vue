@@ -6,7 +6,7 @@
       <template v-if="authStore.isOperativo || authStore.isCoordinamento">
         <SidebarSection titolo="Prenotazioni">
           <SidebarLink :to="{ name: 'NuovaPrenotazione' }" icon="it-plus-circle" label="Nuova Prenotazione" />
-          <SidebarLink :to="{ name: 'MiePrenotazioni' }"   icon="it-list"        label="Le Mie Prenotazioni" />
+          <SidebarLink :to="{ name: 'MiePrenotazioni' }"   icon="it-list"        :label="authStore.isCoordinamento ? 'Riepilogo Prenotazioni' : 'Le Mie Prenotazioni'" />
           <SidebarLink :to="{ name: 'Calendario' }"        icon="it-calendar"    label="Calendario" />
         </SidebarSection>
 

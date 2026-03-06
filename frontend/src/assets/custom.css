@@ -1,4 +1,9 @@
 /* Colori */
+:root{
+    --bs-success-light: #03c785 ;
+    --bs-warning: rgb(252 129 9) !important;
+    --bs-orange: rgb(252 129 9) !important;
+}
 .alert-danger{
     background-position: 10px 50%;
     border-left: 8px solid hsl(350, 60%, 50%);
@@ -6,14 +11,23 @@
 }
 .bg-warning {
     --bs-bg-opacity: 1;
-    background-color: rgb(252 129 9) !important;
+    background-color: var(--bs-warning) !important;
     color: white !important;
 }
 .avatar-coord{
-    background: rgb(252 129 9) !important;
+    background: var(--bs-warning) !important;
 }
 .login-bg{
     background: linear-gradient(135deg, #0d7dee 0%, #a4ffbaa6 100%) !important;
+}
+.hover-link:hover{
+    color: var(--bs-yellow) !important;
+}
+.alert-warning {
+    border-left: 8px solid var(--bs-warning) !important
+}
+.icon-warning {
+    fill: var(--bs-warning) !important;
 }
 
 /* Logo */
@@ -31,18 +45,69 @@
     background-color: var(--bs-primary);
     color: white !important;
 }
-
 .btn-outline-secondary:hover {
     background-color: var(--bs-secondary);
     color: white !important;
 }
-
 .btn-outline-danger:hover {
     background-color: var(--bs-danger);
+    color: white !important;
+}
+.btn-outline-light:hover {
+    background-color: var(--bs-light) !important;
+    color: var(--bs-primary) !important;
+}
+.btn-primary .icon{
+    fill: white !important;
+}
+.btn-primary:hover {
+    background-color: var(--bs-success);
+}
+.simplebtn:hover {
+    background-color: var(--bs-primary) !important;
+}
+.btn-success:hover {
+    background-color: var(--bs-success-light) !important;
+}
+.btn-outline-warning{
+    --bs-btn-color: var(--bs-warning);
+    --bs-btn-border-color: var(--bs-warning);
+    --bs-btn-hover-color: var(--bs-warning);
+    --bs-btn-hover-border-color: var(--bs-warning);
+    --bs-btn-active-color: var(--bs-warning);
+    --bs-btn-active-border-color: var(--bs-warning);
+    --bs-btn-disabled-color: var(--bs-warning);
+    --bs-btn-disabled-border-color: var(--bs-warning);
+    box-shadow: inset 0 0 0 2px var(--bs-warning) !important;
+}
+.btn-outline-warning:hover {
+    background-color: var(--bs-warning);
     color: white !important;
 }
 
 .btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon {
     fill: white;
 }
+.btn-outline-light:hover .icon {
+    fill:  var(--bs-primary) !important;
+}
 
+
+/* Font */
+body {
+  font-family: 'Libre Franklin', sans-serif;
+}
+
+/* Interazioni */
+.form-select:hover{
+    cursor: pointer;
+}
+
+/* Correzioni grafiche */
+.alert-warning {
+    background-image: none !important;
+}
+
+.alert {
+    /* padding-left: 1rem !important; */
+}

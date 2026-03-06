@@ -6,7 +6,7 @@
         <div class="row py-3">
           <div class="col-12 text-center">
             <small class="text-white">
-              Planning Aule v1.0 — InforCoopEcipa Piemonte
+                  © {{ new Date().getFullYear() }} Inforcoop Ecipa Piemonte | Planning Aule v1.0
             </small>
           </div>
         </div>
