@@ -106,7 +106,7 @@
                         :class="s.pct >= 80 ? 'bg-danger' : s.pct >= 50 ? 'bg-warning' : 'bg-success'"
                         :style="{ width: s.pct + '%' }"></div>
                     </div>
-                    <small class="fw-semibold" style="width:32px">{{ s.pct }}%</small>
+                    <small class="fw-semibold text-nowrap" style="min-width:40px">{{ s.pct }}%</small>
                   </div>
                 </td>
               </tr>
@@ -141,35 +141,57 @@ onMounted(async () => {
   loadingSedi.value = true
   try {
     const dataOggi = isoOggi()
-    const [sedi, aule, pren, utenti, conflitti] = await Promise.allSettled([
+
+    // Promise.allSettled: ogni risultato è { status, value } oppure { status, reason }
+    const [rSedi, rAule, rPren, rUtenti, rConflitti] = await Promise.allSettled([
       getSedi(),
       getAule(),
-      getPrenotazioni({ data_dal: dataOggi, data_al: dataOggi, stato: 'confermata' }),
+      getPrenotazioni({ data_dal: dataOggi, data_al: dataOggi }),
       getUtenti(),
-      getConflitti(),
+      getConflitti({ solo_attivi: true }),
     ])
 
-    const sediList   = sedi.value      || []
-    const auleList   = aule.value      || []
-    const prenList   = pren.value      || []
-    const utentiList = utenti.value    || []
-    const conflList  = conflitti.value || []
+    // Estrai .value solo se fulfilled, altrimenti array vuoto
+    function val(r) {
+      if (r.status !== 'fulfilled') return []
+      const v = r.value
+      if (Array.isArray(v)) return v
+      if (v?.items) return v.items
+      return []
+    }
+
+    const sediList   = val(rSedi)
+    const auleList   = val(rAule)
+    const prenList   = val(rPren)
+    const utentiList = val(rUtenti)
+    const conflList  = val(rConflitti)
+
+    // Slot di oggi (ogni prenotazione può avere più slot — filtra per data)
+    const slotOggi = []
+    for (const p of prenList) {
+      for (const s of (p.slots || [])) {
+        if (s.data === dataOggi && !s.annullato) slotOggi.push({ ...s, aula_id: p.aula_id })
+      }
+    }
 
     kpi.value = {
-      prenotazioniOggi: prenList.length,
-      auleOccupateOggi: new Set(prenList.map(p => p.aula_id || p.aula?.id)).size,
+      prenotazioniOggi: slotOggi.length,
+      auleOccupateOggi: new Set(slotOggi.map(s => s.aula_id)).size,
       conflittiAperti:  conflList.length,
       utentiAttivi:     utentiList.length,
     }
 
-    saturazioneSedi.value = sediList.map(s => {
-      const auleS    = auleList.filter(a => a.sede_id === s.id || a.sede?.id === s.id)
-      const occupate = new Set(
-        prenList
-          .filter(p => auleS.some(a => a.id === (p.aula_id || p.aula?.id)))
-          .map(p => p.aula_id || p.aula?.id)
-      ).size
-      return { id: s.id, nome: s.nome, totale: auleS.length, occupate, pct: percentuale(occupate, auleS.length) }
+    saturazioneSedi.value = sediList.map(sede => {
+      const auleS    = auleList.filter(a => a.sede_id === sede.id)
+      const aulaIds  = new Set(auleS.map(a => a.id))
+      const occupate = new Set(slotOggi.filter(s => aulaIds.has(s.aula_id)).map(s => s.aula_id)).size
+      return {
+        id: sede.id,
+        nome: sede.nome,
+        totale: auleS.length,
+        occupate,
+        pct: percentuale(occupate, auleS.length),
+      }
     })
   } catch (e) {
     console.warn('DashboardCoord:', e.message)

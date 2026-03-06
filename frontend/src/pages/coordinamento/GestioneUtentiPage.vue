@@ -31,7 +31,7 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light sticky-top">
               <tr>
-                <th>Utente</th><th>Username</th><th>Ruolo</th><th>Sede</th>
+                <th>Utente</th><th>Ruolo</th><th>Sede</th>
                 <th>Stato</th><th>Creato il</th><th class="text-end">Azioni</th>
               </tr>
             </thead>
@@ -48,7 +48,7 @@
                     </div>
                   </div>
                 </td>
-                <td><code class="small">{{ u.username }}</code></td>
+                <!-- <td><code class="small">{{ u.username }}</code></td> -->
                 <td>
                   <span class="badge" :class="u.ruolo === 'COORDINAMENTO' ? 'bg-warning text-dark' : 'bg-primary'">
                     {{ u.ruolo }}

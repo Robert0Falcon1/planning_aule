@@ -34,11 +34,9 @@
 .logo {
     max-width: 200px;
 }
-
 .filter-logo{
     filter: grayscale(1) contrast(10) invert(1);
 }
-
 
 /* Bottoni */
 .btn-outline-primary:hover {
@@ -84,14 +82,12 @@
     background-color: var(--bs-warning);
     color: white !important;
 }
-
 .btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon {
     fill: white;
 }
 .btn-outline-light:hover .icon {
     fill:  var(--bs-primary) !important;
 }
-
 
 /* Font */
 body {
@@ -113,7 +109,6 @@ body {
 .alert {
     /* padding-left: 1rem !important; */
 }
-
 .btn-no-border-x {
     box-shadow:
         inset 0 2px 0 0 #06c,
