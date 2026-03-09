@@ -12,7 +12,8 @@ from backend.core.dependencies import get_utente_corrente
 from backend.models.utente import Utente
 from backend.models.conflitto import ConflittoPrenotazione
 from backend.services.conflitti_service import ConflittoService
-from backend.models.enums import RuoloUtente
+from backend.models.enums import RuoloUtente, StatoRisoluzioneConflitto
+from sqlalchemy import or_
 
 router = APIRouter(prefix="/conflitti", tags=["Conflitti"])
 
@@ -27,37 +28,61 @@ def require_coordinamento(utente: Utente = Depends(get_utente_corrente)):
     return utente
 
 
+# In routers/conflitti.py sostituisci l'endpoint GET / con questa versione:
+
 @router.get("/", summary="Lista conflitti")
 def lista_conflitti(
     sede_id: Optional[int] = None,
     solo_attivi: bool = True,
     db: Session = Depends(get_db),
-    utente: Utente = Depends(require_coordinamento)
+    utente: Utente = Depends(get_utente_corrente)   # tutti gli autenticati
 ):
     """
     Lista conflitti tra prenotazioni.
-    Solo COORDINAMENTO può visualizzare i conflitti.
+    - COORDINAMENTO: vede tutti i conflitti (filtrabile per sede)
+    - OPERATIVO: vede solo i conflitti che coinvolgono le proprie prenotazioni
     """
+    from backend.models.prenotazione import Prenotazione
+    from backend.models.aula import Aula
+    from sqlalchemy import or_
+
     if solo_attivi:
-        conflitti = ConflittoService.get_active_conflicts(db, sede_id)
+        query = db.query(ConflittoPrenotazione).filter(
+            ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+        )
     else:
         query = db.query(ConflittoPrenotazione)
-        if sede_id:
-            from backend.models.prenotazione import Prenotazione
-            from backend.models.aula import Aula
-            query = (
-                query
-                .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
-                .join(Aula, Prenotazione.aula_id == Aula.id)
-                .filter(Aula.sede_id == sede_id)
+
+    # Filtro sede (solo COORDINAMENTO)
+    if sede_id and utente.ruolo == RuoloUtente.COORDINAMENTO:
+        query = (
+            query
+            .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
+            .join(Aula, Prenotazione.aula_id == Aula.id)
+            .filter(Aula.sede_id == sede_id)
+        )
+
+    # OPERATIVO: filtra solo i conflitti delle proprie prenotazioni
+    if utente.ruolo == RuoloUtente.OPERATIVO:
+        mie_pren_ids = db.query(Prenotazione.id).filter(
+            Prenotazione.richiedente_id == utente.id
+        ).subquery()
+        query = query.filter(
+            or_(
+                ConflittoPrenotazione.prenotazione_id_1.in_(mie_pren_ids),
+                ConflittoPrenotazione.prenotazione_id_2.in_(mie_pren_ids),
             )
-        conflitti = query.all()
-    
+        )
+
+    conflitti = query.all()
+
     return [
         {
             "id": c.id,
             "prenotazione_id_1": c.prenotazione_id_1,
             "prenotazione_id_2": c.prenotazione_id_2,
+            "slot_id_1": c.slot_id_1,
+            "slot_id_2": c.slot_id_2,
             "tipo_conflitto": c.tipo_conflitto.value,
             "stato_risoluzione": c.stato_risoluzione.value,
             "rilevato_il": c.rilevato_il,
@@ -66,6 +91,9 @@ def lista_conflitti(
         for c in conflitti
     ]
 
+# Aggiungi agli import in cima al file (se non già presenti):
+# from backend.models.enums import RuoloUtente, StatoRisoluzioneConflitto
+# from sqlalchemy import or_
 
 @router.get("/{conflitto_id}", summary="Dettaglio conflitto")
 def dettaglio_conflitto(

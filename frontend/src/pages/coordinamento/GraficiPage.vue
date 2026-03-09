@@ -79,7 +79,7 @@
       <!-- Grafico 2: Distribuzione per aula (accordion per sede) -->
       <div class="col-12 col-xl-4">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0 card-header bg-white border-0 ps-3">
+          <div class="card-header bg-white border-0">
             <h5 class="card-title mb-0">Distribuzione per aula</h5>
           </div>
           <div class="card-body p-0">
@@ -87,8 +87,8 @@
             <div v-else class="accordion accordion-flush" id="accordionSedi">
               <div v-for="(sede, si) in datiPerSede" :key="sede.nome" class="accordion-item border-0 border-bottom">
                 <h2 class="accordion-header">
-                  <button class="accordion-button py-2 px-3 small fw-semibold no-decoration"
-                    :class="{ collapsed: si !== 0 }"
+                  <button class="accordion-button py-2 px-3 small fw-semibold"
+                    :class="{ collapsed: !(accordionAperto === sede.nome || (si === 0 && accordionAperto === null)) }"
                     type="button"
                     @click="toggleAccordion(sede.nome)">
                     <!-- <span class="sede-dot me-2" :style="{ background: coloriSede[si % coloriSede.length] }"></span> -->
@@ -102,7 +102,7 @@
                     <div v-for="(aula, ai) in sede.aule" :key="aula.aulaId" class="mb-2">
                       <div class="d-flex justify-content-between mb-1">
                         <small class="fw-semibold text-truncate" style="max-width:150px">{{ aula.nome }}</small>
-                        <small class="text-nowrap ms-1">{{ aula.slot }} <span class="text-muted">slot ({{ aula.pct }}%)</span></small>
+                        <small class="text-nowrap ms-1">{{ aula.slot }}&nbsp;<span class="text-muted">slot&nbsp;({{ aula.pct }}%)</span></small>
                       </div>
                       <div class="progress" style="height:6px">
                         <div class="progress-bar"
@@ -163,28 +163,6 @@
               </div>
             </div>
             <div v-if="!datiAule.length" class="text-muted small text-center">Nessun dato</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Riepilogo testuale -->
-      <div class="col-12">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body">
-            <div class="row text-center g-3">
-              <div class="col-6 col-md-3">
-                <div class="fs-2 fw-bold text-primary">{{ totPrenotazioni }}</div>
-                <div class="small text-muted">Prenotazioni totali</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="fs-2 fw-bold text-success">{{ totConfermate }}</div>
-                <div class="small text-muted">Confermate</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="fs-2 fw-bold text-danger">{{ totConflitti }}</div>
-                <div class="small text-muted">Con conflitti</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -396,8 +374,4 @@ onMounted(async () => {
 }
 .bar-val  { font-size: .7rem; font-weight: 700; color: #333; margin-bottom: 2px; }
 .bar-fill { width: 100%; background: #0066cc; opacity: .85; border-radius: 3px 3px 0 0; transition: height .3s; }
-.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }
-/* .sede-dot { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; } */
-.accordion-button:not(.collapsed) { box-shadow: none; background: #f8f9fa; }
-.accordion-button:focus { box-shadow: none; }
-</style>
+.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }</style>

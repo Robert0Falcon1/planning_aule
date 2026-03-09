@@ -85,7 +85,7 @@
               <!-- Note -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
-                <textarea v-model="singola.note" class="form-control" rows="2" placeholder="Opzionale"></textarea>
+                <textarea v-model="singola.note" class="form-control" rows="2" placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
               </div>
             </div>
 
@@ -117,49 +117,59 @@
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
-                <select v-model="massiva.sede_id" class="form-select" @change="onSedeChangeMassiva">
+                <select v-model="massiva.sede_id" class="form-select" :class="{ 'is-invalid': errM.sede_id }" @change="onSedeChangeMassiva">
                   <option value="">— seleziona —</option>
                   <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
                 </select>
+                <div class="invalid-feedback">{{ errM.sede_id }}</div>
               </div>
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
-                <select v-model="massiva.aula_id" class="form-select" :disabled="!massiva.sede_id">
+                <select v-model="massiva.aula_id" class="form-select" :class="{ 'is-invalid': errM.aula_id }" :disabled="!massiva.sede_id">
                   <option value="">— seleziona sede prima —</option>
                   <option v-for="a in auleMassiva" :key="a.id" :value="a.id">{{ a.nome }}</option>
                 </select>
+                <div class="invalid-feedback">{{ errM.aula_id }}</div>
               </div>
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">ID Corso *</label>
-                <input v-model.number="massiva.corso_id" type="number" min="1" class="form-control" placeholder="ID numerico corso" />
+                <input v-model.number="massiva.corso_id" type="number" min="1" class="form-control"
+                  :class="{ 'is-invalid': errM.corso_id }" placeholder="ID numerico corso" />
+                <div class="invalid-feedback">{{ errM.corso_id }}</div>
               </div>
 
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Ora inizio *</label>
-                <select v-model="massiva.ora_inizio" class="form-select">
+                <select v-model="massiva.ora_inizio" class="form-select" :class="{ 'is-invalid': errM.ora_inizio }">
                   <option value="">—</option>
                   <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
                 </select>
+                <div class="invalid-feedback">{{ errM.ora_inizio }}</div>
               </div>
 
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Ora fine *</label>
-                <select v-model="massiva.ora_fine" class="form-select">
+                <select v-model="massiva.ora_fine" class="form-select" :class="{ 'is-invalid': errM.ora_fine }">
                   <option value="">—</option>
                   <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
                 </select>
+                <div class="invalid-feedback">{{ errM.ora_fine }}</div>
               </div>
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Data inizio *</label>
-                <input v-model="massiva.data_inizio" type="date" class="form-control" :min="oggiISO" />
+                <input v-model="massiva.data_inizio" type="date" class="form-control"
+                  :class="{ 'is-invalid': errM.data_inizio }" :min="oggiISO" />
+                <div class="invalid-feedback">{{ errM.data_inizio }}</div>
               </div>
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Data fine *</label>
-                <input v-model="massiva.data_fine" type="date" class="form-control" :min="massiva.data_inizio || oggiISO" />
+                <input v-model="massiva.data_fine" type="date" class="form-control"
+                  :class="{ 'is-invalid': errM.data_fine }" :min="massiva.data_inizio || oggiISO" />
+                <div class="invalid-feedback">{{ errM.data_fine }}</div>
               </div>
 
               <div class="col-md-6">
@@ -182,11 +192,12 @@
                     <label class="form-check-label" :for="`g${idx}`">{{ nome }}</label>
                   </div>
                 </div>
+                <div v-if="errM.giorni_settimana" class="text-danger small mt-1">{{ errM.giorni_settimana }}</div>
               </div>
 
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
-                <textarea v-model="massiva.note" class="form-control" rows="2" placeholder="Opzionale"></textarea>
+                <textarea v-model="massiva.note" class="form-control" rows="2" placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
               </div>
             </div>
 
@@ -194,11 +205,12 @@
               {{ esitoMassiva.msg }}
             </div>
 
-            <div class="mt-4">
+            <div class="mt-4 d-flex gap-2">
               <button type="submit" class="btn btn-primary" :disabled="loadingMassiva">
                 <span v-if="loadingMassiva" class="spinner-border spinner-border-sm me-1"></span>
                 Crea prenotazioni ricorrenti
               </button>
+              <button type="button" class="btn btn-outline-secondary" @click="resetMassiva">Pulisci</button>
             </div>
           </form>
         </div>
@@ -243,6 +255,10 @@ const singola = reactive({
 })
 const err = reactive({
   sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '', ora_fine: '',
+})
+const errM = reactive({
+  sede_id: '', aula_id: '', corso_id: '', ora_inizio: '', ora_fine: '',
+  data_inizio: '', data_fine: '', giorni_settimana: '',
 })
 const massiva = reactive({
   sede_id: '', aula_id: '', corso_id: null,
@@ -307,7 +323,25 @@ async function submitSingola() {
   }
 }
 
+function validaMassiva() {
+  errM.sede_id    = massiva.sede_id    ? '' : 'Obbligatorio'
+  errM.aula_id    = massiva.aula_id    ? '' : 'Obbligatorio'
+  errM.corso_id   = massiva.corso_id   ? '' : 'Obbligatorio'
+  errM.data_inizio = massiva.data_inizio ? '' : 'Obbligatorio'
+  errM.data_fine   = massiva.data_fine   ? '' : 'Obbligatorio'
+  errM.ora_inizio  = massiva.ora_inizio  ? '' : 'Obbligatorio'
+  errM.ora_fine    = massiva.ora_fine    ? '' : 'Obbligatorio'
+  if (!errM.ora_fine && massiva.ora_inizio >= massiva.ora_fine)
+    errM.ora_fine = "Deve essere dopo l'ora di inizio"
+  if (!errM.data_fine && massiva.data_inizio > massiva.data_fine)
+    errM.data_fine = 'Deve essere uguale o successiva alla data di inizio'
+  const needGiorni = massiva.tipo_ricorrenza === 'settimanale' || massiva.tipo_ricorrenza === 'bisettimanale'
+  errM.giorni_settimana = (needGiorni && !massiva.giorni_settimana.length) ? 'Seleziona almeno un giorno' : ''
+  return !Object.values(errM).some(Boolean)
+}
+
 async function submitMassiva() {
+  if (!validaMassiva()) return
   loadingMassiva.value = true; esitoMassiva.value = null
   try {
     const payload = {
@@ -325,7 +359,19 @@ async function submitMassiva() {
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
     massiva.giorni_settimana = []
   } catch (e) {
-    esitoMassiva.value = { tipo: 'err', msg: e.message || 'Errore durante la creazione massiva.' }
+    // Gestisce sia stringa semplice che array di errori Pydantic [{loc,msg,type}]
+    let msg = e.message || 'Errore durante la creazione massiva.'
+    try {
+      const parsed = JSON.parse(msg)
+      if (Array.isArray(parsed)) {
+        msg = parsed.map(x => x.msg || JSON.stringify(x)).join(' — ')
+      } else if (parsed?.detail) {
+        msg = Array.isArray(parsed.detail)
+          ? parsed.detail.map(x => x.msg || JSON.stringify(x)).join(' — ')
+          : parsed.detail
+      }
+    } catch (_) {}
+    esitoMassiva.value = { tipo: 'err', msg }
   } finally {
     loadingMassiva.value = false
   }
@@ -335,6 +381,24 @@ function resetSingola() {
   Object.assign(singola, { sede_id: '', aula_id: '', corso_id: null, data: '', ora_inizio: '08:00', ora_fine: '13:00', note: '' })
   Object.keys(err).forEach(k => (err[k] = ''))
   aule.value = []
+}
+
+function resetMassiva() {
+  Object.assign(massiva, {
+    sede_id: '',
+    aula_id: '',
+    corso_id: null,
+    data_inizio: '',
+    data_fine: '',
+    ora_inizio: '08:00',
+    ora_fine: '13:00',
+    tipo_ricorrenza: 'settimanale',
+    giorni_settimana: [],
+    note: ''
+  })
+  Object.keys(errM).forEach(k => (errM[k] = ''))
+  auleMassiva.value = []
+  esitoMassiva.value = null
 }
 
 onMounted(async () => {

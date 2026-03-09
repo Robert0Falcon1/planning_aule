@@ -8,6 +8,7 @@ from backend.models.enums import (StatoPrenotazione, TipoPrenotazione,
 
 
 class SlotOrarioSchema(BaseModel):
+    id:         Optional[int] = None
     data:       date
     ora_inizio: time
     ora_fine:   time

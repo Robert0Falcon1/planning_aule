@@ -84,6 +84,7 @@
                 <th>Orario</th>
                 <th>Aula</th>
                 <th>Corso ID</th>
+                <th>Note</th>
                 <th v-if="authStore.isCoordinamento">Prenotato da</th>
                 <th>Conflitti</th>
                 <th class="text-end">Azioni</th>
@@ -107,6 +108,11 @@
                 </td>
 
                 <td><code class="small">{{ slot.corsoId }}</code></td>
+
+                <td>
+                  <span v-if="slot.note" class="small text-muted fst-italic">{{ slot.note }}</span>
+                  <span v-else class="text-muted small">—</span>
+                </td>
 
                 <!-- Colonna richiedente (solo COORDINAMENTO) -->
                 <td v-if="authStore.isCoordinamento">
@@ -167,13 +173,14 @@
 
         <!-- Prenotazione massiva: offre scelta -->
         <div v-if="modalCancella.isMassiva" class="alert alert-info py-2 small mb-3">
+          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-info-circle'"></use></svg>
           Questo slot fa parte di una prenotazione ricorrente con
           <strong>{{ modalCancella.totaleSlot }} slot</strong> totali.
           Puoi eliminare solo questo slot oppure tutti.
         </div>
 
         <div class="d-flex gap-2 justify-content-end flex-wrap">
-          <button class="btn btn-outline-secondary" @click="modalCancella = null">Annulla</button>
+          <button class="btn btn-secondary" @click="modalCancella = null">Annulla</button>
           <button v-if="modalCancella.isMassiva"
             class="btn btn-outline-danger" @click="confermaCancellazione(false)" :disabled="!!cancellando">
             <span v-if="cancellando" class="spinner-border spinner-border-sm me-1"></span>
@@ -190,9 +197,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getMiePrenotazioni, cancellaPrenotazione, annullaSlot } from '@/api/prenotazioni'
+import { getMiePrenotazioni, cancellaPrenotazione, annullaSlot, getConflitti } from '@/api/prenotazioni'
 import { getUtenti } from '@/api/utenti'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
@@ -218,6 +225,7 @@ const pagina        = ref(1)
 const PER_PAGINA    = 20
 const cancellando   = ref(null)
 const modalCancella = ref(null)
+const conflittiAttivi = ref([])  // slot_id_1/slot_id_2 dei conflitti NON_RISOLTO
 
 const titoloPageina = computed(() =>
   authStore.isCoordinamento ? 'Prenotazioni' : 'Mie Prenotazioni'
@@ -230,6 +238,18 @@ const auleFiltrate = computed(() =>
 )
 function onSedeChange() { filtroAula.value = '' }
 
+// ── Set slot ID con conflitti attivi ─────────────────────────────────────────
+// Check preciso slot-level: usa solo slot_id_1/slot_id_2 dai conflitti NON_RISOLTO.
+// I conflitti senza slot_id (dati vecchi) vanno rigenerati con rigenera_conflitti.py.
+const slotIdConConflitti = computed(() => {
+  const s = new Set()
+  for (const cf of conflittiAttivi.value) {
+    if (cf.slot_id_1) s.add(cf.slot_id_1)
+    if (cf.slot_id_2) s.add(cf.slot_id_2)
+  }
+  return s
+})
+
 // ── Mappa utenti per lookup ───────────────────────────────────────────────────
 const mappaUtenti = computed(() =>
   Object.fromEntries(utenti.value.map(u => [u.id, u]))
@@ -240,7 +260,9 @@ function nomeUtente(id) {
 }
 
 // ── Espande ogni prenotazione in slot individuali ─────────────────────────────
+// haConflitti calcolato qui con slotIdConConflitti così KPI e tabella sono allineati
 const tuttiGliSlot = computed(() => {
+  const ids = slotIdConConflitti.value   // dipendenza reattiva da conflittiAttivi
   const list = []
   for (const p of prenotazioni.value) {
     // Filtra per utente se OPERATIVO
@@ -259,16 +281,16 @@ const tuttiGliSlot = computed(() => {
         aulaId:        p.aula_id,
         corsoId:       p.corso_id,
         richiedenteId: p.richiedente_id,
-        haConflitti:   p.richiesta?.ha_conflitti || false,
+        haConflitti:   ids.has(slot.id),  // check preciso per slot
         isMassiva,
         totaleSlot:    p.slots.length,
+        note:          p.note || '',
         data:          slot.data,
         oraInizio:     slot.ora_inizio?.slice(0, 5) || '—',
         oraFine:       slot.ora_fine?.slice(0, 5)   || '—',
       })
     }
   }
-  // Ordina per data desc
   return list.sort((a, b) => a.data > b.data ? -1 : a.data < b.data ? 1 : 0)
 })
 
@@ -306,7 +328,15 @@ const paginaCorrente = computed(() => {
 
 const totalePagine       = computed(() => Math.ceil(slotFiltrati.value.length / PER_PAGINA) || 1)
 const conteggioSlot      = computed(() => tuttiGliSlot.value.length)
-const conteggioConflitti = computed(() => tuttiGliSlot.value.filter(s => s.haConflitti).length)
+// Conta conflitti DISTINTI che coinvolgono le prenotazioni dell'utente corrente
+// (non gli slot, per evitare doppio conteggio: 1 conflitto = 2 slot marcati)
+const miePrenotazioneIds = computed(() => new Set(prenotazioni.value.map(p => p.id)))
+const conteggioConflitti = computed(() =>
+  conflittiAttivi.value.filter(cf =>
+    miePrenotazioneIds.value.has(cf.prenotazione_id_1) ||
+    miePrenotazioneIds.value.has(cf.prenotazione_id_2)
+  ).length
+)
 
 function resetFiltri() {
   filtroSede.value = ''; filtroAula.value = ''; filtroUtente.value = ''
@@ -347,23 +377,34 @@ async function confermaCancellazione(eliminaTutti = true) {
   }
 }
 
-onMounted(async () => {
-  await caricaAule()
+async function caricaTutto() {
   loading.value = true
   try {
-    const calls = [getSedi(), getAule(), getMiePrenotazioni()]
+    const calls = [getSedi(), getAule(), getMiePrenotazioni(), getConflitti({ solo_attivi: true })]
     if (authStore.isCoordinamento) calls.push(getUtenti())
-    const [dataSedi, dataAule, dataPren, dataUtenti] = await Promise.all(calls)
+    const results = await Promise.all(calls)
+    const [dataSedi, dataAule, dataPren, dataConflitti] = results
+    const dataUtenti = results[4]
     sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
     aule.value  = Array.isArray(dataAule)  ? dataAule  : []
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
+    conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
+
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
     console.warn('MiePrenotazioni:', e.message)
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  await caricaAule()
+  caricaTutto()
 })
+
+// Ricarica ogni volta che si torna sulla pagina (es. dopo aver risolto un conflitto)
+onActivated(caricaTutto)
 </script>
 
 <style scoped>

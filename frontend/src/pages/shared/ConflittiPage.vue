@@ -110,60 +110,38 @@
             <div class="d-flex flex-wrap gap-2 align-items-center">
               <small class="text-muted me-1">Risolvi:</small>
 
-              <!-- Annulla slot singolo (solo se massiva) -->
-              <template v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'">
-                <button class="btn btn-sm btn-outline-primary"
-                  @click="risolvi(c.id, 'annulla_slot_1')"
-                  :disabled="risolvendo === c.id"
-                  title="Annulla solo questo slot della prenotazione A (gli altri slot rimangono)">
-                  Annulla slot A
-                </button>
-              </template>
-              <template v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'">
-                <button class="btn btn-sm btn-outline-primary"
-                  @click="risolvi(c.id, 'annulla_slot_2')"
-                  :disabled="risolvendo === c.id"
-                  title="Annulla solo questo slot della prenotazione B (gli altri slot rimangono)">
-                  Annulla slot B
-                </button>
-              </template>
-
-              <div class="vr mx-1" v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva' || prenById(c.prenotazione_id_2)?.tipo === 'massiva'"></div>
-
-              <!-- Azioni su prenotazione intera -->
               <button class="btn btn-sm btn-outline-warning"
                 @click="risolvi(c.id, 'mantieni_1')"
                 :disabled="risolvendo === c.id"
-                title="Mantieni A, elimina intera prenotazione B">
-                Mantieni A, elimina B
+                title="Mantieni lo slot A, annulla lo slot B in conflitto">
+                Mantieni A, annulla slot B
               </button>
               <button class="btn btn-sm btn-outline-warning"
                 @click="risolvi(c.id, 'mantieni_2')"
                 :disabled="risolvendo === c.id"
-                title="Mantieni B, elimina intera prenotazione A">
-                Mantieni B, elimina A
+                title="Mantieni lo slot B, annulla lo slot A in conflitto">
+                Mantieni B, annulla slot A
               </button>
               <button class="btn btn-sm btn-outline-danger"
                 @click="risolvi(c.id, 'elimina_entrambe')"
-                :disabled="risolvendo === c.id">
-                Elimina entrambe
+                :disabled="risolvendo === c.id"
+                title="Annulla entrambi gli slot in conflitto">
+                Annulla entrambi gli slot
               </button>
-              <!-- <button class="btn btn-sm btn-outline-secondary"
+              <button class="btn btn-sm btn-outline-secondary"
                 @click="risolvi(c.id, 'manuale')"
                 :disabled="risolvendo === c.id">
                 Segna risolto
-              </button> -->
+              </button>
 
               <span v-if="risolvendo === c.id"
                 class="spinner-border spinner-border-sm align-self-center ms-2"></span>
             </div>
-
-            <!-- Legenda azioni slot (se almeno una è massiva) -->
-            <div v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva' || prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
-              class="mt-2">
+            <div class="mt-2">
               <small class="text-muted">
-                <svg class="icon icon-xs me-1 mb-1"><use :href="sprites + '#it-info-circle'"></use></svg>
-                "Annulla slot" rimuove solo lo slot in conflitto dalla prenotazione ricorrente, lasciando intatti gli altri.
+                <svg class="icon icon-xs me-1"><use :href="sprites + '#it-info-circle'"></use></svg>
+                Le azioni annullano solo lo slot in conflitto.
+                Per le prenotazioni ricorrenti, gli altri slot rimangono attivi.
               </small>
             </div>
           </div>

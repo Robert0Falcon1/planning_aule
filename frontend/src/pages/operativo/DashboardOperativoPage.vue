@@ -8,13 +8,13 @@
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.attive)"     label="Prenotazioni attive"  icon="it-calendar"     color="primary" />
+        <StatCard :value="String(kpi.totali)"     label="Slot totali"          icon="it-calendar"     color="primary" />
       </div>
       <div class="col-6 col-lg-3">
         <StatCard :value="String(kpi.oggi)"       label="Slot oggi"            icon="it-check-circle" color="success" />
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.conflitti)"  label="Con conflitti"        icon="it-error"        color="danger" />
+        <StatCard :value="String(kpi.conflitti)"  label="Conflitti"            icon="it-error"        color="danger" />
       </div>
       <div class="col-6 col-lg-3">
         <StatCard :value="String(kpi.prossimi7)"  label="Slot prossimi 7 gg"   icon="it-calendar"     color="info" />
@@ -32,18 +32,14 @@
                 <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
                 Nuova prenotazione
               </RouterLink>
-              <!-- <RouterLink :to="{ name: 'NuovaPrenotazione', query: { tipo: 'massiva' } }" class="btn btn-outline-primary">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-files'"></use></svg>
-                Prenotazione massiva
-              </RouterLink> -->
               <RouterLink :to="{ name: 'Calendario' }" class="btn btn-outline-secondary">
                 <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>
                 Calendario
               </RouterLink>
-              <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
+              <!-- <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
                 <svg class="icon icon-sm me-1"><use :href="sprites + '#it-error'"></use></svg>
                 Conflitti
-              </RouterLink>
+              </RouterLink> -->
             </div>
           </div>
         </div>
@@ -54,8 +50,8 @@
     <div class="row g-3">
       <div class="col-12 col-xl-8">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0 pb-0 d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Ultimi slot prenotati</h5>
+          <div class="card-header bg-white border-0 pb-0 d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Ultime prenotazioni</h5>
             <RouterLink :to="{ name: 'MiePrenotazioni' }" class="btn btn-sm btn-outline-primary">
               Vedi tutte
             </RouterLink>
@@ -79,8 +75,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="s in ultimi" :key="s.key"
-                    :class="{ 'table-danger': s.haConflitti }">
+                  <tr v-for="s in ultimi" :key="s.key" :class="{ 'table-danger': s.haConflitti }">
                     <td class="fw-semibold">{{ formatData(s.data) }}</td>
                     <td class="text-nowrap">{{ s.oraInizio }} – {{ s.oraFine }}</td>
                     <td>
@@ -141,14 +136,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import StatCard from '@/components/ui/StatCard.vue'
-import { getMiePrenotazioni } from '@/api/prenotazioni'
+import { getMiePrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { formatData, oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const auth    = useAuthStore()
 const loading = ref(false)
-const prenotazioni = ref([])
+const prenotazioni   = ref([])
+const conflittiAttivi = ref([])
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 
@@ -163,11 +159,30 @@ function meseBreve(isoDate) {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('it-IT', { month: 'short' }).toUpperCase()
 }
 
-// ── Espande le prenotazioni in slot, filtrando per utente corrente ─────────────
+// ── Set slot IDs con conflitti attivi (stesso approccio di MiePrenotazioni) ───
+const slotIdConConflitti = computed(() => {
+  const s = new Set()
+  for (const cf of conflittiAttivi.value) {
+    if (cf.slot_id_1) s.add(cf.slot_id_1)
+    if (cf.slot_id_2) s.add(cf.slot_id_2)
+  }
+  return s
+})
+
+// ── Conteggio conflitti distinti (non slot) ───────────────────────────────────
+const miePrenotazioneIds = computed(() => new Set(prenotazioni.value.map(p => p.id)))
+const conteggioConflitti = computed(() =>
+  conflittiAttivi.value.filter(cf =>
+    miePrenotazioneIds.value.has(cf.prenotazione_id_1) ||
+    miePrenotazioneIds.value.has(cf.prenotazione_id_2)
+  ).length
+)
+
+// ── Espande prenotazioni in slot con haConflitti slot-level ───────────────────
 const tuttiSlot = computed(() => {
+  const ids = slotIdConConflitti.value
   const list = []
   for (const p of prenotazioni.value) {
-    // OPERATIVO vede solo i propri
     if (!auth.isCoordinamento && auth.utente?.id && p.richiedente_id !== auth.utente.id) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
@@ -175,9 +190,10 @@ const tuttiSlot = computed(() => {
       list.push({
         key:         `${p.id}-${si}`,
         prenId:      p.id,
+        slotId:      slot.id,
         aulaId:      p.aula_id,
         corsoId:     p.corso_id,
-        haConflitti: p.richiesta?.ha_conflitti || false,
+        haConflitti: ids.has(slot.id),
         data:        slot.data,
         oraInizio:   slot.ora_inizio?.slice(0, 5) || '—',
         oraFine:     slot.ora_fine?.slice(0, 5)   || '—',
@@ -200,11 +216,11 @@ const prossimi = computed(() =>
     .slice(0, 10)
 )
 
-// KPI
+// KPI — allineati a MiePrenotazioni
 const kpi = computed(() => ({
-  attive:    tuttiSlot.value.filter(s => s.data >= oggiISO).length,
+  totali:    tuttiSlot.value.length,
   oggi:      tuttiSlot.value.filter(s => s.data === oggiISO).length,
-  conflitti: tuttiSlot.value.filter(s => s.haConflitti).length,
+  conflitti: conteggioConflitti.value,   // conflitti distinti, non slot
   prossimi7: prossimi.value.length,
 }))
 
@@ -218,6 +234,14 @@ onMounted(async () => {
     console.warn('DashboardOperativo:', e.message)
   } finally {
     loading.value = false
+  }
+
+  // Conflitti separati — non blocca il caricamento principale
+  try {
+    const data = await getConflitti({ solo_attivi: true })
+    conflittiAttivi.value = Array.isArray(data) ? data : (data?.items || [])
+  } catch (e) {
+    conflittiAttivi.value = []
   }
 })
 </script>

@@ -62,12 +62,7 @@ export async function modificaPrenotazione(id, payload) {
  * Elimina/cancella prenotazione.
  */
 export async function annullaSlot(prenotazioneId, slotId) {
-  const r = await apiFetch(`/prenotazioni/${prenotazioneId}/slots/${slotId}`, { method: 'DELETE' })
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}))
-    throw new Error(err.detail || `Errore ${r.status}`)
-  }
-  return r.json()
+  return apiDelete(`/prenotazioni/${prenotazioneId}/slots/${slotId}`)
 }
 
 export async function cancellaPrenotazione(id) {
