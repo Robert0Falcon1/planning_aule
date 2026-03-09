@@ -55,6 +55,9 @@
     background-color: var(--bs-light) !important;
     color: var(--bs-primary) !important;
 }
+.btn-outline-success:hover {
+    background-color: var(--bs-success) !important;
+}
 
 .btn-primary:hover {
     background-color: var(--bs-success);
@@ -80,8 +83,8 @@
     background-color: var(--bs-warning);
     color: white !important;
 }
-.btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon, .btn-primary .icon, .btn-outline-warning:hover .icon {
-    fill: white;
+.btn-outline-success:hover .icon, .btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon, .btn-primary .icon, .btn-outline-warning:hover .icon {
+    fill: white !important;
 }
 .btn-outline-light:hover .icon {
     fill:  var(--bs-primary) !important;

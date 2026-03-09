@@ -4,7 +4,7 @@
 // NOTA: il backend NON ha campo "attiva" nelle aule
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { apiGet, apiPost } from './client'
+import { apiGet, apiPost, apiPut } from './client'
 
 /** @param {{ sede_id? }} params */
 export async function getAule(params = {}) {
@@ -25,8 +25,7 @@ export async function creaAula(payload) {
   return apiPost('/aule/', payload)
 }
 
-// NOTA: il backend non espone PUT/PATCH per aule
+/** @param {number} id @param {{ nome?, capienza?, note? }} payload */
 export async function modificaAula(id, payload) {
-  console.warn('modificaAula: endpoint non disponibile nel backend')
-  throw new Error('Modifica aula non supportata dal backend')
+  return apiPut(`/aule/${id}`, payload)
 }

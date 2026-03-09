@@ -9,7 +9,7 @@
         <div class="btn-group btn-group-sm">
           <button class="btn simplebtn" :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
             @click="vista = '4giorni'">4 giorni</button>
-          <button class="btn simplebtn btn-no-border-x" :class="vista === 'settimana' ? 'btn-primary' : 'btn-outline-primary'"
+          <button class="btn simplebtn" :class="vista === 'settimana' ? 'btn-primary' : 'btn-no-border-x btn-outline-primary'"
             @click="vista = 'settimana'">
             <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>Settimana
           </button>
@@ -159,7 +159,11 @@
             <svg class="icon icon-sm me-1 text-secondary"><use :href="sprites + '#it-list'"></use></svg>
             Corso ID: <code>{{ popover.ev?.corsoId }}</code>
           </div>
-          <div class="mt-1 text-muted small">Prenotazione #{{ popover.ev?.prenId }}</div>
+          <div v-if="popover.ev?.note" class="mt-1 fst-italic text-muted small">
+            <svg class="icon icon-sm me-1"><use :href="sprites + '#it-comment'"></use></svg>
+            {{ popover.ev.note }}
+          </div>
+          <!-- <div class="mt-1 text-muted small">Prenotazione #{{ popover.ev?.prenId }}</div> -->
         </div>
       </div>
     </Teleport>
@@ -170,7 +174,7 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
-import { getCalendario } from '@/api/prenotazioni'
+import { getCalendario, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -188,8 +192,19 @@ const vista        = ref('settimana')
 const sedi         = ref([])
 const aule         = ref([])
 const prenotazioni = ref([])
+const conflittiAttivi = ref([])
 const dataRef      = ref(oggi())
 const nowTop       = ref(-1)
+
+// Set di slot_id con conflitti NON_RISOLTO — check preciso slot-level
+const slotIdConConflitti = computed(() => {
+  const s = new Set()
+  for (const cf of conflittiAttivi.value) {
+    if (cf.slot_id_1) s.add(cf.slot_id_1)
+    if (cf.slot_id_2) s.add(cf.slot_id_2)
+  }
+  return s
+})
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const nomiGiorni  = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']
@@ -303,6 +318,7 @@ function oraDec(hhmm) {
 // ── Lista eventi filtrati ─────────────────────────────────────────────────────
 const eventiFiltrati = computed(() => {
   const list = []
+  const ids = slotIdConConflitti.value
   for (const p of prenotazioni.value) {
     if (filtroAula.value && p.aula_id != filtroAula.value) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
@@ -311,7 +327,8 @@ const eventiFiltrati = computed(() => {
       const oraFine   = slot.ora_fine?.slice(0, 5)   || ''
       list.push({
         prenId: p.id, slotIdx: si, aulaId: p.aula_id, corsoId: p.corso_id,
-        stato: p.stato, haConflitti: p.richiesta?.ha_conflitti || false,
+        stato: p.stato, haConflitti: ids.has(slot.id),  // check preciso slot-level
+        note: p.note || '',
         data: slot.data, oraInizio, oraFine,
         _ini: oraDec(oraInizio), _fin: oraDec(oraFine),
       })
@@ -423,6 +440,13 @@ onMounted(async () => {
   sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
   aule.value  = Array.isArray(dataAule)  ? dataAule  : []
   caricaDati()
+  // Conflitti attivi — separato per non bloccare su 403 OPERATIVO
+  try {
+    const cf = await getConflitti({ solo_attivi: true })
+    conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
+  } catch (e) {
+    conflittiAttivi.value = []
+  }
 })
 </script>
 

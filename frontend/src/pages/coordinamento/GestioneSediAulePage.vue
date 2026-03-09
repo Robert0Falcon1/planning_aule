@@ -32,17 +32,17 @@
           </button>
         </div>
 
-        <div class="card border-0 shadow- px-2">
+        <div class="card border-0 shadow-sm">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 table-sm">
               <thead class="table-light">
                 <tr>
-                  <th class="ps-2">Nome aula</th><th>Capienza</th><th>Note</th><th>Stato</th><th class="text-end pe-2">Azioni</th>
+                  <th><span class="ms-2">Nome aula</span></th><th>Capienza</th><th>Note</th><th>Stato</th><th class="text-end"><span class="me-2">Azioni</span></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="aula in auleDiSede(sede.id)" :key="aula.id">
-                  <td class="fw-semibold">{{ aula.nome }}</td>
+                  <td class="fw-semibold"><span class="ms-2">{{ aula.nome }}</span></td>
                   <td><span class="badge bg-info-subtle text-info">{{ aula.capienza }} posti</span></td>
                   <td><small class="text-muted">{{ aula.note || '—' }}</small></td>
                   <td>
@@ -62,7 +62,7 @@
               </tbody>
             </table>
           </div>
-          <div class="card-footer bg-white text-end py-2 px-0 pt-3">
+          <div class="card-footer bg-white text-end pt-3 pb-2 pe-0">
             <button class="btn btn-sm btn-outline-primary" @click="apriModaleAula(null, sede)">
               <svg class="icon icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
               Aggiungi aula a {{ sede.nome }}
@@ -242,7 +242,9 @@ async function salvaAula() {
     if (aulaInEdit.value) {
       const updated = await modificaAula(aulaInEdit.value.id, payload)
       const idx = aule.value.findIndex(a => a.id === aulaInEdit.value.id)
-      if (idx !== -1) aule.value[idx] = { ...aule.value[idx], ...updated }
+      // Merge: dati originali → payload inviato → risposta server
+      // Garantisce che sede_id e altri campi non restituiti dal server non vadano persi
+      if (idx !== -1) aule.value[idx] = { ...aule.value[idx], ...payload, ...(updated || {}) }
     } else {
       const created = await creaAula(payload)
       aule.value.push(created)

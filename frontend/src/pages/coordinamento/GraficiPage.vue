@@ -91,7 +91,6 @@
                     :class="{ collapsed: !(accordionAperto === sede.nome || (si === 0 && accordionAperto === null)) }"
                     type="button"
                     @click="toggleAccordion(sede.nome)">
-                    <!-- <span class="sede-dot me-2" :style="{ background: coloriSede[si % coloriSede.length] }"></span> -->
                     {{ sede.nome }}
                     <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} slot</span>
                   </button>
@@ -174,18 +173,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
-import { getPrenotazioni } from '@/api/prenotazioni'
+import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
-const loading      = ref(false)
-const sedi         = ref([])
-const prenotazioni = ref([])
-const granularity  = ref('mese')
-const range        = ref('6')
-const filtroSede   = ref('')
-const topN         = ref(10)
+const loading         = ref(false)
+const sedi            = ref([])
+const prenotazioni    = ref([])
+const conflittiAttivi = ref([])
+const granularity     = ref('mese')
+const range           = ref('6')
+const filtroSede      = ref('')
+const topN            = ref(10)
 const accordionAperto = ref(null)   // null = primo aperto di default
 
 function toggleAccordion(nome) {
@@ -256,13 +256,11 @@ const datiSede = computed(() => {
 
 // Distribuzione per aula raggruppata per sede (accordion)
 const datiPerSede = computed(() => {
-  // Conta slot confermati per aula_id
   const map = {}
   for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
     const k = s.aula_id
     map[k] = (map[k] || 0) + 1
   }
-  // Raggruppa per sede
   const sediMap = {}
   for (const [aulaId, slot] of Object.entries(map)) {
     const id = Number(aulaId)
@@ -271,7 +269,6 @@ const datiPerSede = computed(() => {
     sediMap[nomeSede].aule.push({ aulaId: id, nome: nomeAula(id), slot })
     sediMap[nomeSede].totSlot += slot
   }
-  // Calcola % dentro ogni sede e ordina
   return Object.values(sediMap)
     .sort((a, b) => b.totSlot - a.totSlot)
     .map(sede => {
@@ -308,7 +305,8 @@ const datiAule = computed(() => {
 // KPI riepilogo
 const totPrenotazioni = computed(() => prenotazioni.value.length)
 const totConfermate   = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata').length)
-const totConflitti    = computed(() => prenotazioni.value.filter(p => p.stato === 'conflitto' || p.richiesta?.ha_conflitti).length)
+// FIX: conta conflitti NON_RISOLTO distinti da API (non il flag ha_conflitti inaffidabile)
+const totConflitti    = computed(() => conflittiAttivi.value.length)
 
 // ── Caricamento ───────────────────────────────────────────────────────────────
 
@@ -359,6 +357,13 @@ onMounted(async () => {
   const data = await getSedi()
   sedi.value = Array.isArray(data) ? data : []
   carica()
+  // FIX: conflitti distinti da API — separato per non bloccare su 403 OPERATIVO
+  try {
+    const cf = await getConflitti({ solo_attivi: true })
+    conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
+  } catch (e) {
+    conflittiAttivi.value = []
+  }
 })
 </script>
 
@@ -374,4 +379,5 @@ onMounted(async () => {
 }
 .bar-val  { font-size: .7rem; font-weight: 700; color: #333; margin-bottom: 2px; }
 .bar-fill { width: 100%; background: #0066cc; opacity: .85; border-radius: 3px 3px 0 0; transition: height .3s; }
-.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }</style>
+.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }
+</style>
