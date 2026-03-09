@@ -264,13 +264,20 @@ const datiPerSede = computed(() => {
   const sediMap = {}
   for (const [aulaId, slot] of Object.entries(map)) {
     const id = Number(aulaId)
-    const nomeSede = sedeDiAula(id) || 'Altra sede'
-    if (!sediMap[nomeSede]) sediMap[nomeSede] = { nome: nomeSede, aule: [], totSlot: 0 }
-    sediMap[nomeSede].aule.push({ aulaId: id, nome: nomeAula(id), slot })
-    sediMap[nomeSede].totSlot += slot
+    const nomeSede = sedeDiAula(id)
+    // sedeDiAula restituisce '—' quando sede_id manca: raggruppa come 'Sede non associata'
+    const nomeGruppo = (nomeSede && nomeSede !== '—') ? nomeSede : 'Sede non associata'
+    if (!sediMap[nomeGruppo]) sediMap[nomeGruppo] = { nome: nomeGruppo, aule: [], totSlot: 0 }
+    sediMap[nomeGruppo].aule.push({ aulaId: id, nome: nomeAula(id), slot })
+    sediMap[nomeGruppo].totSlot += slot
   }
   return Object.values(sediMap)
-    .sort((a, b) => b.totSlot - a.totSlot)
+    .sort((a, b) => {
+      // 'Sede non associata' sempre in fondo
+      if (a.nome === 'Sede non associata') return 1
+      if (b.nome === 'Sede non associata') return -1
+      return b.totSlot - a.totSlot
+    })
     .map(sede => {
       const maxSlot = Math.max(...sede.aule.map(a => a.slot), 1)
       sede.aule = sede.aule
