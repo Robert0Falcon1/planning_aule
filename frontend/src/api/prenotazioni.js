@@ -59,19 +59,21 @@ export async function modificaPrenotazione(id, payload) {
 }
 
 /**
- * Elimina/cancella prenotazione.
+ * Annulla uno slot specifico di una prenotazione.
  */
 export async function annullaSlot(prenotazioneId, slotId) {
   return apiDelete(`/prenotazioni/${prenotazioneId}/slots/${slotId}`)
 }
 
+/**
+ * Elimina/cancella l'intera prenotazione.
+ */
 export async function cancellaPrenotazione(id) {
   return apiDelete(`/prenotazioni/${id}`)
 }
 
 /**
  * Slot occupati per un'aula in un range di date.
- * Utile per calcolare disponibilità.
  */
 export async function getSlotLiberi(aulaId, dataDal, dataAl) {
   return apiGet(`/prenotazioni/slot-liberi/${aulaId}?data_dal=${dataDal}&data_al=${dataAl}`)
@@ -93,45 +95,29 @@ export async function esportaCsv(params = {}) {
   console.warn('esportaCsv: endpoint non disponibile nel backend')
 }
 
-// ─── Conflitti ───────────────────────────────────────────────────────────────
-// NOTA: i conflitti usano /conflitti/ (senza /api/v1/)
-
-const BASE_CONFLITTI = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')
-
-async function fetchConflitti(path, options = {}) {
-  const token = localStorage.getItem('ice_token')
-  const res = await fetch(`${BASE_CONFLITTI}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...options,
-  })
-  if (!res.ok) {
-    let msg = `Errore ${res.status}`
-    try { const e = await res.json(); msg = e.detail || msg } catch (_) {}
-    throw new Error(msg)
-  }
-  return res.json()
-}
+// ─── Conflitti ────────────────────────────────────────────────────────────────
+// FIX: rimosso fetchConflitti/BASE_CONFLITTI custom.
+// Ora usano il client standard (VITE_API_URL + /api/v1 già incluso nel client).
 
 export async function getConflitti(params = {}) {
   const qs = new URLSearchParams()
-  if (params.sede_id)    qs.set('sede_id', params.sede_id)
+  if (params.sede_id !== undefined)     qs.set('sede_id',     params.sede_id)
   if (params.solo_attivi !== undefined) qs.set('solo_attivi', params.solo_attivi)
   const query = qs.toString() ? `?${qs}` : ''
-  return fetchConflitti(`/conflitti/${query}`)
+  return apiGet(`/conflitti/${query}`)
 }
 
 export async function getConflitto(id) {
-  return fetchConflitti(`/conflitti/${id}`)
+  return apiGet(`/conflitti/${id}`)
 }
 
 export async function risolviConflitto(id, azione, note = '') {
-  return fetchConflitti(`/conflitti/${id}/risolvi?azione=${azione}&note=${encodeURIComponent(note)}`, { method: 'POST' })
+  const qs = new URLSearchParams({ azione })
+  if (note) qs.set('note', note)
+  return apiPost(`/conflitti/${id}/risolvi?${qs}`)
 }
 
 export async function getStatsConflitti(sedeId = null) {
   const query = sedeId ? `?sede_id=${sedeId}` : ''
-  return fetchConflitti(`/conflitti/stats/summary${query}`)
+  return apiGet(`/conflitti/stats/summary${query}`)
 }

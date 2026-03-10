@@ -57,11 +57,20 @@ class TipoAttrezzatura(str, enum.Enum):
     WEBCAM      = "webcam"
 
 
-class TipoConflitto(str, enum.Enum):
+class TipoConflitto(str, Enum):
     """Tipologie di conflitto rilevabili nel sistema."""
-    SOVRAPPOSIZIONE_SLOT          = "sovrapposizione_slot"
-    CAPIENZA_SUPERATA             = "capienza_superata"
-    ATTREZZATURA_NON_DISPONIBILE  = "attrezzatura_non_disponibile"
+    OVERLAP_ORARIO          = "OVERLAP_ORARIO"
+    DOPPIA_PRENOTAZIONE     = "DOPPIA_PRENOTAZIONE"
+    ALTRO                   = "ALTRO"
+
+
+class StatoRisoluzioneConflitto(str, Enum):
+    """Stato risoluzione conflitto"""
+    NON_RISOLTO                  = "NON_RISOLTO"
+    RISOLTO_MANTENUTA_1          = "RISOLTO_MANTENUTA_1"
+    RISOLTO_MANTENUTA_2          = "RISOLTO_MANTENUTA_2"
+    RISOLTO_ELIMINATE_ENTRAMBE   = "RISOLTO_ELIMINATE_ENTRAMBE"
+    RISOLTO_MANUALE              = "RISOLTO_MANUALE"
 
 
 # ── Corsi ─────────────────────────────────────────────────────────────────────
@@ -101,10 +110,10 @@ class OreAccertamento(str, enum.Enum):
 
 class TipoLezione(str, enum.Enum):
     """Tipologie di lezione registrabili su Sistema Piemonte."""
-    NORMALE                          = "normale"
-    RECUPERO_SOLO_DIDATTICO          = "recupero_solo_didattico"
+    NORMALE                           = "normale"
+    RECUPERO_SOLO_DIDATTICO           = "recupero_solo_didattico"
     RECUPERO_AMMINISTRATIVO_DIDATTICO = "recupero_amministrativo_e_didattico"
-    FAD                              = "fad"
+    FAD                               = "fad"
 
 
 # ── Docenti ───────────────────────────────────────────────────────────────────
@@ -128,7 +137,7 @@ class Sesso(str, enum.Enum):
 
 
 class Cittadinanza(str, enum.Enum):
-    COMUNITARIA      = "comunitaria"
+    COMUNITARIA       = "comunitaria"
     EXTRA_COMUNITARIA = "extra_comunitaria"
 
 
@@ -150,20 +159,20 @@ class LivelloIstruzione(str, enum.Enum):
 
 
 class CondizioneOccupazionale(str, enum.Enum):
-    DISOCCUPATO        = "disoccupato"
-    INOCCUPATO         = "inoccupato"
+    DISOCCUPATO         = "disoccupato"
+    INOCCUPATO          = "inoccupato"
     OCCUPATO_DIPENDENTE = "occupato_dipendente"
-    OCCUPATO_AUTONOMO  = "occupato_autonomo"
-    OCCUPATO_CIGO      = "occupato_cigo"
-    OCCUPATO_CIGS      = "occupato_cigs"
-    STUDENTE           = "studente"
+    OCCUPATO_AUTONOMO   = "occupato_autonomo"
+    OCCUPATO_CIGO       = "occupato_cigo"
+    OCCUPATO_CIGS       = "occupato_cigs"
+    STUDENTE            = "studente"
 
 
 class DisabilitaVulnerabilita(str, enum.Enum):
-    NESSUNA             = "nessuna"
-    DSA                 = "dsa"
-    DISABILITA          = "disabilita"
-    EES                 = "ees"
+    NESSUNA              = "nessuna"
+    DSA                  = "dsa"
+    DISABILITA           = "disabilita"
+    EES                  = "ees"
     SVANTAGGIO_CULTURALE = "svantaggio_culturale"
 
 
@@ -171,18 +180,3 @@ class SvantaggioAbitativo(str, enum.Enum):
     """1 = in condizione di svantaggio · 2 = nessuna condizione."""
     SVANTAGGIO = "1"
     NESSUNA    = "2"
-
-class TipoConflitto(str, Enum):
-    """Tipologie conflitto prenotazioni"""
-    OVERLAP_ORARIO = "OVERLAP_ORARIO"
-    DOPPIA_PRENOTAZIONE = "DOPPIA_PRENOTAZIONE"
-    ALTRO = "ALTRO"
-
-
-class StatoRisoluzioneConflitto(str, Enum):
-    """Stato risoluzione conflitto"""
-    NON_RISOLTO = "NON_RISOLTO"
-    RISOLTO_MANTENUTA_1 = "RISOLTO_MANTENUTA_1"
-    RISOLTO_MANTENUTA_2 = "RISOLTO_MANTENUTA_2"
-    RISOLTO_ELIMINATE_ENTRAMBE = "RISOLTO_ELIMINATE_ENTRAMBE"
-    RISOLTO_MANUALE = "RISOLTO_MANUALE"

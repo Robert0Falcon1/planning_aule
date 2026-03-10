@@ -226,6 +226,46 @@ def crea_massive(base_url, token, aule, corso_ids, n=15):
     return ok, err
 
 
+# ── Prenotazione garantita per smoke test Playwright ──────────────────────────
+
+def crea_prenotazione_smoke(base_url, token, aule, corso_ids):
+    """
+    Crea una prenotazione fissa con nota per coord@test.it.
+    Serve a garantire che MiePrenotazioniPage mostri la tabella (non il v-else)
+    durante i test Playwright, così la colonna Note è verificabile visivamente.
+    """
+    print("\n── Prenotazione smoke test ─────────────────────────────────")
+
+    # Usa la prima aula disponibile e il primo corso
+    aula     = aule[0]
+    corso_id = corso_ids[0]
+    # Domani lavorativo (salta weekend)
+    domani = date.today() + timedelta(days=1)
+    while domani.isoweekday() > 5:
+        domani += timedelta(days=1)
+
+    payload = {
+        "aula_id":  aula["id"],
+        "corso_id": corso_id,
+        "slot": {
+            "data":       domani.isoformat(),
+            "ora_inizio": "09:00",
+            "ora_fine":   "12:00",
+        },
+        "note": "Prenotazione smoke test — non eliminare",
+    }
+
+    r = post_json(base_url, "/api/v1/prenotazioni/singola", payload, token)
+    if r.status_code in (200, 201):
+        print(f"  ✓ Smoke prenotazione creata: Aula {aula['id']} | Corso {corso_id} | {domani} 09:00-12:00")
+    else:
+        try:
+            detail = r.json().get("detail", r.text)
+        except Exception:
+            detail = r.text
+        print(f"  ✗ Smoke prenotazione fallita: {r.status_code}: {str(detail)[:120]}")
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
@@ -269,6 +309,10 @@ def main():
 
     s_ok, s_err = crea_singole(args.url, token, aule, corso_ids, n=args.singole)
     m_ok, m_err = crea_massive(args.url, token, aule, corso_ids, n=args.massive)
+
+    # Prenotazione garantita per smoke test Playwright
+    # (assicura che MiePrenotazioni abbia almeno una riga → colonna Note visibile)
+    crea_prenotazione_smoke(args.url, token, aule, corso_ids)
 
     print("\n" + "=" * 60)
     print(f"  TOTALE: {s_ok + m_ok} create, {s_err + m_err} errori")

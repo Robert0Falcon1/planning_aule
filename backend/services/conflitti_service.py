@@ -278,15 +278,13 @@ class ConflittoService:
         else:
             raise ValueError(f"Azione non valida: {azione}")
 
-        db.commit()
-
-        # Ricalcola ha_conflitti su entrambe le prenotazioni
+        # FIX: rimosso db.commit() — il commit è responsabilità esclusiva del router/caller.
+        # Ricalcola ha_conflitti su entrambe le prenotazioni (solo flush, niente commit)
         ConflittoService._aggiorna_flag_conflitti(db, conflitto.prenotazione_id_1)
-        # prenotazione_2 potrebbe essere stata eliminata — verifica prima
         if db.query(Prenotazione).filter(
             Prenotazione.id == conflitto.prenotazione_id_2
         ).first():
             ConflittoService._aggiorna_flag_conflitti(db, conflitto.prenotazione_id_2)
-        db.commit()
+        db.flush()
 
         return conflitto

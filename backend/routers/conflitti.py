@@ -1,41 +1,28 @@
 """
 Router per la gestione dei conflitti tra prenotazioni.
-Solo COORDINAMENTO può accedere a questi endpoint.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import Optional
 
 from backend.database import get_db
-from backend.core.dependencies import get_utente_corrente
+from backend.core.dependencies import get_utente_corrente, require_coordinamento
 from backend.models.utente import Utente
 from backend.models.conflitto import ConflittoPrenotazione
 from backend.services.conflitti_service import ConflittoService
 from backend.models.enums import RuoloUtente, StatoRisoluzioneConflitto
-from sqlalchemy import or_
 
 router = APIRouter(prefix="/conflitti", tags=["Conflitti"])
 
-
-def require_coordinamento(utente: Utente = Depends(get_utente_corrente)):
-    """Verifica che l'utente sia COORDINAMENTO"""
-    if utente.ruolo != RuoloUtente.COORDINAMENTO:
-        raise HTTPException(
-            status_code=403,
-            detail="Accesso negato: richiesto ruolo COORDINAMENTO"
-        )
-    return utente
-
-
-# In routers/conflitti.py sostituisci l'endpoint GET / con questa versione:
 
 @router.get("/", summary="Lista conflitti")
 def lista_conflitti(
     sede_id: Optional[int] = None,
     solo_attivi: bool = True,
     db: Session = Depends(get_db),
-    utente: Utente = Depends(get_utente_corrente)   # tutti gli autenticati
+    utente: Utente = Depends(get_utente_corrente)
 ):
     """
     Lista conflitti tra prenotazioni.
@@ -44,7 +31,6 @@ def lista_conflitti(
     """
     from backend.models.prenotazione import Prenotazione
     from backend.models.aula import Aula
-    from sqlalchemy import or_
 
     if solo_attivi:
         query = db.query(ConflittoPrenotazione).filter(
@@ -91,9 +77,39 @@ def lista_conflitti(
         for c in conflitti
     ]
 
-# Aggiungi agli import in cima al file (se non già presenti):
-# from backend.models.enums import RuoloUtente, StatoRisoluzioneConflitto
-# from sqlalchemy import or_
+
+@router.get("/stats/summary", summary="Statistiche conflitti")
+def statistiche_conflitti(
+    sede_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    utente: Utente = Depends(require_coordinamento)
+):
+    """Statistiche riepilogative sui conflitti"""
+    query = db.query(ConflittoPrenotazione)
+
+    if sede_id:
+        from backend.models.prenotazione import Prenotazione
+        from backend.models.aula import Aula
+        query = (
+            query
+            .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
+            .join(Aula, Prenotazione.aula_id == Aula.id)
+            .filter(Aula.sede_id == sede_id)
+        )
+
+    totali = query.count()
+    attivi = query.filter(
+        ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+    ).count()
+    risolti = totali - attivi
+
+    return {
+        "totali": totali,
+        "attivi": attivi,
+        "risolti": risolti,
+        "percentuale_risolti": (risolti / totali * 100) if totali > 0 else 0
+    }
+
 
 @router.get("/{conflitto_id}", summary="Dettaglio conflitto")
 def dettaglio_conflitto(
@@ -105,10 +121,10 @@ def dettaglio_conflitto(
     conflitto = db.query(ConflittoPrenotazione).filter(
         ConflittoPrenotazione.id == conflitto_id
     ).first()
-    
+
     if not conflitto:
         raise HTTPException(404, "Conflitto non trovato")
-    
+
     return {
         "conflitto": {
             "id": conflitto.id,
@@ -141,19 +157,18 @@ def risolvi_conflitto(
 ):
     """
     Risolve un conflitto.
-    
+
     Azioni possibili:
-    - mantieni_1: mantiene prenotazione 1, elimina 2
-    - mantieni_2: mantiene prenotazione 2, elimina 1
-    - elimina_entrambe: elimina entrambe
-    - manuale: segna come risolto senza eliminazioni
+    - mantieni_1: mantiene slot_1, annulla slot_2
+    - mantieni_2: mantiene slot_2, annulla slot_1
+    - elimina_entrambe: annulla entrambi gli slot in conflitto
+    - manuale: segna come risolto senza modifiche
     """
     try:
         conflitto = ConflittoService.resolve_conflict(
             db, conflitto_id, utente.id, azione, note
         )
         db.commit()
-        
         return {
             "ok": True,
             "message": f"Conflitto risolto: {azione}",
@@ -164,39 +179,5 @@ def risolvi_conflitto(
             }
         }
     except ValueError as e:
+        db.rollback()
         raise HTTPException(400, str(e))
-
-
-@router.get("/stats/summary", summary="Statistiche conflitti")
-def statistiche_conflitti(
-    sede_id: Optional[int] = None,
-    db: Session = Depends(get_db),
-    utente: Utente = Depends(require_coordinamento)
-):
-    """Statistiche riepilogative sui conflitti"""
-    from backend.models.enums import StatoRisoluzioneConflitto
-    
-    query = db.query(ConflittoPrenotazione)
-    
-    if sede_id:
-        from backend.models.prenotazione import Prenotazione
-        from backend.models.aula import Aula
-        query = (
-            query
-            .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
-            .join(Aula, Prenotazione.aula_id == Aula.id)
-            .filter(Aula.sede_id == sede_id)
-        )
-    
-    totali = query.count()
-    attivi = query.filter(
-        ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
-    ).count()
-    risolti = totali - attivi
-    
-    return {
-        "totali": totali,
-        "attivi": attivi,
-        "risolti": risolti,
-        "percentuale_risolti": (risolti / totali * 100) if totali > 0 else 0
-    }

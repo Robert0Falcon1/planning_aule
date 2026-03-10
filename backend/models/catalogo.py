@@ -9,7 +9,7 @@ from backend.database import Base
 
 
 class Catalogo(Base):
-    __tablename__ = "Catalogo"
+    __tablename__ = "catalogo"
 
     id                              = Column(Integer, primary_key=True, autoincrement=True)
     stato                           = Column(SmallInteger, nullable=False, default=0)

@@ -3,7 +3,7 @@ Gestione della sicurezza: hashing password e generazione/verifica token JWT.
 Usa bcrypt direttamente (senza passlib) per compatibilità con bcrypt >= 4.0.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import bcrypt
 from jose import JWTError, jwt
@@ -34,6 +34,11 @@ def verifica_password(password_chiaro: str, password_hash: str) -> bool:
         return False
 
 
+def _ora_utc() -> datetime:
+    """Restituisce datetime UTC naive (senza tzinfo) compatibile con jose/JWT."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def crea_access_token(dati: dict, scadenza: Optional[timedelta] = None) -> str:
     """
     Genera un token JWT firmato con i dati forniti.
@@ -46,16 +51,10 @@ def crea_access_token(dati: dict, scadenza: Optional[timedelta] = None) -> str:
         Token JWT come stringa
     """
     payload = dati.copy()
+    ora = _ora_utc()
 
-    # Calcola la data di scadenza
-    if scadenza:
-        expire = datetime.utcnow() + scadenza
-    else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.access_token_expire_minutes
-        )
-
-    payload.update({"exp": expire, "iat": datetime.utcnow()})
+    expire = ora + (scadenza or timedelta(minutes=settings.access_token_expire_minutes))
+    payload.update({"exp": expire, "iat": ora})
 
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
@@ -68,11 +67,10 @@ def decodifica_token(token: str) -> Optional[dict]:
         Il payload del token se valido, None altrimenti
     """
     try:
-        payload = jwt.decode(
+        return jwt.decode(
             token,
             settings.secret_key,
             algorithms=[settings.algorithm]
         )
-        return payload
     except JWTError:
         return None

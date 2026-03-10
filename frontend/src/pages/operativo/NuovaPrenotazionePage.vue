@@ -7,13 +7,17 @@
     <ul class="nav nav-tabs mb-4">
       <li class="nav-item">
         <button class="nav-link" :class="{ active: tab === 'singola' }" @click="tab = 'singola'">
-          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>
+          <svg class="icon icon-sm me-1">
+            <use :href="sprites + '#it-calendar'"></use>
+          </svg>
           Prenotazione singola
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-link" :class="{ active: tab === 'massiva' }" @click="tab = 'massiva'">
-          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-files'"></use></svg>
+          <svg class="icon icon-sm me-1">
+            <use :href="sprites + '#it-files'"></use>
+          </svg>
           Prenotazione massiva (ricorrente)
         </button>
       </li>
@@ -29,7 +33,8 @@
               <!-- Sede -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
-                <select v-model="singola.sede_id" class="form-select" :class="{ 'is-invalid': err.sede_id }" @change="onSedeChange">
+                <select v-model="singola.sede_id" class="form-select" :class="{ 'is-invalid': err.sede_id }"
+                  @change="onSedeChange">
                   <option value="">— seleziona —</option>
                   <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
                 </select>
@@ -39,7 +44,8 @@
               <!-- Aula -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
-                <select v-model="singola.aula_id" class="form-select" :class="{ 'is-invalid': err.aula_id }" :disabled="!singola.sede_id || caricandoAule">
+                <select v-model="singola.aula_id" class="form-select" :class="{ 'is-invalid': err.aula_id }"
+                  :disabled="!singola.sede_id || caricandoAule">
                   <option value="">{{ caricandoAule ? 'Caricamento…' : '— seleziona sede prima —' }}</option>
                   <option v-for="a in aule" :key="a.id" :value="a.id">{{ a.nome }} (cap. {{ a.capienza }})</option>
                 </select>
@@ -53,12 +59,20 @@
                   :class="{ 'is-invalid': err.corso_id }" placeholder="Inserisci l'ID del corso" />
                 <div class="invalid-feedback">{{ err.corso_id }}</div>
                 <div class="form-text text-muted">Inserisci l'ID numerico del corso dalla piattaforma.</div>
+
+                <!-- <select v-model="form.corso_id">
+                  <option v-for="c in corsi" :key="c.id" :value="c.id">
+                    {{ c.codice }} — {{ c.titolo }}
+                  </option>
+                </select> -->
+
               </div>
 
               <!-- Data -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Data *</label>
-                <input v-model="singola.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }" :min="oggiISO" />
+                <input v-model="singola.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }"
+                  :min="oggiISO" />
                 <div class="invalid-feedback">{{ err.data }}</div>
               </div>
 
@@ -85,7 +99,8 @@
               <!-- Note -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
-                <textarea v-model="singola.note" class="form-control" rows="2" placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
+                <textarea v-model="singola.note" class="form-control" rows="2"
+                  placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
               </div>
             </div>
 
@@ -117,7 +132,8 @@
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
-                <select v-model="massiva.sede_id" class="form-select" :class="{ 'is-invalid': errM.sede_id }" @change="onSedeChangeMassiva">
+                <select v-model="massiva.sede_id" class="form-select" :class="{ 'is-invalid': errM.sede_id }"
+                  @change="onSedeChangeMassiva">
                   <option value="">— seleziona —</option>
                   <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
                 </select>
@@ -126,7 +142,8 @@
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
-                <select v-model="massiva.aula_id" class="form-select" :class="{ 'is-invalid': errM.aula_id }" :disabled="!massiva.sede_id">
+                <select v-model="massiva.aula_id" class="form-select" :class="{ 'is-invalid': errM.aula_id }"
+                  :disabled="!massiva.sede_id">
                   <option value="">— seleziona sede prima —</option>
                   <option v-for="a in auleMassiva" :key="a.id" :value="a.id">{{ a.nome }}</option>
                 </select>
@@ -183,7 +200,8 @@
               </div>
 
               <!-- Giorni settimana (solo se settimanale/bisettimanale) -->
-              <div v-if="massiva.tipo_ricorrenza === 'settimanale' || massiva.tipo_ricorrenza === 'bisettimanale'" class="col-12">
+              <div v-if="massiva.tipo_ricorrenza === 'settimanale' || massiva.tipo_ricorrenza === 'bisettimanale'"
+                class="col-12">
                 <label class="form-label fw-semibold">Giorni della settimana *</label>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                   <div v-for="(nome, idx) in nomiGiorni" :key="idx" class="form-check form-check-inline my-0">
@@ -197,11 +215,13 @@
 
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
-                <textarea v-model="massiva.note" class="form-control" rows="2" placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
+                <textarea v-model="massiva.note" class="form-control" rows="2"
+                  placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
               </div>
             </div>
 
-            <div v-if="esitoMassiva" class="alert mt-3" :class="esitoMassiva.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
+            <div v-if="esitoMassiva" class="alert mt-3"
+              :class="esitoMassiva.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
               {{ esitoMassiva.msg }}
             </div>
 
@@ -227,19 +247,20 @@ import { getAuleBySede } from '@/api/aule'
 import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+// import { getCorsi } from '@/api/corsi'
 
-const route  = useRoute()
-const tab    = ref(route.query.tipo === 'massiva' ? 'massiva' : 'singola')
+const route = useRoute()
+const tab = ref(route.query.tipo === 'massiva' ? 'massiva' : 'singola')
 const oggiISO = oggi()
 
-const loading        = ref(false)
+const loading = ref(false)
 const loadingMassiva = ref(false)
-const caricandoAule  = ref(false)
-const sedi           = ref([])
-const aule           = ref([])
-const auleMassiva    = ref([])
-const esito          = ref(null)
-const esitoMassiva   = ref(null)
+const caricandoAule = ref(false)
+const sedi = ref([])
+const aule = ref([])
+const auleMassiva = ref([])
+const esito = ref(null)
+const esitoMassiva = ref(null)
 
 const nomiGiorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
 
@@ -289,12 +310,12 @@ async function onSedeChangeMassiva() {
 }
 
 function validaSingola() {
-  err.sede_id   = singola.sede_id     ? '' : 'Obbligatorio'
-  err.aula_id   = singola.aula_id     ? '' : 'Obbligatorio'
-  err.corso_id  = singola.corso_id    ? '' : 'Obbligatorio'
-  err.data      = singola.data        ? '' : 'Obbligatorio'
+  err.sede_id = singola.sede_id ? '' : 'Obbligatorio'
+  err.aula_id = singola.aula_id ? '' : 'Obbligatorio'
+  err.corso_id = singola.corso_id ? '' : 'Obbligatorio'
+  err.data = singola.data ? '' : 'Obbligatorio'
   err.ora_inizio = singola.ora_inizio ? '' : 'Obbligatorio'
-  err.ora_fine   = singola.ora_fine   ? '' : 'Obbligatorio'
+  err.ora_fine = singola.ora_fine ? '' : 'Obbligatorio'
   if (singola.ora_inizio && singola.ora_fine && singola.ora_inizio >= singola.ora_fine)
     err.ora_fine = 'Deve essere dopo l\'ora di inizio'
   return !Object.values(err).some(Boolean)
@@ -305,12 +326,12 @@ async function submitSingola() {
   loading.value = true; esito.value = null
   try {
     await creaPrenotazione({
-      aula_id:  singola.aula_id,
+      aula_id: singola.aula_id,
       corso_id: singola.corso_id,
       slot: {
-        data:       singola.data,
+        data: singola.data,
         ora_inizio: singola.ora_inizio,
-        ora_fine:   singola.ora_fine,
+        ora_fine: singola.ora_fine,
       },
       note: singola.note || undefined,
     })
@@ -324,13 +345,13 @@ async function submitSingola() {
 }
 
 function validaMassiva() {
-  errM.sede_id    = massiva.sede_id    ? '' : 'Obbligatorio'
-  errM.aula_id    = massiva.aula_id    ? '' : 'Obbligatorio'
-  errM.corso_id   = massiva.corso_id   ? '' : 'Obbligatorio'
+  errM.sede_id = massiva.sede_id ? '' : 'Obbligatorio'
+  errM.aula_id = massiva.aula_id ? '' : 'Obbligatorio'
+  errM.corso_id = massiva.corso_id ? '' : 'Obbligatorio'
   errM.data_inizio = massiva.data_inizio ? '' : 'Obbligatorio'
-  errM.data_fine   = massiva.data_fine   ? '' : 'Obbligatorio'
-  errM.ora_inizio  = massiva.ora_inizio  ? '' : 'Obbligatorio'
-  errM.ora_fine    = massiva.ora_fine    ? '' : 'Obbligatorio'
+  errM.data_fine = massiva.data_fine ? '' : 'Obbligatorio'
+  errM.ora_inizio = massiva.ora_inizio ? '' : 'Obbligatorio'
+  errM.ora_fine = massiva.ora_fine ? '' : 'Obbligatorio'
   if (!errM.ora_fine && massiva.ora_inizio >= massiva.ora_fine)
     errM.ora_fine = "Deve essere dopo l'ora di inizio"
   if (!errM.data_fine && massiva.data_inizio > massiva.data_fine)
@@ -345,14 +366,14 @@ async function submitMassiva() {
   loadingMassiva.value = true; esitoMassiva.value = null
   try {
     const payload = {
-      aula_id:         massiva.aula_id,
-      corso_id:        massiva.corso_id,
-      data_inizio:     massiva.data_inizio,
-      data_fine:       massiva.data_fine,
-      ora_inizio:      massiva.ora_inizio,
-      ora_fine:        massiva.ora_fine,
+      aula_id: massiva.aula_id,
+      corso_id: massiva.corso_id,
+      data_inizio: massiva.data_inizio,
+      data_fine: massiva.data_fine,
+      ora_inizio: massiva.ora_inizio,
+      ora_fine: massiva.ora_fine,
       tipo_ricorrenza: massiva.tipo_ricorrenza,
-      note:            massiva.note || undefined,
+      note: massiva.note || undefined,
     }
     if (massiva.giorni_settimana.length) payload.giorni_settimana = massiva.giorni_settimana
     await creaPrenotazioneMassiva(payload)
@@ -370,7 +391,7 @@ async function submitMassiva() {
           ? parsed.detail.map(x => x.msg || JSON.stringify(x)).join(' — ')
           : parsed.detail
       }
-    } catch (_) {}
+    } catch (_) { }
     esitoMassiva.value = { tipo: 'err', msg }
   } finally {
     loadingMassiva.value = false
@@ -404,16 +425,22 @@ function resetMassiva() {
 onMounted(async () => {
   const data = await getSedi()
   sedi.value = data || []
+  // corsi.value = await getCorsi({ attivo: true, sede_id: sedeSelezionata.value })
+
+
   // Pre-popola da query params (link da SediAulePage)
   if (route.query.sede_id) {
     singola.sede_id = Number(route.query.sede_id)
     await onSedeChange()
   }
   if (route.query.aula_id) singola.aula_id = Number(route.query.aula_id)
-  if (route.query.data)    singola.data    = route.query.data
+  if (route.query.data) singola.data = route.query.data
 })
 </script>
 
 <style scoped>
-.page-title { font-size: 1.4rem; font-weight: 700; }
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
 </style>

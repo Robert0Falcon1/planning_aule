@@ -1,7 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // API — Utenti
-// Endpoints: GET /utenti/, POST /utenti/, DELETE /utenti/{id}, PATCH /utenti/{id}/riattiva
-// NOTA: non esiste endpoint PATCH per modifica dati utente
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { apiGet, apiPost, apiDelete, apiPatch } from './client'
@@ -16,6 +14,15 @@ export async function getUtenti() {
  */
 export async function creaUtente(payload) {
   return apiPost('/utenti/', payload)
+}
+
+/**
+ * Modifica dati utente esistente. Tutti i campi sono opzionali.
+ * @param {number} id
+ * @param {{ nome?, cognome?, email?, ruolo?, sede_id?, password? }} payload
+ */
+export async function modificaUtente(id, payload) {
+  return apiPatch(`/utenti/${id}`, payload)
 }
 
 /**
@@ -34,9 +41,3 @@ export async function attivaUtente(id) {
 
 // Alias per compatibilità con codice esistente
 export const riattivaUtente = attivaUtente
-
-// NOTA: non esiste endpoint per modificare i dati utente
-export async function modificaUtente(id, payload) {
-  console.warn('modificaUtente: endpoint non disponibile nel backend')
-  throw new Error('Modifica utente non supportata dal backend')
-}

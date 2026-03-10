@@ -1,7 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // API — Aule
-// Schema: { id, nome, capienza, sede_id, note }
-// NOTA: il backend NON ha campo "attiva" nelle aule
+// Schema: { id, nome, capienza, sede_id, note, attiva }
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { apiGet, apiPost, apiPut } from './client'
@@ -25,7 +24,7 @@ export async function creaAula(payload) {
   return apiPost('/aule/', payload)
 }
 
-/** @param {number} id @param {{ nome?, capienza?, note? }} payload */
+/** @param {number} id @param {{ nome?, capienza?, note?, attiva? }} payload */
 export async function modificaAula(id, payload) {
   return apiPut(`/aule/${id}`, payload)
 }

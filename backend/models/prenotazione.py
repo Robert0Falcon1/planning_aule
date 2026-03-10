@@ -33,8 +33,6 @@ class Prenotazione(Base):
     data_creazione  = Column(DateTime, default=datetime.utcnow, nullable=False)
     data_aggiornamento = Column(DateTime, default=datetime.utcnow,
                                  onupdate=datetime.utcnow, nullable=False)
-    # NUOVO CAMPO per conflitti
-    ha_conflitti_attivi = Column(Boolean, default=False, nullable=False)
 
     # ── Colonne per prenotazioni massive ──────────────────────────────────────
     tipo_ricorrenza   = Column(SAEnum(TipoRicorrenza), nullable=True)
@@ -50,7 +48,7 @@ class Prenotazione(Base):
         "polymorphic_identity": None,
     }
 
-    # ── Relazioni ─────────────────────────────────────────────────────────────
+    # ── Relazioni base ────────────────────────────────────────────────────────
     aula        = relationship("Aula",   back_populates="prenotazioni")
     corso       = relationship("Corso",  back_populates="prenotazioni")
     richiedente = relationship("Utente", back_populates="prenotazioni_richieste",
@@ -62,34 +60,33 @@ class Prenotazione(Base):
     attrezzature_richieste = relationship("RichiestaAttrezzatura",
                                            back_populates="prenotazione",
                                            cascade="all, delete-orphan")
-                                           
 
-    def __repr__(self) -> str:
-        return f"<Prenotazione #{self.id} [{self.tipo}] - aula {self.aula_id}>"
-    
-
-    # ===== RELAZIONI CONFLITTI (Sistema 2 ruoli) =====
+    # ── Relazioni conflitti ───────────────────────────────────────────────────
+    # FIX: ha_conflitti_attivi dichiarato UNA SOLA VOLTA (era duplicato)
     ha_conflitti_attivi = Column(Boolean, default=False, nullable=False)
-    
+
     conflitti_come_pren1 = relationship(
         "ConflittoPrenotazione",
         foreign_keys="ConflittoPrenotazione.prenotazione_id_1",
         back_populates="prenotazione_1",
         cascade="all, delete-orphan"
     )
-    
+
+    # FIX: rimosso delete-orphan su pren2 — un conflitto referenzia ENTRAMBE le
+    # prenotazioni, quindi non può essere "orfano" di una sola.
+    # delete-orphan causava IntegrityError quando si eliminava prenotazione_2.
     conflitti_come_pren2 = relationship(
         "ConflittoPrenotazione",
         foreign_keys="ConflittoPrenotazione.prenotazione_id_2",
         back_populates="prenotazione_2",
-        cascade="all, delete-orphan"
+        cascade="all"
     )
-    
+
     @property
     def conflitti(self):
         """Tutti i conflitti di questa prenotazione"""
         return self.conflitti_come_pren1 + self.conflitti_come_pren2
-    
+
     @property
     def ha_conflitti_non_risolti(self) -> bool:
         """Verifica conflitti attivi non risolti"""
@@ -98,6 +95,9 @@ class Prenotazione(Base):
             c.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
             for c in self.conflitti
         )
+
+    def __repr__(self) -> str:
+        return f"<Prenotazione #{self.id} [{self.tipo}] - aula {self.aula_id}>"
 
 
 class PrenotazioneSingola(Prenotazione):
@@ -117,8 +117,7 @@ class PrenotazioneMassiva(Prenotazione):
 class RichiestaPrenotazione(Base):
     """
     Workflow di approvazione di una prenotazione.
-    Creata automaticamente quando un ResponsabileCorso fa una richiesta.
-    La SegreteriaSede poi approva o rifiuta.
+    Mantenuta per tracking ha_conflitti anche dopo rimozione workflow approvazione.
     """
     __tablename__ = "richieste_prenotazione"
 
@@ -141,5 +140,3 @@ class RichiestaPrenotazione(Base):
 
     def __repr__(self) -> str:
         return f"<Richiesta #{self.id} [{self.stato}]>"
-
-   

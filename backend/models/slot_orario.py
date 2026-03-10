@@ -4,7 +4,7 @@ Uno slot rappresenta un blocco di tempo in una specifica data.
 """
 
 from datetime import date, time
-from sqlalchemy import Column, Integer, Date, Time, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Date, Time, ForeignKey, Boolean, Index
 from sqlalchemy.orm import relationship
 from backend.database import Base
 
@@ -20,7 +20,12 @@ class SlotOrario(Base):
     data            = Column(Date, nullable=False, index=True)
     ora_inizio      = Column(Time, nullable=False)
     ora_fine        = Column(Time, nullable=False)
-    annullato       = Column(Boolean, default=False)  # Permette annullamento singolo slot
+    annullato       = Column(Boolean, default=False)
+
+    # ── Indice composto: query per conflitti e calendario (prenotazione_id + data)
+    __table_args__ = (
+        Index("ix_slot_orari_prenotazione_data", "prenotazione_id", "data"),
+    )
 
     # ── Relazioni ─────────────────────────────────────────────────────────────
     prenotazione = relationship("Prenotazione", back_populates="slots")
