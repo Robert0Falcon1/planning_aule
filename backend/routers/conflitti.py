@@ -34,7 +34,7 @@ def lista_conflitti(
 
     if solo_attivi:
         query = db.query(ConflittoPrenotazione).filter(
-            ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+            ConflittoPrenotazione.stato_risoluzione == None
         )
     else:
         query = db.query(ConflittoPrenotazione)
@@ -70,7 +70,7 @@ def lista_conflitti(
             "slot_id_1": c.slot_id_1,
             "slot_id_2": c.slot_id_2,
             "tipo_conflitto": c.tipo_conflitto.value,
-            "stato_risoluzione": c.stato_risoluzione.value,
+            "stato_risoluzione": c.stato_risoluzione.value if c.stato_risoluzione else None,
             "rilevato_il": c.rilevato_il,
             "risolto_il": c.risolto_il,
         }
@@ -99,7 +99,7 @@ def statistiche_conflitti(
 
     totali = query.count()
     attivi = query.filter(
-        ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+        ConflittoPrenotazione.stato_risoluzione == None
     ).count()
     risolti = totali - attivi
 
@@ -129,7 +129,7 @@ def dettaglio_conflitto(
         "conflitto": {
             "id": conflitto.id,
             "tipo_conflitto": conflitto.tipo_conflitto.value,
-            "stato_risoluzione": conflitto.stato_risoluzione.value,
+            "stato_risoluzione": conflitto.stato_risoluzione.value if conflitto.stato_risoluzione else None,
             "rilevato_il": conflitto.rilevato_il,
             "risolto_il": conflitto.risolto_il,
             "note_risoluzione": conflitto.note_risoluzione,

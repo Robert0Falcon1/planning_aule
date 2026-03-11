@@ -95,7 +95,7 @@ class ConflittoService:
                 existing = db.query(ConflittoPrenotazione).filter(
                     ConflittoPrenotazione.slot_id_1 == s1,
                     ConflittoPrenotazione.slot_id_2 == s2,
-                    ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO,
+                    ConflittoPrenotazione.stato_risoluzione == None,
                 ).first()
 
                 if not existing:
@@ -132,7 +132,7 @@ class ConflittoService:
         sede_id: Optional[int] = None
     ) -> List[ConflittoPrenotazione]:
         query = db.query(ConflittoPrenotazione).filter(
-            ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
+            ConflittoPrenotazione.stato_risoluzione == None
         )
         if sede_id:
             from backend.models import Aula
@@ -155,7 +155,7 @@ class ConflittoService:
                 ConflittoPrenotazione.prenotazione_id_1 == prenotazione_id,
                 ConflittoPrenotazione.prenotazione_id_2 == prenotazione_id,
             ),
-            ConflittoPrenotazione.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO,
+            ConflittoPrenotazione.stato_risoluzione == None,
         ).first() is not None
 
         richiesta = db.query(RichiestaPrenotazione).filter(
@@ -228,7 +228,7 @@ class ConflittoService:
         if conflitto.is_risolto:
             raise ValueError(f"Conflitto {conflitto_id} già risolto")
 
-        conflitto.risolto_da_id = risolto_da_id
+        conflitto.risolto_da = risolto_da_id
         conflitto.risolto_il    = datetime.now(timezone.utc).replace(tzinfo=None)
         conflitto.note_risoluzione = note
 
@@ -271,9 +271,6 @@ class ConflittoService:
                 ConflittoService._annulla_slot_e_cleanup(
                     db, pren2, conflitto.slot_id_2
                 )
-
-        elif azione == "manuale":
-            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANUALE
 
         else:
             raise ValueError(f"Azione non valida: {azione}")

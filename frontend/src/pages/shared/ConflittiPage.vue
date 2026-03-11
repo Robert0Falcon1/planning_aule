@@ -44,7 +44,7 @@
           <!-- Header -->
           <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
             <span class="badge bg-danger">Conflitto #{{ c.id }}</span>
-            <span v-if="c.stato_risoluzione !== 'NON_RISOLTO'" class="badge bg-success ms-1">Risolto</span>
+            <span v-if="c.stato_risoluzione !== null" class="badge bg-success ms-1">Risolto</span>
             <small class="ms-auto text-muted">{{ formatData(c.rilevato_il) }}</small>
           </div>
 
@@ -105,7 +105,7 @@
           </div>
 
           <!-- Azioni risoluzione -->
-          <div v-if="c.stato_risoluzione === 'NON_RISOLTO'" class="card-footer bg-white">
+          <div v-if="c.stato_risoluzione === null" class="card-footer bg-white">
             <div class="d-flex flex-wrap gap-2 align-items-center">
               <small class="text-muted me-1">Risolvi:</small>
 
@@ -127,12 +127,6 @@
                 title="Annulla entrambi gli slot in conflitto">
                 Annulla entrambi gli slot
               </button>
-              <button class="btn btn-sm btn-outline-secondary"
-                @click="risolvi(c.id, 'manuale')"
-                :disabled="risolvendo === c.id">
-                Segna risolto
-              </button>
-
               <span v-if="risolvendo === c.id"
                 class="spinner-border spinner-border-sm align-self-center ms-2"></span>
             </div>

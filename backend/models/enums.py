@@ -66,11 +66,9 @@ class TipoConflitto(str, Enum):
 
 class StatoRisoluzioneConflitto(str, Enum):
     """Stato risoluzione conflitto"""
-    NON_RISOLTO                  = "NON_RISOLTO"
     RISOLTO_MANTENUTA_1          = "RISOLTO_MANTENUTA_1"
     RISOLTO_MANTENUTA_2          = "RISOLTO_MANTENUTA_2"
     RISOLTO_ELIMINATE_ENTRAMBE   = "RISOLTO_ELIMINATE_ENTRAMBE"
-    RISOLTO_MANUALE              = "RISOLTO_MANUALE"
 
 
 # ── Corsi ─────────────────────────────────────────────────────────────────────

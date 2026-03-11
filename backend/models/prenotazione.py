@@ -89,12 +89,7 @@ class Prenotazione(Base):
 
     @property
     def ha_conflitti_non_risolti(self) -> bool:
-        """Verifica conflitti attivi non risolti"""
-        from backend.models.enums import StatoRisoluzioneConflitto
-        return any(
-            c.stato_risoluzione == StatoRisoluzioneConflitto.NON_RISOLTO
-            for c in self.conflitti
-        )
+        return any(c.stato_risoluzione is None for c in self.conflitti)
 
     def __repr__(self) -> str:
         return f"<Prenotazione #{self.id} [{self.tipo}] - aula {self.aula_id}>"

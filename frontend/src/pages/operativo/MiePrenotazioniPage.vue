@@ -272,7 +272,7 @@ const tuttiGliSlot = computed(() => {
     const isMassiva = p.tipo === 'massiva'
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
-      if (!slot?.data) continue
+      if (!slot?.data || slot.annullato) continue
       list.push({
         key:           `${p.id}-${si}`,
         prenId:        p.id,
@@ -351,25 +351,12 @@ async function confermaCancellazione(eliminaTutti = true) {
   cancellando.value = slot.prenId
   try {
     if (!eliminaTutti && slot.isMassiva) {
-      // Annulla solo questo slot via nuovo endpoint
-      const res = await annullaSlot(slot.prenId, slot.slotId)
-      if (res.prenotazione_eliminata) {
-        // Era l'ultimo slot — rimuovi l'intera prenotazione
-        prenotazioni.value = prenotazioni.value.filter(p => p.id !== slot.prenId)
-      } else {
-        // Marca lo slot come annullato nella lista locale
-        const pren = prenotazioni.value.find(p => p.id === slot.prenId)
-        if (pren) {
-          const s = pren.slots.find(s => s.id === slot.slotId)
-          if (s) s.annullato = true
-        }
-      }
+      await annullaSlot(slot.prenId, slot.slotId)
     } else {
-      // Elimina l'intera prenotazione
       await cancellaPrenotazione(slot.prenId)
-      prenotazioni.value = prenotazioni.value.filter(p => p.id !== slot.prenId)
     }
     modalCancella.value = null
+    await caricaTutto()  // ricarica prenotazioni + conflitti
   } catch (e) {
     alert(`Errore: ${e.message}`)
   } finally {

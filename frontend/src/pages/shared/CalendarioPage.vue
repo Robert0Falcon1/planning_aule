@@ -327,7 +327,7 @@ const eventiFiltrati = computed(() => {
   for (const p of prenotazioni.value) {
     if (filtroAula.value && p.aula_id != filtroAula.value) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
-      const slot = p.slots[si]; if (!slot?.data) continue
+      const slot = p.slots[si]; if (!slot?.data || slot.annullato) continue
       const oraInizio = slot.ora_inizio?.slice(0, 5) || ''
       const oraFine   = slot.ora_fine?.slice(0, 5)   || ''
       list.push({
@@ -427,11 +427,16 @@ async function caricaDati() {
       ini = dateToISO(giorniVista.value[0])
       fin = dateToISO(giorniVista.value[giorniVista.value.length - 1])
     }
-    const data = await getCalendario(ini, fin, filtroSede.value || null)
-    prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
+    const [data, cf] = await Promise.all([
+      getCalendario(ini, fin, filtroSede.value || null),
+      getConflitti({ solo_attivi: true })
+    ])
+    prenotazioni.value    = Array.isArray(data) ? data : (data?.items || [])
+    conflittiAttivi.value = Array.isArray(cf)   ? cf   : (cf?.items  || [])
   } catch (e) {
     console.warn('Calendario:', e.message)
-    prenotazioni.value = []
+    prenotazioni.value    = []
+    conflittiAttivi.value = []
   } finally {
     loading.value = false
   }
@@ -446,14 +451,6 @@ onMounted(async () => {
   sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
   aule.value  = Array.isArray(dataAule)  ? dataAule  : []
   caricaDati()
-  // Conflitti attivi — accessibile a tutti i ruoli.
-  // OPERATIVO riceve solo i conflitti delle proprie prenotazioni (filtro backend).
-  try {
-    const cf = await getConflitti({ solo_attivi: true })
-    conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
-  } catch (e) {
-    conflittiAttivi.value = []
-  }
 })
 </script>
 

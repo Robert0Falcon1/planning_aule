@@ -59,8 +59,8 @@ class ConflittoPrenotazione(Base):
     # Risoluzione (COORDINAMENTO)
     stato_risoluzione = Column(
         SQLEnum(StatoRisoluzioneConflitto),
-        nullable=False,
-        default=StatoRisoluzioneConflitto.NON_RISOLTO,
+        nullable=True,
+        default=None,
         index=True
     )
     
@@ -96,7 +96,7 @@ class ConflittoPrenotazione(Base):
     @property
     def is_risolto(self) -> bool:
         """Controlla se il conflitto è risolto"""
-        return self.stato_risoluzione != StatoRisoluzioneConflitto.NON_RISOLTO
+        return self.stato_risoluzione is not None
     
     def risolvi(
         self, 

@@ -12,7 +12,8 @@ class SlotOrarioSchema(BaseModel):
     data:       date
     ora_inizio: time
     ora_fine:   time
-
+    annullato:  bool = False
+    
     @field_validator("ora_fine")
     @classmethod
     def ora_fine_dopo_inizio(cls, v, info):

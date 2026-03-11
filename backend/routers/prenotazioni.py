@@ -4,6 +4,7 @@ Router per la gestione delle prenotazioni aule - Sistema 2 RUOLI
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from backend.database import get_db
 from backend.core.dependencies import get_utente_corrente, verifica_permesso
 from backend.models.utente import Utente
@@ -239,6 +240,31 @@ def annulla_slot(
         raise HTTPException(status_code=400, detail="Slot già annullato")
 
     slot.annullato = True
+    db.flush()
+
+    # Risolvi automaticamente i conflitti NON_RISOLTO che coinvolgevano questo slot.
+    # detect_and_record_conflicts non chiude i conflitti esistenti — va fatto esplicitamente.
+    from backend.models.conflitto import ConflittoPrenotazione
+    from backend.models.enums import StatoRisoluzioneConflitto
+
+    conflitti_slot = db.query(ConflittoPrenotazione).filter(
+        or_(
+            ConflittoPrenotazione.slot_id_1 == slot_id,
+            ConflittoPrenotazione.slot_id_2 == slot_id,
+        ),
+        ConflittoPrenotazione.stato_risoluzione == None  # attivi = NULL
+    ).all()
+
+    for cf in conflitti_slot:
+        # RISOLTO_MANTENUTA_1 = teniamo prenotazione 1 → slot_2 è quello annullato
+        # RISOLTO_MANTENUTA_2 = teniamo prenotazione 2 → slot_1 è quello annullato
+        cf.stato_risoluzione = (
+            StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
+            if cf.slot_id_1 == slot_id
+            else StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
+        )
+        cf.risolto_il = datetime.now(timezone.utc)
+
     db.flush()
 
     slot_attivi = [s for s in prenotazione.slots if not s.annullato]
