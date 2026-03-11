@@ -29,6 +29,9 @@
 .icon-warning {
     fill: var(--bs-warning) !important;
 }
+.form-select:disabled{
+color: hsl(210, 17%, 44%) !important;
+}
 
 /* Logo */
 .logo {
@@ -120,10 +123,3 @@ body {
 .align-items-flex-end{
     align-items: flex-end;
 }
-
-
-
-
-/* .it-header-slim-wrapper {
-    background-color: #e5e5b1;
-} */

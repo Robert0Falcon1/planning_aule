@@ -11,7 +11,12 @@
         </select>
 
         <!-- Filtro aula -->
-        <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto">
+        <select 
+          v-model="filtroAula" 
+          class="form-select form-select-sm" 
+          style="width:auto"
+          :disabled="!filtroSede"
+        >
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
         </select>

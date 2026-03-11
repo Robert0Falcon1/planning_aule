@@ -28,12 +28,19 @@
         </button>
         <button class="btn btn-outline-primary btn-sm" @click="vaiOggi">Oggi</button>
 
+        <!-- Filtro sede -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="onSedeChange">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
 
-        <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto">
+        <!-- Filtro aula -->
+        <select 
+          v-model="filtroAula" 
+          class="form-select form-select-sm" 
+          style="width:auto"
+          :disabled="!filtroSede"
+        >
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
         </select>

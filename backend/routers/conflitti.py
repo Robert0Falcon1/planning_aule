@@ -162,7 +162,6 @@ def risolvi_conflitto(
     - mantieni_1: mantiene slot_1, annulla slot_2
     - mantieni_2: mantiene slot_2, annulla slot_1
     - elimina_entrambe: annulla entrambi gli slot in conflitto
-    - manuale: segna come risolto senza modifiche
     """
     try:
         conflitto = ConflittoService.resolve_conflict(
