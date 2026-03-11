@@ -291,7 +291,7 @@ const tuttiGliSlot = computed(() => {
       })
     }
   }
-  return list.sort((a, b) => a.data > b.data ? -1 : a.data < b.data ? 1 : 0)
+  return list.sort((a, b) => a.data > b.data ? 1 : a.data < b.data ? -1 : 0)
 })
 
 // ── Slot filtrati ─────────────────────────────────────────────────────────────

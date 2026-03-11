@@ -327,7 +327,9 @@ const eventiFiltrati = computed(() => {
       const oraFine   = slot.ora_fine?.slice(0, 5)   || ''
       list.push({
         prenId: p.id, slotIdx: si, aulaId: p.aula_id, corsoId: p.corso_id,
-        stato: p.stato, haConflitti: ids.has(slot.id),  // check preciso slot-level
+        stato: p.stato,
+        // FIX: fallback su richiesta.ha_conflitti per OPERATIVO (getConflitti → 403)
+        haConflitti: ids.has(slot.id) || (p.richiesta?.ha_conflitti === true),
         note: p.note || '',
         data: slot.data, oraInizio, oraFine,
         _ini: oraDec(oraInizio), _fin: oraDec(oraFine),

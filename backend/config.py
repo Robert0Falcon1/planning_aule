@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = True
 
+    # CORS — IP LAN del frontend (es. http://10.0.0.178:5173)
+    # Lasciare vuoto in produzione e gestire tramite reverse proxy
+    frontend_origin: str = ""
+
     @property
     def database_url(self) -> str:
         return (

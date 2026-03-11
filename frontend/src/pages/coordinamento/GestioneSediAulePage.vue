@@ -84,12 +84,27 @@
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label fw-semibold">Nome sede *</label>
-              <input v-model="formSede.nome" type="text" class="form-control" :class="{ 'is-invalid': fse.nome }" />
+              <input v-model="formSede.nome" type="text" class="form-control"
+                :class="{ 'is-invalid': fse.nome }" />
               <div class="invalid-feedback">{{ fse.nome }}</div>
             </div>
-            <div class="col-12">
+            <div class="col-md-8">
               <label class="form-label fw-semibold">Indirizzo</label>
-              <input v-model="formSede.indirizzo" type="text" class="form-control" placeholder="Via, numero, città" />
+              <input v-model="formSede.indirizzo" type="text" class="form-control"
+                placeholder="Via e numero civico" />
+            </div>
+            <!-- FIX: aggiunto campo città (richiesto dal backend) -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Città *</label>
+              <input v-model="formSede.citta" type="text" class="form-control"
+                :class="{ 'is-invalid': fse.citta }" placeholder="es. Torino" />
+              <div class="invalid-feedback">{{ fse.citta }}</div>
+            </div>
+            <!-- FIX: aggiunto campo capienza massima (richiesto dal backend) -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Capienza massima</label>
+              <input v-model.number="formSede.capienza_massima" type="number" min="0"
+                class="form-control" placeholder="0" />
             </div>
           </div>
           <div v-if="errSede" class="alert alert-danger mt-3 py-2 small">{{ errSede }}</div>
@@ -115,17 +130,20 @@
           <div class="row g-3">
             <div class="col-md-8">
               <label class="form-label fw-semibold">Nome aula *</label>
-              <input v-model="formAula.nome" type="text" class="form-control" :class="{ 'is-invalid': fau.nome }" />
+              <input v-model="formAula.nome" type="text" class="form-control"
+                :class="{ 'is-invalid': fau.nome }" />
               <div class="invalid-feedback">{{ fau.nome }}</div>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-semibold">Capienza *</label>
-              <input v-model.number="formAula.capienza" type="number" min="1" max="500" class="form-control" :class="{ 'is-invalid': fau.capienza }" />
+              <input v-model.number="formAula.capienza" type="number" min="1" max="500"
+                class="form-control" :class="{ 'is-invalid': fau.capienza }" />
               <div class="invalid-feedback">{{ fau.capienza }}</div>
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Sede *</label>
-              <select v-model="formAula.sede_id" class="form-select" :class="{ 'is-invalid': fau.sede_id }">
+              <select v-model="formAula.sede_id" class="form-select"
+                :class="{ 'is-invalid': fau.sede_id }">
                 <option value="">— seleziona —</option>
                 <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
               </select>
@@ -133,11 +151,13 @@
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Note</label>
-              <textarea v-model="formAula.note" class="form-control" rows="2" placeholder="Dotazioni, accessibilità, ecc."></textarea>
+              <textarea v-model="formAula.note" class="form-control" rows="2"
+                placeholder="Dotazioni, accessibilità, ecc."></textarea>
             </div>
             <div v-if="aulaInEdit" class="col-12">
               <div class="form-check form-switch">
-                <input v-model="formAula.attiva" class="form-check-input" type="checkbox" role="switch" id="switchAttiva" />
+                <input v-model="formAula.attiva" class="form-check-input" type="checkbox"
+                  role="switch" id="switchAttiva" />
                 <label class="form-check-label" for="switchAttiva">Aula attiva</label>
               </div>
             </div>
@@ -170,8 +190,9 @@ const modaleSede   = ref(false)
 const sedeInEdit   = ref(null)
 const salvandoSede = ref(false)
 const errSede      = ref('')
-const formSede     = reactive({ nome: '', indirizzo: '' })
-const fse          = reactive({ nome: '' })
+// FIX: aggiunti citta e capienza_massima (mancanti → 422 dal backend)
+const formSede = reactive({ nome: '', indirizzo: '', citta: '', capienza_massima: 0 })
+const fse      = reactive({ nome: '', citta: '' })
 
 function auleDiSede(sedeId) {
   return aule.value.filter(a => a.sede_id === sedeId || a.sede?.id === sedeId)
@@ -180,17 +201,28 @@ function auleDiSede(sedeId) {
 function apriModaleSede(s = null) {
   sedeInEdit.value = s
   errSede.value    = ''
-  Object.assign(formSede, { nome: s?.nome || '', indirizzo: s?.indirizzo || '' })
-  fse.nome = ''
+  Object.assign(formSede, {
+    nome:             s?.nome             || '',
+    indirizzo:        s?.indirizzo        || '',
+    citta:            s?.citta            || '',
+    capienza_massima: s?.capienza_massima || 0,
+  })
+  fse.nome = ''; fse.citta = ''
   modaleSede.value = true
 }
 
 async function salvaSede() {
-  fse.nome = formSede.nome.trim() ? '' : 'Obbligatorio'
-  if (fse.nome) return
+  fse.nome  = formSede.nome.trim()  ? '' : 'Obbligatorio'
+  fse.citta = formSede.citta.trim() ? '' : 'Obbligatorio'
+  if (fse.nome || fse.citta) return
   salvandoSede.value = true; errSede.value = ''
   try {
-    const payload = { nome: formSede.nome, indirizzo: formSede.indirizzo || undefined }
+    const payload = {
+      nome:             formSede.nome,
+      indirizzo:        formSede.indirizzo || undefined,
+      citta:            formSede.citta,
+      capienza_massima: formSede.capienza_massima || 0,
+    }
     if (sedeInEdit.value) {
       const updated = await modificaSede(sedeInEdit.value.id, payload)
       const idx = sedi.value.findIndex(s => s.id === sedeInEdit.value.id)
@@ -236,14 +268,15 @@ async function salvaAula() {
   salvandoAula.value = true; errAula.value = ''
   try {
     const payload = {
-      nome: formAula.nome, capienza: formAula.capienza,
-      sede_id: formAula.sede_id, note: formAula.note || undefined, attiva: formAula.attiva,
+      nome:     formAula.nome,
+      capienza: formAula.capienza,
+      sede_id:  formAula.sede_id,
+      note:     formAula.note || undefined,
+      attiva:   formAula.attiva,
     }
     if (aulaInEdit.value) {
       const updated = await modificaAula(aulaInEdit.value.id, payload)
       const idx = aule.value.findIndex(a => a.id === aulaInEdit.value.id)
-      // Merge: dati originali → payload inviato → risposta server
-      // Garantisce che sede_id e altri campi non restituiti dal server non vadano persi
       if (idx !== -1) aule.value[idx] = { ...aule.value[idx], ...payload, ...(updated || {}) }
     } else {
       const created = await creaAula(payload)
@@ -261,8 +294,8 @@ onMounted(async () => {
   loading.value = true
   try {
     const [ds, da] = await Promise.all([getSedi(), getAule()])
-    sedi.value  = ds?.items || ds || []
-    aule.value  = da?.items || da || []
+    sedi.value = ds?.items || ds || []
+    aule.value = da?.items || da || []
   } catch (e) {
     console.warn('GestioneSedi:', e.message)
   } finally {
