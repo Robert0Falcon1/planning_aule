@@ -35,8 +35,7 @@
       <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
         <svg class="icon icon-warning flex-shrink-0"><use :href="sprites + '#it-error'"></use></svg>
         <span>
-          <strong>{{ conflitti.length }} {{ conflitti.length === 1 ? 'conflitto' : 'conflitti' }}</strong> rilevati.
-        </span>
+<strong>{{ conflitti.length }} {{ conflitti.length === 1 ? 'conflitto' : 'conflitti' }}</strong> {{ conflitti.length === 1 ? 'rilevato' : 'rilevati' }}.        </span>
       </div>
 
       <div class="d-flex flex-column gap-3">

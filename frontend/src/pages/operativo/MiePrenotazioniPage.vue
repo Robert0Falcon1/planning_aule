@@ -281,7 +281,7 @@ const tuttiGliSlot = computed(() => {
         aulaId:        p.aula_id,
         corsoId:       p.corso_id,
         richiedenteId: p.richiedente_id,
-        haConflitti:   ids.has(slot.id),  // check preciso per slot
+        haConflitti: ids.has(slot.id),
         isMassiva,
         totaleSlot:    p.slots.length,
         note:          p.note || '',
@@ -330,12 +330,12 @@ const totalePagine       = computed(() => Math.ceil(slotFiltrati.value.length / 
 const conteggioSlot      = computed(() => tuttiGliSlot.value.length)
 // Conta conflitti DISTINTI che coinvolgono le prenotazioni dell'utente corrente
 // (non gli slot, per evitare doppio conteggio: 1 conflitto = 2 slot marcati)
-const miePrenotazioneIds = computed(() => new Set(prenotazioni.value.map(p => p.id)))
+
+// Conta gli slot con conflitti — coerente con "Slot totali" e la tabella.
+// tuttiGliSlot è già filtrato per utente (OPERATIVO) o globale (COORDINAMENTO)
+// e ha haConflitti corretto (slot-level per COORD, richiesta.ha_conflitti per OPERATIVO).
 const conteggioConflitti = computed(() =>
-  conflittiAttivi.value.filter(cf =>
-    miePrenotazioneIds.value.has(cf.prenotazione_id_1) ||
-    miePrenotazioneIds.value.has(cf.prenotazione_id_2)
-  ).length
+  tuttiGliSlot.value.filter(s => s.haConflitti).length
 )
 
 function resetFiltri() {

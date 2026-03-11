@@ -52,7 +52,6 @@
     <div v-else-if="vista !== 'mese'" class="card border-0 shadow-sm">
       <div class="card-body p-0">
         <div class="cal-week">
-          <!-- Intestazione -->
           <div class="cal-week-header" :style="headerGridStyle">
             <div class="cal-gutter-head"></div>
             <div v-for="(g, i) in giorniVista" :key="i"
@@ -63,15 +62,12 @@
               </span>
             </div>
           </div>
-          <!-- Corpo -->
           <div class="cal-week-body" :style="bodyGridStyle">
-            <!-- Etichette ore -->
             <div class="cal-gutter">
               <div v-for="ora in oreGiornata" :key="ora" class="cal-gutter-slot">
                 <span class="cal-ora-label">{{ String(ora).padStart(2,'0') }}:00</span>
               </div>
             </div>
-            <!-- Colonne giorno -->
             <div v-for="(g, gi) in giorniVista" :key="gi"
               class="cal-day-col" :class="{ 'is-today': isToday(g) }"
               :style="{ height: altezzaTotale + 'px' }">
@@ -163,7 +159,6 @@
             <svg class="icon icon-sm me-1"><use :href="sprites + '#it-comment'"></use></svg>
             {{ popover.ev.note }}
           </div>
-          <!-- <div class="mt-1 text-muted small">Prenotazione #{{ popover.ev?.prenId }}</div> -->
         </div>
       </div>
     </Teleport>
@@ -179,24 +174,38 @@ import { useAule } from '@/composables/useAule'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const ORA_INIZIO   = 7
-const ORA_FINE     = 21
-const SLOT_H       = 56
-const GAP          = 2
+const ORA_INIZIO    = 7
+const ORA_FINE      = 21
+const SLOT_H        = 56
+const GAP           = 2
 const altezzaTotale = (ORA_FINE - ORA_INIZIO) * SLOT_H
 
-const loading      = ref(false)
-const filtroSede   = ref('')
-const filtroAula   = ref('')
-const vista        = ref('settimana')
-const sedi         = ref([])
-const aule         = ref([])
-const prenotazioni = ref([])
+const loading         = ref(false)
+const filtroSede      = ref('')
+const filtroAula      = ref('')
+const vista           = ref('settimana')
+const sedi            = ref([])
+const aule            = ref([])
+const prenotazioni    = ref([])
 const conflittiAttivi = ref([])
-const dataRef      = ref(oggi())
-const nowTop       = ref(-1)
+const dataRef         = ref(oggi())
+const nowTop          = ref(-1)
 
-// Set di slot_id con conflitti NON_RISOLTO — check preciso slot-level
+// ── FIX TIMEZONE ─────────────────────────────────────────────────────────────
+// toISOString() converte in UTC: in Italia (UTC+1/+2) mezzanotte locale
+// diventa 23:00 del giorno precedente → .slice(0,10) restituisce la data sbagliata.
+// dateToISO usa sempre il fuso locale del browser.
+function dateToISO(d) {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+// Set di slot_id con conflitti NON_RISOLTO.
+// /conflitti/ è ora accessibile a tutti i ruoli:
+// COORDINAMENTO → tutti i conflitti; OPERATIVO → solo i propri (filtro backend).
 const slotIdConConflitti = computed(() => {
   const s = new Set()
   for (const cf of conflittiAttivi.value) {
@@ -217,16 +226,11 @@ let popoverTimer = null
 function mostraPopover(e, ev) {
   cancellaChiudiPopover()
   const rect = e.currentTarget.getBoundingClientRect()
-  // Posiziona a destra dell'elemento, con fallback a sinistra se fuori schermo
   let x = rect.right + window.scrollX + 8
   if (x + 260 > window.innerWidth) x = rect.left + window.scrollX - 268
   const y = Math.min(rect.top + window.scrollY, window.innerHeight + window.scrollY - 180)
-  popover.ev      = ev
-  popover.x       = x
-  popover.y       = y
-  popover.visible = true
+  popover.ev = ev; popover.x = x; popover.y = y; popover.visible = true
 }
-
 function chiudiPopover() {
   popoverTimer = setTimeout(() => { popover.visible = false }, 120)
 }
@@ -251,13 +255,14 @@ function onSedeChange() { filtroAula.value = '' }
 const nGiorni = computed(() => vista.value === '4giorni' ? 4 : 7)
 
 const giorniVista = computed(() => {
-  const lun = new Date(inizioSettimana(dataRef.value) + 'T00:00:00')
+  const start = vista.value === 'settimana'
+    ? new Date(inizioSettimana(dataRef.value) + 'T00:00:00')
+    : new Date(dataRef.value + 'T00:00:00')
   return Array.from({ length: nGiorni.value }, (_, i) => {
-    const d = new Date(lun); d.setDate(lun.getDate() + i); return d
+    const d = new Date(start); d.setDate(start.getDate() + i); return d
   })
 })
 
-// Grid dinamico in base al numero di colonne
 const headerGridStyle = computed(() => ({
   gridTemplateColumns: `52px repeat(${nGiorni.value}, 1fr)`
 }))
@@ -278,7 +283,7 @@ const celleMese = computed(() => {
   }
   for (let g = 1; g <= fin.getDate(); g++) {
     const d = new Date(ini); d.setDate(g)
-    cells.push({ d, corrente: true, oggi: d.toISOString().slice(0,10) === oggiStr, weekend: d.getDay() === 0 || d.getDay() === 6 })
+    cells.push({ d, corrente: true, oggi: dateToISO(d) === oggiStr, weekend: d.getDay() === 0 || d.getDay() === 6 })
   }
   while (cells.length % 7 !== 0) {
     const d = new Date(fin); d.setDate(fin.getDate() + (cells.length - fin.getDate() - primoGiorno + 1))
@@ -295,13 +300,13 @@ const labelPeriodo = computed(() => {
   return `${ini.toLocaleDateString('it-IT', opt)} – ${fin.toLocaleDateString('it-IT', opt)} ${fin.getFullYear()}`
 })
 
-function isToday(d) { return d.toISOString().slice(0,10) === oggi() }
+function isToday(d)   { return dateToISO(d) === oggi() }
 function nomGiorno(d) { return d.toLocaleDateString('it-IT', { weekday: 'short' }).toUpperCase() }
 
 function sposta(n) {
   if (vista.value === 'mese') {
     const d = new Date(dataRef.value + 'T00:00:00'); d.setMonth(d.getMonth() + n)
-    dataRef.value = d.toISOString().slice(0,10)
+    dataRef.value = dateToISO(d)
   } else {
     dataRef.value = aggiungiGiorni(dataRef.value, n * nGiorni.value)
   }
@@ -328,8 +333,7 @@ const eventiFiltrati = computed(() => {
       list.push({
         prenId: p.id, slotIdx: si, aulaId: p.aula_id, corsoId: p.corso_id,
         stato: p.stato,
-        // FIX: fallback su richiesta.ha_conflitti per OPERATIVO (getConflitti → 403)
-        haConflitti: ids.has(slot.id) || (p.richiesta?.ha_conflitti === true),
+        haConflitti: ids.has(slot.id),  // slot-level preciso — funziona per tutti i ruoli
         note: p.note || '',
         data: slot.data, oraInizio, oraFine,
         _ini: oraDec(oraInizio), _fin: oraDec(oraFine),
@@ -377,8 +381,8 @@ const layoutPerData = computed(() => {
   return map
 })
 
-function eventiLayoutGiorno(g) { return layoutPerData.value[g.toISOString().slice(0,10)] || [] }
-function eventiGiornoMese(g)   { return eventiPerData.value[g.toISOString().slice(0,10)] || [] }
+function eventiLayoutGiorno(g) { return layoutPerData.value[dateToISO(g)] || [] }
+function eventiGiornoMese(g)   { return eventiPerData.value[dateToISO(g)] || [] }
 
 function evStyle(ev) {
   const ini    = Math.max(ev._ini, ORA_INIZIO)
@@ -417,11 +421,11 @@ async function caricaDati() {
   try {
     let ini, fin
     if (vista.value === 'mese') {
-      ini = inizioMese().toISOString().slice(0,10)
-      fin = fineMese().toISOString().slice(0,10)
+      ini = dateToISO(inizioMese())
+      fin = dateToISO(fineMese())
     } else {
-      ini = giorniVista.value[0].toISOString().slice(0,10)
-      fin = giorniVista.value[giorniVista.value.length - 1].toISOString().slice(0,10)
+      ini = dateToISO(giorniVista.value[0])
+      fin = dateToISO(giorniVista.value[giorniVista.value.length - 1])
     }
     const data = await getCalendario(ini, fin, filtroSede.value || null)
     prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
@@ -442,7 +446,8 @@ onMounted(async () => {
   sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
   aule.value  = Array.isArray(dataAule)  ? dataAule  : []
   caricaDati()
-  // Conflitti attivi — separato per non bloccare su 403 OPERATIVO
+  // Conflitti attivi — accessibile a tutti i ruoli.
+  // OPERATIVO riceve solo i conflitti delle proprie prenotazioni (filtro backend).
   try {
     const cf = await getConflitti({ solo_attivi: true })
     conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
@@ -455,7 +460,6 @@ onMounted(async () => {
 <style scoped>
 .page-title { font-size: 1.4rem; font-weight: 700; }
 
-/* ── GRIGLIA SETTIMANALE / 4 GIORNI ── */
 .cal-week { overflow-x: auto; min-width: 420px; display: flex; flex-direction: column; }
 
 .cal-week-header {
@@ -498,36 +502,20 @@ onMounted(async () => {
 .cal-ev--confirmed { background: #d4edda; border-left: 3px solid #198754; color: #0d4f2b; }
 .cal-ev--cancelled { background: #f8d7da; border-left: 3px solid #dc3545; color: #5c1a1e; }
 
-/* ── POPOVER ── */
 .cal-popover {
-  position: absolute;
-  width: 260px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.18);
-  z-index: 9999;
-  overflow: hidden;
-  pointer-events: auto;
-  animation: popoverIn .12s ease;
+  position: absolute; width: 260px; background: #fff; border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.18); z-index: 9999;
+  overflow: hidden; pointer-events: auto; animation: popoverIn .12s ease;
 }
 @keyframes popoverIn {
   from { opacity: 0; transform: translateY(4px) scale(.97); }
   to   { opacity: 1; transform: none; }
 }
-.cal-popover-header {
-  padding: 8px 12px;
-  font-size: .82rem;
-  display: flex; align-items: center;
-}
+.cal-popover-header { padding: 8px 12px; font-size: .82rem; display: flex; align-items: center; }
 .cal-popover-header.cal-ev--confirmed { background: #d4edda; color: #0d4f2b; }
 .cal-popover-header.cal-ev--cancelled { background: #f8d7da; color: #5c1a1e; }
-.cal-popover-body {
-  padding: 10px 12px;
-  font-size: .82rem;
-  line-height: 1.6;
-}
+.cal-popover-body { padding: 10px 12px; font-size: .82rem; line-height: 1.6; }
 
-/* ── MENSILE ── */
 .mes-grid   { overflow-x: auto; min-width: 600px; }
 .mes-header { display: grid; grid-template-columns: repeat(7, 1fr); }
 .mes-dow    { padding: .4rem; text-align: center; font-size: .7rem; font-weight: 700; color: #888; border-bottom: 2px solid #eee; }
