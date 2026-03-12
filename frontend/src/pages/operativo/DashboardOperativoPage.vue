@@ -153,7 +153,7 @@ const fra7    = aggiungiGiorni(oggiISO, 7)
 
 const oggiLabel = new Date().toLocaleDateString('it-IT', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-})
+}).replace(/\b\w/g, c => c.toUpperCase())
 
 function meseBreve(isoDate) {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('it-IT', { month: 'short' }).toUpperCase()
