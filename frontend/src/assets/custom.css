@@ -21,7 +21,7 @@
     background: linear-gradient(135deg, #0d7dee 0%, #a4ffbaa6 100%) !important;
 }
 .hover-link:hover{
-    color: var(--bs-yellow) !important;
+    filter: none !important;
 }
 .alert-warning {
     border-left: 8px solid var(--bs-warning) !important
@@ -31,6 +31,9 @@
 }
 .form-select:disabled{
 color: hsl(210, 17%, 44%) !important;
+}
+.badge-ruolo{
+    background-color: var(--bs-success-light) !important;
 }
 
 /* Logo */
@@ -115,6 +118,9 @@ body {
         inset 0 2px 0 0 #06c,
         inset 0 -2px 0 0 #06c !important;
 }
+.border-right-muted{
+    border-right-color: hsl(210,4%,78%) !important;
+}
 
 /* Allineamenti */
 .justify-content-space-between{
@@ -122,4 +128,17 @@ body {
 }
 .align-items-flex-end{
     align-items: flex-end;
+}
+.justify-content-flex-end{
+    justify-content: flex-end;
+}
+
+
+/* Previeni il padding-right automatico di Bootstrap sull'offcanvas */
+body:has(#mobileSidebar.show) {
+  padding-right: 0 !important;
+}
+
+body {
+    padding-right: 0px !important;
 }

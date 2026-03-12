@@ -18,7 +18,7 @@
           <svg class="icon icon-sm me-1">
             <use :href="sprites + '#it-files'"></use>
           </svg>
-          Prenotazione massiva (ricorrente)
+          Prenotazione massiva
         </button>
       </li>
     </ul>

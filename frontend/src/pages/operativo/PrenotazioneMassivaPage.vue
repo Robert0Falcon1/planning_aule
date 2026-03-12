@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="h4 fw-bold mb-4">🔄 Prenotazione Massiva (Ricorrente)</h2>
+    <h2 class="h4 fw-bold mb-4">🔄 Prenotazione massiva</h2>
 
     <div class="row">
       <div class="col-lg-7">

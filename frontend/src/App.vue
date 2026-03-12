@@ -16,9 +16,11 @@
 
     <div class="container-fluid p-0">
       <div class="row g-0">
-        <aside class="col-lg-2 col-md-3 d-none d-md-block">
+        <!-- ═══ DESKTOP: Sidebar classica ═══ -->
+        <aside class="col-lg-2 col-md-3 d-none d-md-block border-right-muted">
           <AppSidebar />
         </aside>
+
         <main class="col-lg-10 col-md-9 col-12 p-4">
           <AlertBanner />
           <router-view />
@@ -37,9 +39,9 @@
 
 <script setup>
 import { useAuthStore } from '@/stores/auth'
-import AppHeader   from '@/components/layout/AppHeader.vue'
-import AppSidebar  from '@/components/layout/AppSidebar.vue'
-import AppFooter   from '@/components/layout/AppFooter.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import AlertBanner from '@/components/ui/AlertBanner.vue'
 
 const authStore = useAuthStore()

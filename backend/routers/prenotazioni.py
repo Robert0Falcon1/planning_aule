@@ -58,7 +58,7 @@ def nuova_prenotazione_singola(
 
 
 @router.post("/massiva", response_model=PrenotazioneRisposta, status_code=201,
-             summary="Crea prenotazione massiva (ricorrente)")
+             summary="Crea Prenotazione massiva")
 def nuova_prenotazione_massiva(
     dati: PrenotazioneMassivaInput,
     db: Session = Depends(get_db),

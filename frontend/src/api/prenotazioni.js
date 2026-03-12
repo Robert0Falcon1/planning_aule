@@ -36,7 +36,7 @@ export async function creaPrenotazione(payload) {
 }
 
 /**
- * Crea prenotazione massiva (ricorrente).
+ * Crea Prenotazione massiva.
  * @param {{ aula_id, corso_id, data_inizio, data_fine, ora_inizio, ora_fine, tipo_ricorrenza, giorni_settimana?, note? }} payload
  */
 export async function creaPrenotazioneMassiva(payload) {

@@ -34,7 +34,7 @@ class PrenotazioneSingolaInput(BaseModel):
 
 
 class PrenotazioneMassivaInput(BaseModel):
-    """Input per creare una prenotazione massiva (ricorrente)."""
+    """Input per creare una Prenotazione massiva."""
     aula_id:         int
     corso_id:        int
     data_inizio:     date
