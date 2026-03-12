@@ -134,6 +134,9 @@ body {
 .shadow-sm {
     box-shadow: none !important;
 }
+.fw-600{
+    font-weight: 600;
+}
 
 /* Allineamenti */
 .justify-content-space-between{

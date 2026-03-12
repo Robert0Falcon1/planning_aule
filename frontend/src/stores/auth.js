@@ -30,6 +30,9 @@ export const useAuthStore = defineStore('auth', () => {
     return full || utente.value.email || ''
   })
 
+  // Solo il nome
+  const nomeUtenteInformale = computed(() => utente.value?.nome || '')
+
   // ─── Actions ──────────────────────────────────────────────────────────────
   async function login(username, password) {
     loading.value = true
@@ -95,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     utente, token, loading, errore, inizializzato,
-    isAuthenticated, ruolo, nomeUtente, isCoordinamento, isOperativo,
+    isAuthenticated, ruolo, nomeUtente, nomeUtenteInformale, isCoordinamento, isOperativo,
     login, logout, refreshMe,
   }
 })

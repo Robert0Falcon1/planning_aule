@@ -1,8 +1,8 @@
 <template>
   <div class="page-operativo">
     <div class="page-header mb-4">
-      <h2 class="page-title">Ciao, {{ auth.nomeUtente }} 👋</h2>
-      <p class="text-muted mb-0">{{ oggiLabel }} — qui trovi un riepilogo rapido della tua attività.</p>
+      <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
+      <p class="text-muted mb-0">Riepilogo di oggi — <span class="fw-600 text-primary">{{oggiLabel }}</span>:</p>
     </div>
 
     <!-- KPI -->
@@ -51,7 +51,7 @@
       <div class="col-12 col-xl-8">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0 pb-0 d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0">Ultime prenotazioni</h5>
+            <h5 class="card-title mb-0">Prenotazioni passate</h5>
             <RouterLink :to="{ name: 'MiePrenotazioni' }" class="btn btn-sm btn-outline-primary">
               Vedi tutte
             </RouterLink>
