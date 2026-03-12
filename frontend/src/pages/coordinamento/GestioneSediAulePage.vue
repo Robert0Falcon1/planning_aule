@@ -155,7 +155,7 @@
                 placeholder="Dotazioni, accessibilità, ecc."></textarea>
             </div>
             <div v-if="aulaInEdit" class="col-12">
-              <div class="form-check form-switch">
+              <div class="form-check form-switch ps-0">
                 <input v-model="formAula.attiva" class="form-check-input" type="checkbox"
                   role="switch" id="switchAttiva" />
                 <label class="form-check-label" for="switchAttiva">Aula attiva</label>

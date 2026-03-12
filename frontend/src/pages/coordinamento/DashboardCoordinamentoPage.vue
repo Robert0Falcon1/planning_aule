@@ -178,7 +178,7 @@ onMounted(async () => {
       prenotazioniOggi: slotOggi.length,
       auleOccupateOggi: new Set(slotOggi.map(s => s.aula_id)).size,
       conflittiAperti:  conflList.length,
-      utentiAttivi:     utentiList.length,
+      utentiAttivi: utentiList.filter(u => u.attivo).length,
     }
 
     saturazioneSedi.value = sediList.map(sede => {

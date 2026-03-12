@@ -18,8 +18,6 @@
         <div class="sede-header d-flex align-items-center gap-2 mb-3">
           <div class="d-flex justify-content-space-between align-items-flex-end w-100">
             <div class="d-flex">
-
-
               <svg class="icon icon-primary">
                 <use :href="sprites + '#it-map-marker'"></use>
               </svg>
@@ -36,15 +34,20 @@
 
         <div class="row g-3">
           <div v-for="aula in auleDiSede(sede.id)" :key="aula.id" class="col-12 col-md-6 col-xl-4">
-            <div class="card border-0 shadow-sm h-100 aula-card">
+            <div class="card border-0 shadow-sm h-100 aula-card" :class="{ 'aula-inattiva': !aula.attiva }">
               <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="fw-bold mb-0">{{ aula.nome }}</h6>
+                  <h6 class="fw-bold mb-0">
+                    {{ aula.nome }}
+                    <span v-if="!aula.attiva" class="badge bg-secondary ms-1" style="font-size:.65rem">Inattiva</span>
+                  </h6>
                   <small class="text-muted">Capienza: {{ aula.capienza }} posti</small>
                 </div>
-                <span class="badge rounded-pill" :class="aulaLibera(aula.id) ? 'bg-success' : 'bg-warning text-dark'">
+                <span v-if="aula.attiva" class="badge rounded-pill"
+                  :class="aulaLibera(aula.id) ? 'bg-success' : 'bg-warning text-dark'">
                   {{ aulaLibera(aula.id) ? 'Libera' : 'Prenotata' }}
                 </span>
+                <span v-else class="badge rounded-pill bg-secondary">Non disponibile</span>
               </div>
 
               <div class="card-body pt-2 mx-2">
@@ -83,9 +86,9 @@
                 </div>
               </div>
 
-              <!-- Footer: pulsante sempre visibile -->
-              <div class="card-footer bg-white border-0 pt-0">
-                <RouterLink
+              <!-- Footer -->
+              <div class="card-footer bg-white border-0 pt-0 pb-5">
+                <RouterLink v-if="aula.attiva"
                   :to="{ name: 'NuovaPrenotazione', query: { aula_id: aula.id, sede_id: sede.id, data: dataConsulta } }"
                   class="btn btn-sm w-100" :class="aulaLibera(aula.id) ? 'btn-outline-primary' : 'btn-outline-warning'">
                   <svg class="icon icon-sm me-1">
@@ -93,6 +96,9 @@
                   </svg>
                   Prenota per {{ dataFormattata }}
                 </RouterLink>
+                <button v-else class="btn btn-sm w-100 btn-outline-secondary" disabled>
+                  Aula non disponibile
+                </button>
               </div>
             </div>
           </div>
@@ -121,7 +127,6 @@ const dataConsulta = ref(oggiISO)
 
 const oreGiornata = Array.from({ length: 11 }, (_, i) => i + 8) // 08–18
 
-// Data formattata DD/MM/YYYY per la visualizzazione
 const dataFormattata = computed(() => {
   if (!dataConsulta.value) return ''
   const [y, m, d] = dataConsulta.value.split('-')
@@ -142,11 +147,10 @@ const eventiPerAula = computed(() => {
     if (p.stato === 'annullata' || p.stato === 'rifiutata') continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
-      if (slot?.data !== dataConsulta.value) continue
+      if (slot?.data !== dataConsulta.value || slot.annullato) continue
       const aulaId = p.aula_id
       if (!map[aulaId]) map[aulaId] = []
       map[aulaId].push({
-
         prenId: p.id,
         slotIdx: si,
         corsoId: p.corso_id,
@@ -155,10 +159,8 @@ const eventiPerAula = computed(() => {
         oraH: parseInt(slot.ora_inizio?.slice(0, 2) || '0'),
         oraFineH: parseInt(slot.ora_fine?.slice(0, 2) || '0'),
       })
-      map[aulaId].sort((a, b) => a.oraH - b.oraH)
     }
   }
-  // Ordina ogni lista per ora di inizio
   for (const id of Object.keys(map)) {
     map[id].sort((a, b) => a.oraH - b.oraH)
   }
@@ -216,6 +218,11 @@ onMounted(async () => {
 
 .aula-card {
   border-radius: 12px;
+}
+
+.aula-inattiva {
+  opacity: 0.55;
+  filter: grayscale(40%);
 }
 
 .slot-grid {

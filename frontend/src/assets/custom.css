@@ -66,7 +66,7 @@ color: hsl(210, 17%, 44%) !important;
 }
 
 .btn-primary:hover {
-    background-color: var(--bs-success);
+    background-color: var(--bs-success-light);
 }
 .simplebtn:hover {
     background-color: var(--bs-primary) !important;
@@ -89,7 +89,10 @@ color: hsl(210, 17%, 44%) !important;
     background-color: var(--bs-warning);
     color: white !important;
 }
-.btn-outline-success:hover .icon, .btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon, .btn-primary .icon, .btn-outline-warning:hover .icon {
+.btn-light:hover {
+    background: var(--bs-success-light);
+}
+.btn-light:hover .icon, .btn-outline-success:hover .icon, .btn-outline-primary:hover, .btn-outline-secondary:hover .icon, .btn-outline-danger:hover .icon, .btn-primary .icon, .btn-outline-warning:hover .icon {
     fill: white !important;
 }
 .btn-outline-light:hover .icon {
@@ -104,6 +107,10 @@ body {
 /* Interazioni */
 .form-select:hover{
     cursor: pointer;
+}
+.hover-link:hover{
+    cursor: pointer;
+    font-weight: 600;
 }
 
 /* Correzioni grafiche */
@@ -120,6 +127,12 @@ body {
 }
 .border-right-muted{
     border-right-color: hsl(210,4%,78%) !important;
+}
+.card:after {
+    margin-top: 0px !important;
+}
+.shadow-sm {
+    box-shadow: none !important;
 }
 
 /* Allineamenti */

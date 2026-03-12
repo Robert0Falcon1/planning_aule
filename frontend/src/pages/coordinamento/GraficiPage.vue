@@ -172,6 +172,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
+import { getUtenti } from '@/api/utenti'
 import { useAule } from '@/composables/useAule'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
@@ -187,6 +188,7 @@ const range           = ref('6')
 const filtroSede      = ref('')
 const topN            = ref(10)
 const accordionAperto = ref(null)   // null = primo aperto di default
+const utenti = ref([])
 
 function toggleAccordion(nome) {
   accordionAperto.value = accordionAperto.value === nome ? '__chiudi__' : nome
@@ -338,19 +340,28 @@ async function carica() {
 
 function esportaCsv() {
   if (!prenotazioni.value.length) { alert('Nessun dato da esportare.'); return }
-  const righe = [['ID', 'Tipo', 'Aula ID', 'Corso&nbsp;ID', 'Stato', 'Ha conflitti', 'Data', 'Ora inizio', 'Ora fine', 'Creata il']]
+
+  const mappaUtenti = Object.fromEntries(utenti.value.map(u => [u.id, `${u.nome} ${u.cognome}`]))
+
+  const righe = [['Corso', 'Sede', 'Aula', 'Data', 'Ora inizio', 'Ora fine', 'Creata il', 'Creata da']]
   for (const p of prenotazioni.value) {
     for (const slot of (p.slots || [])) {
+      if (slot.annullato) continue
       righe.push([
-        p.id, p.tipo, p.aula_id, p.corso_id, p.stato,
-        p.richiesta?.ha_conflitti ? 'si' : 'no',
-        slot.data || '', slot.ora_inizio || '', slot.ora_fine || '',
+        p.corso_id || '',
+        sedeDiAula(p.aula_id) || '',
+        nomeAula(p.aula_id)   || '',
+        slot.data             || '',
+        slot.ora_inizio?.slice(0, 5) || '',
+        slot.ora_fine?.slice(0, 5)   || '',
         p.data_creazione?.slice(0, 10) || '',
+        mappaUtenti[p.richiedente_id] || `#${p.richiedente_id}`,
       ])
     }
   }
-  const csv  = righe.map(r => r.join(';')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+
+  const csv  = righe.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
@@ -368,6 +379,9 @@ onMounted(async () => {
   try {
     const cf = await getConflitti({ solo_attivi: true })
     conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
+    const [data, dataUtenti] = await Promise.all([getSedi(), getUtenti()])
+    sedi.value   = Array.isArray(data)       ? data       : []
+    utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
     conflittiAttivi.value = []
   }

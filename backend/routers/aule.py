@@ -20,6 +20,7 @@ class AulaSchema(BaseModel):
     capienza: int
     sede_id: int
     note: Optional[str] = None
+    attiva: bool = True
     class Config:
         from_attributes = True
 
@@ -45,7 +46,7 @@ def lista_aule(
     _: Utente = Depends(get_utente_corrente)
 ):
     """Restituisce le aule, opzionalmente filtrate per sede."""
-    query = db.query(Aula).filter(Aula.attiva == 1)
+    query = db.query(Aula)
     if sede_id:
         query = query.filter(Aula.sede_id == sede_id)
     return query.all()

@@ -29,12 +29,14 @@
             <!-- <span class="fw-bold text-white me-3">Planning Aule</span> -->
             <div class="d-flex align-items-center py-2">
               <div class="d-flex">
-                <span class="text-white d-flex justify-content-center align-items-center">
-                  <svg class="icon icon-sm icon-light me-1">
-                    <use :href="sprites + '#it-user'"></use>
-                  </svg>
-                  {{ authStore.nomeUtente }}
-                </span>
+                <router-link :to="homePath">
+                  <span class="text-white d-flex justify-content-center align-items-center hover-link">
+                    <svg class="icon icon-sm icon-light me-1">
+                      <use :href="sprites + '#it-user'"></use>
+                    </svg>
+                    {{ authStore.nomeUtente }}
+                  </span>
+                </router-link>
               </div>
               <div class="d-flex">
                 <span class="badge d-flex align-items-center justify-content-center my-2 ms-2 text-uppercase"
