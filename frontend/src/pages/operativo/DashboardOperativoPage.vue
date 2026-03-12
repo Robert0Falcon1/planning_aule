@@ -70,7 +70,7 @@
                     <th>Data</th>
                     <th>Orario</th>
                     <th>Aula</th>
-                    <th>Corso ID</th>
+                    <th>Corso&nbsp;ID</th>
                     <th>Conflitto</th>
                   </tr>
                 </thead>

@@ -338,7 +338,7 @@ async function carica() {
 
 function esportaCsv() {
   if (!prenotazioni.value.length) { alert('Nessun dato da esportare.'); return }
-  const righe = [['ID', 'Tipo', 'Aula ID', 'Corso ID', 'Stato', 'Ha conflitti', 'Data', 'Ora inizio', 'Ora fine', 'Creata il']]
+  const righe = [['ID', 'Tipo', 'Aula ID', 'Corso&nbsp;ID', 'Stato', 'Ha conflitti', 'Data', 'Ora inizio', 'Ora fine', 'Creata il']]
   for (const p of prenotazioni.value) {
     for (const slot of (p.slots || [])) {
       righe.push([

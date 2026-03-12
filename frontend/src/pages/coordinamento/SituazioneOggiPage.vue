@@ -3,12 +3,12 @@
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Situazione Oggi</h2>
       <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
-        <button class="btn btn-outline-secondary btn-sm" @click="spostaGiorno(-1)">
+        <button class="btn" @click="spostaGiorno(-1)">
           <svg class="icon icon-sm"><use :href="sprites + '#it-chevron-left'"></use></svg>
         </button>
         <input v-model="dataSelezionata" type="date" class="form-control form-control-sm"
           style="width:auto" @change="carica" />
-        <button class="btn btn-outline-secondary btn-sm" @click="spostaGiorno(1)">
+        <button class="btn" @click="spostaGiorno(1)">
           <svg class="icon icon-sm"><use :href="sprites + '#it-chevron-right'"></use></svg>
         </button>
         <button class="btn btn-sm btn-outline-primary" @click="dataSelezionata = oggiISO; carica()">Oggi</button>
@@ -64,7 +64,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Aula</th>
-                  <th>Corso ID</th>
+                  <th>Corso&nbsp;ID</th>
                   <th>Orario</th>
                   <th>Tipo</th>
                   <th>Stato</th>

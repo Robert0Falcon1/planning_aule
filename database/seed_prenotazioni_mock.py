@@ -104,7 +104,7 @@ def ottieni_corso_ids(base_url, token):
         pren = get_json(base_url, "/api/v1/prenotazioni/", token)
         ids  = list({p["corso_id"] for p in pren if p.get("corso_id")})
         if ids:
-            print(f"✓ Corso IDs estratti dalle prenotazioni esistenti: {ids}")
+            print(f"✓ Corso&nbsp;IDs estratti dalle prenotazioni esistenti: {ids}")
             return ids
     except Exception:
         pass
@@ -301,7 +301,7 @@ def main():
     # Corsi
     if args.corsi:
         corso_ids = [int(x.strip()) for x in args.corsi.split(",") if x.strip().isdigit()]
-        print(f"✓ Corso IDs da argomento: {corso_ids}")
+        print(f"✓ Corso&nbsp;IDs da argomento: {corso_ids}")
     else:
         corso_ids = ottieni_corso_ids(args.url, token)
 

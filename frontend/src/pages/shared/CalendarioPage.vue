@@ -160,7 +160,7 @@
           <div class="mb-1 text-muted small">{{ sedeDiAulaFn(popover.ev?.aulaId) }}</div>
           <div>
             <svg class="icon icon-sm me-1 text-secondary"><use :href="sprites + '#it-list'"></use></svg>
-            Corso ID: <code>{{ popover.ev?.corsoId }}</code>
+            Corso&nbsp;ID: <code>{{ popover.ev?.corsoId }}</code>
           </div>
           <div v-if="popover.ev?.note" class="mt-1 fst-italic text-muted small">
             <svg class="icon icon-sm me-1"><use :href="sprites + '#it-comment'"></use></svg>

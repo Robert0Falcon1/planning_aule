@@ -88,9 +88,9 @@
                 <th>Data</th>
                 <th>Orario</th>
                 <th>Aula</th>
-                <th>Corso ID</th>
+                <th>Corso&nbsp;ID</th>
                 <th>Note</th>
-                <th v-if="authStore.isCoordinamento">Prenotato da</th>
+                <th v-if="authStore.isCoordinamento">Prenotato&nbsp;da</th>
                 <th>Conflitti</th>
                 <th class="text-end">Azioni</th>
               </tr>

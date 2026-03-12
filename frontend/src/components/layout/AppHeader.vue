@@ -37,7 +37,8 @@
                 </span>
               </div>
               <div class="d-flex">
-                <span class="badge badge-ruolo d-flex align-items-center justify-content-center my-2 ms-2">
+                <span class="badge d-flex align-items-center justify-content-center my-2 ms-2 text-uppercase"
+                  :class="authStore.ruolo === 'COORDINAMENTO' ? 'bg-warning text-dark' : 'badge-ruolo'">
                   {{ labelRuolo(authStore.ruolo) }}
                 </span>
               </div>
@@ -45,8 +46,9 @@
             </div>
 
             <!-- Pulsante hamburger MOBILE -->
-            <button class="btn text-white d-md-none ms-auto" style="padding-right: 5px;" type="button" data-bs-toggle="offcanvas"
-              data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Apri menu">
+            <button class="btn text-white d-md-none ms-auto" style="padding-right: 5px;" type="button"
+              data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar"
+              aria-label="Apri menu">
               ☰
             </button>
 

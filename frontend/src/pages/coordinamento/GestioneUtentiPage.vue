@@ -16,7 +16,7 @@
         </select>
         <button class="btn btn-sm btn-primary" @click="apriModale()">
           <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
-          Nuovo utente
+          Nuovo
         </button>
       </div>
     </div>
@@ -32,7 +32,7 @@
             <thead class="table-light sticky-top">
               <tr>
                 <th>Utente</th><th>Ruolo</th><th>Sede</th>
-                <th>Stato</th><th>Creato il</th><th class="text-end">Azioni</th>
+                <th>Stato</th><th>Creato&nbsp;il</th><th class="text-end">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -50,7 +50,7 @@
                 </td>
                 <!-- <td><code class="small">{{ u.username }}</code></td> -->
                 <td>
-                  <span class="badge" :class="u.ruolo === 'COORDINAMENTO' ? 'bg-warning text-dark' : 'bg-primary'">
+                  <span class="badge" :class="u.ruolo === 'COORDINAMENTO' ? 'bg-warning text-dark' : 'badge-ruolo'">
                     {{ u.ruolo }}
                   </span>
                 </td>

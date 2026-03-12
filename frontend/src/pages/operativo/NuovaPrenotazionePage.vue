@@ -52,7 +52,7 @@
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
 
-              <!-- Corso ID -->
+              <!-- Corso&nbsp;ID -->
               <div class="col-12">
                 <label class="form-label fw-semibold">ID Corso *</label>
                 <input v-model.number="singola.corso_id" type="number" min="1" class="form-control"
