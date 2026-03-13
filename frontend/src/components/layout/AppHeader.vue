@@ -1,6 +1,6 @@
 <template>
   <!-- Slim header: nome ente -->
-  <div class="it-header-slim-wrapper">
+  <div class="it-header-slim-wrapper custom-bg">
     <div class="container-fluid">
       <div class="it-header-slim-wrapper-content">
         <span class="navbar-brand">

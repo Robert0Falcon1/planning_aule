@@ -63,7 +63,7 @@
                 <td><small class="text-muted">{{ formatData(u.data_creazione) }}</small></td>
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
-                    <button class="btn btn-sm btn-outline-primary" @click="apriModale(u)">
+                    <button class="btn btn-sm btn-outline-success" @click="apriModale(u)">
                       <svg class="icon icon-sm"><use :href="sprites + '#it-pencil'"></use></svg>
                     </button>
                     <button

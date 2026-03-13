@@ -4,8 +4,8 @@
     --bs-success-light: #03c785;
     --bs-warning: rgb(252, 129, 9);
     --bs-orange: rgb(252, 129, 9);
-    --bs-primary: #0066CC;
-    --bs-primary-rgb: rgb(0, 102, 204);
+    --bs-primary: #0066CC; /* BLU: #0066CC;  ICE: #000000*/
+    --bs-primary-accent: #0066CC; /* BLU: #0066CC;  ICE: #e7343e */
     --bs-blue: var(--bs-primary);
     
     /* Varianti del primary */
@@ -18,6 +18,14 @@
     --bs-link-color: var(--bs-primary);
     --bs-link-hover-color: var(--bs-primary-hover);
 }
+
+/* Fix colori ICE */
+/* .custom-bg{
+    background-color: #ffffff !important;
+}
+.filter-logo {
+    filter: none !important;
+} */
 
 .text-primary {
     color: var(--bs-primary) !important;
@@ -36,8 +44,8 @@
 
 /* Bottoni primari */
 .btn-primary {
-    --bs-btn-bg: var(--bs-primary);
-    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-bg: var(--bs-primary-accent);
+    --bs-btn-border-color: var(--bs-primary-accent);
     --bs-btn-hover-bg: var(--bs-primary-hover);
     --bs-btn-hover-border-color: var(--bs-primary-hover);
     --bs-btn-active-bg: var(--bs-primary-active);
@@ -48,36 +56,48 @@
 
 /* Bottoni outline-primary */
 .btn-outline-primary {
-    --bs-btn-color: var(--bs-primary);
-    --bs-btn-border-color: var(--bs-primary);
-    --bs-btn-hover-bg: var(--bs-primary);
-    --bs-btn-hover-border-color: var(--bs-primary);
+    --bs-btn-color: var(--bs-primary-accent);
+    --bs-btn-border-color: var(--bs-primary-accent);
+    --bs-btn-hover-bg: transparent !important;
+    --bs-btn-hover-border-color: var(--bs-primary-accent);
     --bs-btn-hover-color: #fff;
-    --bs-btn-active-bg: var(--bs-primary-hover);
-    --bs-btn-active-border-color: var(--bs-primary-hover);
+    --bs-btn-active-bg: var(--bs-primary-accent);
+    --bs-btn-active-border-color: var(--bs-primary-accent);
     --bs-btn-active-color: #fff;
-    --bs-btn-disabled-color: var(--bs-primary-disabled);
-    --bs-btn-disabled-border-color: var(--bs-primary-disabled);
-    box-shadow: inset 0 0 0 2px var(--bs-primary);
+    --bs-btn-disabled-color: var(--bs-primary-accent);
+    --bs-btn-disabled-border-color: var(--bs-primary-accent);
+    box-shadow: inset 0 0 0 2px var(--bs-primary-accent);
 }
-
+.btn-no-border-x {
+    box-shadow: inset 0 2px 0 0 var(--bs-primary-accent), inset 0 -2px 0 0 var(--bs-primary-accent) !important;
+}
+button.btn.btn-sm.btn-outline-light {
+    box-shadow: none !important;
+}
+button.btn.btn-sm.btn-outline-light:hover {
+    background-color: var(--bs-primary-accent) !important;
+    color: #ffffff !important;
+}
+button.btn.btn-sm.btn-outline-light:hover .icon {
+    fill: #ffffff !important;
+}
 /* Tabs */
 .nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link {
-    border-bottom-color: var(--bs-primary) !important;
-    color: var(--bs-primary) !important;
+    border-bottom-color: var(--bs-primary-accent) !important;
+    color: var(--bs-primary-accent) !important;
 }
 .nav-tabs .nav-link:hover {
-    color: var(--bs-primary) !important;
+    color: var(--bs-primary-accent) !important;
     border-bottom-color: rgba(0, 0, 0, 0);
 }
 .nav-tabs .nav-link.active .icon {
-    fill: var(--bs-primary) !important;
+    fill: var(--bs-primary-accent) !important;
 }
 
 /* Check */
 .form-check [type=checkbox]:checked+label::after {
-    border-color: var(--bs-primary);
-    background-color: var(--bs-primary);
+    border-color: var(--bs-primary-accent);
+    background-color: var(--bs-primary-accent);
     z-index: 0;
 }
 
@@ -85,7 +105,7 @@
 .btn-outline-primary.disabled,
 .btn-outline-primary:hover,
 .btn-outline-primary:active {
-    box-shadow: inset 0 0 0 2px var(--bs-primary);
+    box-shadow: inset 0 0 0 2px var(--bs-primary-accent);
 }
 
 .btn-outline-light{
@@ -198,7 +218,7 @@ input[type="date"]:focus {
 
 /* Bottoni - Hover states */
 .btn-outline-primary:hover {
-    background-color: var(--bs-primary);
+    background-color: var(--bs-primary-accent);
     color: white !important;
 }
 
@@ -226,7 +246,7 @@ input[type="date"]:focus {
 }
 
 .simplebtn:hover {
-    background-color: var(--bs-primary) !important;
+    background-color: var(--bs-primary-accent) !important;
 }
 
 .btn-success:hover {
@@ -293,13 +313,6 @@ a:hover {
 /* Accordion */
 .accordion-button:hover {
     text-decoration: none !important;
-}
-
-/* Borders */
-.btn-no-border-x {
-    box-shadow:
-        inset 0 2px 0 0 #06c,
-        inset 0 -2px 0 0 #06c !important;
 }
 
 .border-right-muted {
