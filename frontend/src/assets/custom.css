@@ -5,7 +5,7 @@
     --bs-warning: rgb(252, 129, 9);
     --bs-orange: rgb(252, 129, 9);
     --bs-primary: #0066CC; /* BLU: #0066CC;  ICE: #000000*/
-    --bs-primary-accent: #0066CC; /* BLU: #0066CC;  ICE: #e7343e */
+    --bs-primary-accent: #0066CC; /* BLU: #0066CC;  ICE: #e5313e */
     --bs-blue: var(--bs-primary);
     
     /* Varianti del primary */
@@ -19,13 +19,40 @@
     --bs-link-hover-color: var(--bs-primary-hover);
 }
 
+.btn-sidebar:hover{
+    background-color: #fff;
+    border: 2px solid #fff;
+}
+.btn-sidebar:hover .icon{
+    fill: var(--bs-primary) !important;
+}
+.btn-sidebar:active {
+    border-color: #fff;
+}
+
 /* Fix colori ICE */
 /* .custom-bg{
     background-color: #ffffff !important;
 }
 .filter-logo {
     filter: none !important;
-} */
+}
+.nav-link > .icon{
+    fill: var(--bs-primary-accent) !important;
+} 
+    
+.btn-sidebar:hover{
+    background-color: var(--bs-primary-accent) !important;
+    border: 2px solid var(--bs-primary-accent) !important;
+}
+.btn-sidebar:hover .icon{
+    fill: #fff !important;
+}
+.btn-sidebar:active {
+    border-color: var(--bs-primary-accent) !important;
+}
+*/
+
 
 .text-primary {
     color: var(--bs-primary) !important;
@@ -81,6 +108,17 @@ button.btn.btn-sm.btn-outline-light:hover {
 button.btn.btn-sm.btn-outline-light:hover .icon {
     fill: #ffffff !important;
 }
+
+.accordion-header .accordion-button {
+    color: var(--bs-primary);
+}
+.accordion-header .accordion-button:after {
+    filter: grayscale(1) brightness(0);
+}
+.accordion-button:not(.collapsed) > p {
+    color: var(--bs-primary-accent);
+}
+
 /* Tabs */
 .nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link {
     border-bottom-color: var(--bs-primary-accent) !important;
@@ -310,6 +348,13 @@ a:hover {
     font-weight: 600;
 }
 
+.btn-sidebar{
+    border: 2px solid #ffffff59 !important;
+}
+.btn-sidebar .icon{
+    fill: #ffffff59 !important;
+}
+
 /* Accordion */
 .accordion-button:hover {
     text-decoration: none !important;
@@ -348,4 +393,12 @@ a:hover {
 /* Offcanvas fix */
 body:has(#mobileSidebar.show) {
     padding-right: 0 !important;
+}
+
+.chevron-toggle {
+  transition: transform 0.3s ease-in-out;
+}
+
+.chevron-flipped {
+  transform: scaleX(-1) !important;
 }

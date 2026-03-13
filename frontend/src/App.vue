@@ -17,11 +17,15 @@
     <div class="container-fluid p-0">
       <div class="row g-0">
         <!-- ═══ DESKTOP: Sidebar classica ═══ -->
-        <aside class="col-lg-2 col-md-3 d-none d-md-block border-right-muted">
+        <aside 
+          class="sidebar-desktop d-none d-md-block border-right-muted"
+          :class="{ 'sidebar-collapsed': !sidebarIsOpen }">
           <AppSidebar />
         </aside>
 
-        <main class="col-lg-10 col-md-9 col-12 p-4">
+        <main 
+          class="main-content p-4"
+          :class="{ 'main-expanded': !sidebarIsOpen }">
           <AlertBanner />
           <router-view />
         </main>
@@ -39,10 +43,40 @@
 
 <script setup>
 import { useAuthStore } from '@/stores/auth'
+import { useSidebar } from '@/composables/useSidebar'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AlertBanner from '@/components/ui/AlertBanner.vue'
 
 const authStore = useAuthStore()
+const { isOpen: sidebarIsOpen } = useSidebar()
 </script>
+
+<style scoped>
+.sidebar-desktop {
+  width: 280px;
+  flex-shrink: 0;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.sidebar-collapsed {
+  margin-left: -280px;
+}
+
+.main-content {
+  flex: 1;
+  transition: margin-left 0.3s ease-in-out;
+  width: calc(100% - 280px);
+}
+
+.main-expanded {
+  width: 100%;
+  margin-left: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: nowrap;
+}
+</style>

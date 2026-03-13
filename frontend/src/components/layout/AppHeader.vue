@@ -26,8 +26,17 @@
       <div class="row mx-0">
         <div class="col-12 d-flex px-3">
           <nav class="navbar navbar-expand-md w-100 py-0" aria-label="Navigazione principale">
-            <!-- <span class="fw-bold text-white me-3">Planning Aule</span> -->
             <div class="d-flex align-items-center py-2">
+
+              <!-- Bottone toggle sidebar DESKTOP -->
+              <button class="btn btn-sm text-white d-none d-md-flex align-items-center me-3 px-2 py-1 btn-sidebar" @click="toggleSidebar"
+                aria-label="Apri/chiudi menu laterale" title="Apri/chiudi menu">
+                <svg class="icon icon-sm icon-light chevron-toggle" :class="{ 'chevron-flipped': !sidebarIsOpen }">
+                  <use :href="sprites + '#it-arrow-left'"></use>
+                </svg>
+              </button>
+
+
               <div class="d-flex">
                 <router-link :to="homePath">
                   <span class="text-white d-flex justify-content-center align-items-center hover-link">
@@ -44,7 +53,6 @@
                   {{ labelRuolo(authStore.ruolo) }}
                 </span>
               </div>
-
             </div>
 
             <!-- Pulsante hamburger MOBILE -->
@@ -62,8 +70,8 @@
   </div>
 
   <!-- ═══ MOBILE: Offcanvas sidebar ═══ -->
-  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel"
-    style="width: 280px;">
+  <div class="offcanvas offcanvas-start border-right-muted" tabindex="-1" id="mobileSidebar"
+    aria-labelledby="mobileSidebarLabel" style="width: 280px;">
     <div class="offcanvas-header justify-content-flex-end">
       <!-- <h5 class="offcanvas-title" id="mobileSidebarLabel">Menu</h5> -->
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Chiudi menu"></button>
@@ -105,16 +113,20 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { labelRuolo } from '@/utils/formatters'
+import { useSidebar } from '@/composables/useSidebar'
 import SidebarSection from '@/components/layout/SidebarSection.vue'
 import SidebarLink from '@/components/layout/SidebarLink.vue'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const { toggle: toggleSidebar, isOpen: sidebarIsOpen } = useSidebar()
+
 
 const homePath = computed(() =>
   authStore.ruolo === 'COORDINAMENTO'
@@ -126,4 +138,13 @@ function handleLogout() {
   authStore.logout()
   router.push({ name: 'Login' })
 }
+
+// Chiudi il menu mobile quando cambia la route
+watch(() => route.path, () => {
+  // Trova e clicca il bottone di chiusura dell'offcanvas
+  const closeButton = document.querySelector('#mobileSidebar .btn-close')
+  if (closeButton) {
+    closeButton.click()
+  }
+})
 </script>
