@@ -3,7 +3,7 @@
     class="login-bg d-flex align-items-center justify-content-center min-vh-100"
   >
     <div class="login-card card border-0 shadow-lg">
-      <div class="card-body px-5 pt-5 pb-4">
+      <div class="card-body px-5 pt-5 pb-5">
         <!-- Logo / Brand -->
         <div class="text-center mb-4">
           <div class="mx-auto mb-3">
