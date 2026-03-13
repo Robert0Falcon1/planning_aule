@@ -1,0 +1,22 @@
+# Avvio Applicativo in locale
+
+### Database
+
+Start Apache
+Start MySQL
+(http://localhost/phpmyadmin/)
+
+### Ambiente Virtuale
+
+.\ice_venv\Scripts\activate
+
+### Backend - Terminale 1
+
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+(http://localhost:8000/api/docs)
+
+### Frontend - Terminale 2
+
+cd frontend
+npm run dev
+(http://localhost:5173)
