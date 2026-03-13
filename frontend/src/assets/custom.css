@@ -4,12 +4,12 @@
     --bs-success-light: #03c785;
     --bs-warning: rgb(252, 129, 9);
     --bs-orange: rgb(252, 129, 9);
-    --bs-primary: hsl(0, 0%, 22%);
-    --bs-primary-rgb: 255, 128, 128;
+    --bs-primary: #0066CC;
+    --bs-primary-rgb: rgb(0, 102, 204);
     --bs-blue: var(--bs-primary);
     
     /* Varianti del primary */
-    --bs-primary-dark: color-mix(in srgb, var(--bs-primary) 80%, black);
+    --bs-primary-dark: color-mix(in srgb, var(--bs-primary) 85%, black);
     --bs-primary-darker: color-mix(in srgb, var(--bs-primary) 70%, black);
     --bs-primary-transparent: color-mix(in srgb, var(--bs-primary) 90%, transparent);
     --bs-primary-light: color-mix(in srgb, var(--bs-primary) 30%, transparent);
