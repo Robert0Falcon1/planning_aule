@@ -5,7 +5,7 @@
       <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
         <div class="btn-group btn-group-sm" role="group">
           <button v-for="g in granularita" :key="g.val" class="btn"
-            :class="granularity === g.val ? 'btn-primary' : 'btn-outline-primary'"
+            :class="granularity === g.val ? 'btn-primary simplebtn' : 'btn-outline-primary'"
             @click="granularity = g.val; carica()">{{ g.label }}</button>
         </div>
         <select v-model="range" class="form-select form-select-sm" style="width:auto" @change="carica">
