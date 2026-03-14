@@ -2,9 +2,8 @@
 // API — Autenticazione
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { apiGet, apiPost } from './client'
+import { apiGet, apiPost, BASE_URL } from './client'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 /**
  * Login con credenziali.

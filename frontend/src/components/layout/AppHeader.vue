@@ -39,7 +39,7 @@
 
               <div class="d-flex">
                 <router-link :to="homePath">
-                  <span class="text-white d-flex justify-content-center align-items-center hover-link">
+                  <span class="text-white d-flex justify-content-center align-items-center hover-link no-decoration">
                     <svg class="icon icon-sm icon-light me-1">
                       <use :href="sprites + '#it-user'"></use>
                     </svg>

@@ -86,6 +86,43 @@ def nuova_prenotazione_massiva(
     return prenotazione
 
 
+@router.get("/slot-liberi/{aula_id}", summary="Slot liberi per aula")
+def slot_liberi(
+    aula_id: int,
+    data_dal: date,
+    data_al: date,
+    db: Session = Depends(get_db),
+    _: Utente = Depends(verifica_permesso("aula:vedere_slot_liberi"))
+):
+    """
+    Restituisce gli slot occupati per un'aula in un range di date.
+    Il frontend può calcolare gli slot liberi sottraendo quelli occupati.
+    """
+    slot_occupati = (
+        db.query(SlotOrario)
+        .join(Prenotazione)
+        .filter(
+            Prenotazione.aula_id == aula_id,
+            Prenotazione.stato.in_([
+                StatoPrenotazione.CONFERMATA,
+                StatoPrenotazione.IN_ATTESA,
+                StatoPrenotazione.CONFLITTO,
+            ]),
+            SlotOrario.data >= data_dal,
+            SlotOrario.data <= data_al,
+            SlotOrario.annullato == False,
+        )
+        .all()
+    )
+
+    return [{
+        "data": s.data,
+        "ora_inizio": s.ora_inizio,
+        "ora_fine": s.ora_fine,
+        "prenotazione_id": s.prenotazione_id,
+    } for s in slot_occupati]
+
+
 @router.get("/", response_model=list[PrenotazioneRisposta],
             summary="Lista prenotazioni")
 def lista_prenotazioni(
@@ -360,40 +397,3 @@ def modifica_prenotazione(
     db.refresh(prenotazione)
 
     return prenotazione
-
-
-@router.get("/slot-liberi/{aula_id}", summary="Slot liberi per aula")
-def slot_liberi(
-    aula_id: int,
-    data_dal: date,
-    data_al: date,
-    db: Session = Depends(get_db),
-    _: Utente = Depends(verifica_permesso("aula:vedere_slot_liberi"))
-):
-    """
-    Restituisce gli slot occupati per un'aula in un range di date.
-    Il frontend può calcolare gli slot liberi sottraendo quelli occupati.
-    """
-    slot_occupati = (
-        db.query(SlotOrario)
-        .join(Prenotazione)
-        .filter(
-            Prenotazione.aula_id == aula_id,
-            Prenotazione.stato.in_([
-                StatoPrenotazione.CONFERMATA,
-                StatoPrenotazione.IN_ATTESA,
-                StatoPrenotazione.CONFLITTO,
-            ]),
-            SlotOrario.data >= data_dal,
-            SlotOrario.data <= data_al,
-            SlotOrario.annullato == False,
-        )
-        .all()
-    )
-
-    return [{
-        "data": s.data,
-        "ora_inizio": s.ora_inizio,
-        "ora_fine": s.ora_fine,
-        "prenotazione_id": s.prenotazione_id,
-    } for s in slot_occupati]

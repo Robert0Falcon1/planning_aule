@@ -3,8 +3,8 @@
     <ul class="nav flex-column pe-4">
       <template v-if="authStore.isOperativo || authStore.isCoordinamento">
         <SidebarSection titolo="Prenotazioni">
-          <SidebarLink :to="{ name: 'NuovaPrenotazione' }" icon="it-plus-circle" label="Nuova Prenotazione" />
-          <SidebarLink :to="{ name: 'MiePrenotazioni' }"   icon="it-list"        :label="authStore.isCoordinamento ? 'Riepilogo Prenotazioni' : 'Le Mie Prenotazioni'" />
+          <SidebarLink :to="{ name: 'NuovaPrenotazione' }" icon="it-plus-circle" label="Nuova" />
+          <SidebarLink :to="{ name: 'MiePrenotazioni' }"   icon="it-list"        :label="authStore.isCoordinamento ? 'Riepilogo' : 'Le Mie Prenotazioni'" />
           <SidebarLink :to="{ name: 'Calendario' }"        icon="it-calendar"    label="Calendario" />
         </SidebarSection>
 

@@ -360,6 +360,10 @@ a:hover {
     text-decoration: none !important;
 }
 
+.no-decoration {
+    text-decoration: none !important;
+}
+
 .border-right-muted {
     border-right-color: hsl(210, 4%, 78%) !important;
 }

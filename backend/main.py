@@ -40,9 +40,8 @@ app = FastAPI(
 # oppure caricarlo da variabile d'ambiente in settings.
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"http://192\.168\.1\.\d+:(5173|8501)",  # tutta la LAN
     allow_origins=[
-        "http://localhost:8501",
-        "http://127.0.0.1:8501",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         *([settings.frontend_origin] if getattr(settings, "frontend_origin", None) else []),

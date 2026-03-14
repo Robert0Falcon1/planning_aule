@@ -79,4 +79,46 @@ const { isOpen: sidebarIsOpen } = useSidebar()
   display: flex;
   flex-wrap: nowrap;
 }
+
+/* ── Layout principale ───────────────────────────────────────── */
+.it-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;        /* occupa tutta la viewport */
+}
+
+.container-fluid {
+  flex: 1;                  /* cresce e spinge il footer in fondo */
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-wrap: nowrap;
+  flex: 1;                  /* la row occupa tutto lo spazio del container */
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.sidebar-desktop {
+  width: 280px;
+  flex-shrink: 0;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.sidebar-collapsed {
+  margin-left: -280px;
+}
+
+/* ── Main content ────────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  transition: margin-left 0.3s ease-in-out;
+  width: calc(100% - 280px);
+}
+
+.main-expanded {
+  width: 100%;
+  margin-left: 0;
+}
 </style>
