@@ -41,3 +41,7 @@ export async function attivaUtente(id) {
 
 // Alias per compatibilità con codice esistente
 export const riattivaUtente = attivaUtente
+
+export async function cambiaPassword(payload) {
+  return apiPatch('/utenti/me/password', payload)
+}

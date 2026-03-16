@@ -38,14 +38,19 @@
 
 
               <div class="d-flex">
-                <router-link :to="homePath">
-                  <span class="text-white d-flex justify-content-center align-items-center hover-link no-decoration">
-                    <svg class="icon icon-sm icon-light me-1">
-                      <use :href="sprites + '#it-user'"></use>
-                    </svg>
-                    {{ authStore.nomeUtente }}
-                  </span>
-                </router-link>
+
+                <!-- Cambio password sul nome utente -->
+                <span
+                  class="text-white d-flex justify-content-center align-items-center hover-link no-decoration"
+                  style="cursor:pointer"
+                  @click="modalPasswordAperta = true"
+                >
+                  <svg class="icon icon-sm icon-light me-1">
+                    <use :href="sprites + '#it-user'"></use>
+                  </svg>
+                  {{ authStore.nomeUtente }}
+                </span>
+
               </div>
               <div class="d-flex">
                 <span class="badge d-flex align-items-center justify-content-center my-2 ms-2 text-uppercase"
@@ -110,10 +115,11 @@
       </nav>
     </div>
   </div>
+  <CambioPasswordModal v-model:aperta="modalPasswordAperta" />
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { labelRuolo } from '@/utils/formatters'
@@ -121,11 +127,14 @@ import { useSidebar } from '@/composables/useSidebar'
 import SidebarSection from '@/components/layout/SidebarSection.vue'
 import SidebarLink from '@/components/layout/SidebarLink.vue'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import CambioPasswordModal from '@/components/layout/CambioPasswordModal.vue'
+
 
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const { toggle: toggleSidebar, isOpen: sidebarIsOpen } = useSidebar()
+const modalPasswordAperta = ref(false)
 
 
 const homePath = computed(() =>

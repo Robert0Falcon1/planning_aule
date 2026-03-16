@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from backend.database import get_db
-from backend.core.security import hash_password
-from backend.core.dependencies import require_coordinamento
+from backend.core.security import hash_password, verifica_password
+from backend.core.dependencies import require_coordinamento, get_utente_corrente
 from backend.models.utente import Utente
 from backend.models.enums import RuoloUtente
 from backend.schemas.utente import UtenteCrea, UtenteRisposta
@@ -23,6 +23,10 @@ class UtenteModifica(BaseModel):
     sede_id:  Optional[int]      = None
     password: Optional[str]      = None   # se presente, viene ri-hashata
 
+class CambioPasswordInput(BaseModel):
+    password_attuale: str
+    nuova_password: str
+    conferma_password: str
 
 @router.get("/", response_model=list[UtenteRisposta], summary="Lista utenti")
 def lista_utenti(
@@ -62,6 +66,31 @@ def crea_utente(
     db.refresh(utente)
     return utente
 
+@router.patch("/me/password", status_code=200, summary="Cambia la propria password")
+def cambia_password(
+    dati: CambioPasswordInput,
+    db: Session = Depends(get_db),
+    utente: Utente = Depends(get_utente_corrente)
+):
+    """Permette a qualsiasi utente autenticato di cambiare la propria password."""
+    if not verifica_password(dati.password_attuale, utente.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password attuale non corretta"
+        )
+    if dati.nuova_password != dati.conferma_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nuova password e la conferma non coincidono"
+        )
+    if len(dati.nuova_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nuova password deve essere di almeno 8 caratteri"
+        )
+    utente.password_hash = hash_password(dati.nuova_password)
+    db.commit()
+    return {"detail": "Password aggiornata con successo"}
 
 @router.patch("/{utente_id}", response_model=UtenteRisposta, summary="Modifica utente")
 def modifica_utente(

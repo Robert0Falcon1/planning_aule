@@ -69,7 +69,7 @@ class PrenotazioneRisposta(BaseModel):
     corso_id:       int
     richiedente_id: int
     stato:          StatoPrenotazione
-    note:           Optional[str]
+    note:           Optional[str] = None
     data_creazione: datetime
     slots:          List[SlotOrarioSchema] = []
     richiesta: Optional[RichiestaEmbedded] = None

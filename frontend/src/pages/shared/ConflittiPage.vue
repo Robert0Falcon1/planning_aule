@@ -52,8 +52,8 @@
           <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
             <!-- <span class="badge bg-danger">Conflitto #{{ c.id }}</span> -->
             <span class="badge bg-danger">Conflitto tra {{
-                    nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }} e {{
-                    nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
+              nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }} e {{
+                nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
             <span v-if="c.stato_risoluzione !== null" class="badge bg-success ms-1">Risolto</span>
             <small class="ms-auto text-muted">{{ formatData(c.rilevato_il) }}</small>
           </div>
@@ -80,6 +80,9 @@
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
+                      <div v-if="prenById(c.prenotazione_id_1)?.note" class="text-muted small mt-1 fst-italic">
+                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ prenById(c.prenotazione_id_1)?.note }}
+                      </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
                   </template>
@@ -112,6 +115,9 @@
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
+                      <div v-if="prenById(c.prenotazione_id_2)?.note" class="text-muted small mt-1 fst-italic">
+                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ prenById(c.prenotazione_id_2)?.note }}
+                      </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
                   </template>
@@ -158,7 +164,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getConflitti, risolviConflitto, getMiePrenotazioni } from '@/api/prenotazioni'
+import { getConflitti, risolviConflitto, getMiePrenotazioni, getPrenotazione } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
 import { formatData } from '@/utils/formatters'
@@ -209,18 +215,26 @@ async function carica() {
   try {
     const params = { solo_attivi: soloAttivi.value }
     if (filtroSede.value) params.sede_id = filtroSede.value
-    const [dataConflitti, dataPren] = await Promise.all([
-      getConflitti(params),
-      getMiePrenotazioni(),
-    ])
 
-    // Normalizza conflitti
+    const dataConflitti = await getConflitti(params)
+
     if (Array.isArray(dataConflitti)) conflitti.value = dataConflitti
     else if (dataConflitti?.items) conflitti.value = dataConflitti.items
     else conflitti.value = []
 
-    // Cache prenotazioni per lookup
-    prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
+    const prenIds = [...new Set(
+      conflitti.value.flatMap(c => [c.prenotazione_id_1, c.prenotazione_id_2])
+    )]
+
+    try {
+      const dataPren = prenIds.length
+        ? await Promise.all(prenIds.map(id => getPrenotazione(id)))
+        : []
+      prenotazioni.value = dataPren.filter(Boolean)
+    } catch (e) {
+      console.warn('Errore caricamento prenotazioni per conflitti:', e.message)
+      prenotazioni.value = []
+    }
 
   } catch (e) {
     console.warn('Conflitti:', e.message)
