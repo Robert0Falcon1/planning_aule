@@ -229,7 +229,7 @@ const slotEspansi = computed(() => {
 const slotEspansiFiltrati = computed(() => {
   if (!filtroSede.value) return slotEspansi.value
   return slotEspansi.value.filter(s =>
-    aulaMap.value[s.aula_id]?.sede_id == filtroSede.value
+    Number(aulaMap.value[s.aula_id]?.sede_id) === Number(filtroSede.value)
   )
 })
 

@@ -89,3 +89,28 @@ class RichiestaPrenotazioneRisposta(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SlotInputSchema(BaseModel):
+    """Schema per il slot in input (senza aula_id/corso_id che stanno nel payload top-level)."""
+    data:       date
+    ora_inizio: time
+    ora_fine:   time
+
+    @field_validator("ora_fine")
+    @classmethod
+    def ora_fine_dopo_inizio(cls, v, info):
+        if "ora_inizio" in info.data and v <= info.data["ora_inizio"]:
+            raise ValueError("L'ora di fine deve essere successiva all'ora di inizio")
+        return v
+
+    class Config:
+        from_attributes = True
+
+
+
+class PrenotazioneSingolaInput(BaseModel):
+    aula_id:  int
+    corso_id: int
+    slot:     SlotInputSchema
+    note:     Optional[str] = None

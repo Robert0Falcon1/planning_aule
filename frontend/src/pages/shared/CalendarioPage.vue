@@ -332,7 +332,7 @@ const eventiFiltrati = computed(() => {
   const list = []
   const ids = slotIdConConflitti.value
   for (const p of prenotazioni.value) {
-    if (filtroAula.value && !p.slots?.some(s => !s.annullato && s.aula_id == filtroAula.value)) continue
+    if (filtroAula.value && !p.slots?.some(s => !s.annullato && Number(s.aula_id) === Number(filtroAula.value))) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]; if (!slot?.data || slot.annullato) continue
       const oraInizio = slot.ora_inizio?.slice(0, 5) || ''

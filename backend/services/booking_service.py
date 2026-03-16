@@ -106,16 +106,13 @@ def crea_prenotazione_massiva(
     Sistema 2 ruoli: stato CONFERMATA immediato.
     """
     prenotazione = PrenotazioneMassiva(
-        aula_id=dati.aula_id,
-        corso_id=dati.corso_id,
-        richiedente_id=utente.id,
-        note=dati.note,
-        stato=StatoPrenotazione.CONFERMATA,  # Immediata
-        tipo_ricorrenza=dati.tipo_ricorrenza,
-        giorni_settimana=",".join(map(str, dati.giorni_settimana)),
-        data_inizio_range=dati.data_inizio,
-        data_fine_range=dati.data_fine,
-    )
+    richiedente_id=utente.id,
+    stato=StatoPrenotazione.CONFERMATA,
+    tipo_ricorrenza=dati.tipo_ricorrenza,
+    giorni_settimana=",".join(map(str, dati.giorni_settimana)),
+    data_inizio_range=dati.data_inizio,
+    data_fine_range=dati.data_fine,
+)
     db.add(prenotazione)
     db.flush()
 

@@ -324,14 +324,14 @@ const slotFiltrati = computed(() => {
   let list = tuttiGliSlot.value
 
   if (filtroAula.value) {
-    list = list.filter(s => s.aulaId == filtroAula.value)
+    list = list.filter(s => Number(s.aulaId) === Number(filtroAula.value))
   } else if (filtroSede.value) {
-    const ids = new Set(aule.value.filter(a => a.sede_id == filtroSede.value).map(a => a.id))
-    list = list.filter(s => ids.has(s.aulaId))
+    const ids = new Set(aule.value.filter(a => Number(a.sede_id) === Number(filtroSede.value)).map(a => Number(a.id)))
+    list = list.filter(s => ids.has(Number(s.aulaId)))
   }
 
   if (filtroUtente.value) {
-    list = list.filter(s => s.richiedenteId == filtroUtente.value)
+    list = list.filter(s => Number(s.richiedenteId) === Number(filtroUtente.value))
   }
 
   if (filtroStato.value === 'conflitto') {
@@ -412,7 +412,7 @@ async function caricaTutto() {
 
 onMounted(async () => {
   await caricaAule()
-  caricaTutto()
+  await caricaTutto()
 })
 
 // Ricarica ogni volta che si torna sulla pagina (es. dopo aver risolto un conflitto)
