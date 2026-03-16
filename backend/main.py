@@ -44,6 +44,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://10.0.220.184:5173", # Indirizzo IP della rete WiFi da aggiungere
         *([settings.frontend_origin] if getattr(settings, "frontend_origin", None) else []),
     ],
     allow_credentials=True,
