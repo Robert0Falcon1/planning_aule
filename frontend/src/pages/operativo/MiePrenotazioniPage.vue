@@ -133,13 +133,21 @@
                 </td>
 
                 <td class="text-end">
-                  <button class="btn btn-sm btn-outline-danger"
-                    :disabled="cancellando === slot.prenId"
-                    @click="richiediCancellazione(slot)">
-                    <span v-if="cancellando === slot.prenId" class="spinner-border spinner-border-sm"></span>
-                    <svg v-else class="icon icon-sm"><use :href="sprites + '#it-delete'"></use></svg>
-                  </button>
+                  <div class="d-flex gap-1 justify-content-end">
+                    <button class="btn btn-sm btn-outline-primary" @click="apriModifica(slot)"
+                      title="Modifica slot">
+                      <svg class="icon icon-sm"><use :href="sprites + '#it-pencil'"></use></svg>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                      :disabled="cancellando === slot.prenId"
+                      @click="richiediCancellazione(slot)">
+                      <span v-if="cancellando === slot.prenId" class="spinner-border spinner-border-sm"></span>
+                      <svg v-else class="icon icon-sm"><use :href="sprites + '#it-delete'"></use></svg>
+                    </button>
+                  </div>
                 </td>
+
+
               </tr>
             </tbody>
           </table>
@@ -177,28 +185,30 @@
         </p>
 
         <!-- Prenotazione massiva: offre scelta -->
-        <div v-if="modalCancella.isMassiva" class="alert alert-info py-2 small mb-3">
+        <!-- <div v-if="modalCancella.isMassiva" class="alert alert-info py-2 small mb-3">
           <svg class="icon icon-sm me-1"><use :href="sprites + '#it-info-circle'"></use></svg>
           Questo slot fa parte di una prenotazione ricorrente con
           <strong>{{ modalCancella.totaleSlot }} slot</strong> totali.
           Puoi eliminare solo questo slot oppure tutti.
-        </div>
+        </div> -->
 
         <div class="d-flex gap-2 justify-content-end flex-wrap">
           <button class="btn btn-secondary" @click="modalCancella = null">Annulla</button>
-          <button v-if="modalCancella.isMassiva"
-            class="btn btn-outline-danger" @click="confermaCancellazione(false)" :disabled="!!cancellando">
+          <button class="btn btn-danger" @click="confermaCancellazione(false)" :disabled="!!cancellando">
             <span v-if="cancellando" class="spinner-border spinner-border-sm me-1"></span>
-            Solo questo slot
-          </button>
-          <button class="btn btn-danger" @click="confermaCancellazione(true)" :disabled="!!cancellando">
-            <span v-if="cancellando" class="spinner-border spinner-border-sm me-1"></span>
-            {{ modalCancella.isMassiva ? 'Elimina tutti gli slot' : 'Sì, elimina' }}
+            Elimina
           </button>
         </div>
       </div>
     </div>
   </div>
+  <ModificaSlotModal
+  v-model:aperta="modalModifica"
+  :slot="slotInModifica"
+  :sedi="sedi"
+  :aula-map="aulaMap"
+  @salvato="caricaTutto"
+/>
 </template>
 
 <script setup>
@@ -211,6 +221,7 @@ import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
 
 const authStore = useAuthStore()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
@@ -230,7 +241,9 @@ const pagina        = ref(1)
 const PER_PAGINA    = 20
 const cancellando   = ref(null)
 const modalCancella = ref(null)
-const conflittiAttivi = ref([])  // slot_id_1/slot_id_2 dei conflitti NON_RISOLTO
+const conflittiAttivi = ref([])
+const modalModifica  = ref(false)
+const slotInModifica = ref(null)
 
 const titoloPageina = computed(() =>
   authStore.isCoordinamento ? 'Prenotazioni' : 'Mie Prenotazioni'
@@ -259,18 +272,25 @@ const slotIdConConflitti = computed(() => {
 const mappaUtenti = computed(() =>
   Object.fromEntries(utenti.value.map(u => [u.id, u]))
 )
+
+const aulaMap = computed(() =>
+  Object.fromEntries(aule.value.map(a => [a.id, a]))
+)
+
 function nomeUtente(id) {
   const u = mappaUtenti.value[id]
   return u ? `${u.nome} ${u.cognome}` : `#${id}`
 }
 
-// ── Espande ogni prenotazione in slot individuali ─────────────────────────────
-// haConflitti calcolato qui con slotIdConConflitti così KPI e tabella sono allineati
+function apriModifica(slot) {
+  slotInModifica.value = slot
+  modalModifica.value  = true
+}
+
 const tuttiGliSlot = computed(() => {
-  const ids = slotIdConConflitti.value   // dipendenza reattiva da conflittiAttivi
+  const ids = slotIdConConflitti.value
   const list = []
   for (const p of prenotazioni.value) {
-    // Filtra per utente se OPERATIVO
     if (!authStore.isCoordinamento && authStore.utente?.id) {
       if (p.richiedente_id !== authStore.utente.id) continue
     }
@@ -283,13 +303,13 @@ const tuttiGliSlot = computed(() => {
         prenId:        p.id,
         slotId:        slot.id,
         slotIdx:       si,
-        aulaId:        p.aula_id,
-        corsoId:       p.corso_id,
+        aulaId:        slot.aula_id,    // ← da slot
+        corsoId:       slot.corso_id,   // ← da slot
+        note:          slot.note || '', // ← da slot
         richiedenteId: p.richiedente_id,
-        haConflitti: ids.has(slot.id),
+        haConflitti:   ids.has(slot.id),
         isMassiva,
         totaleSlot:    p.slots.length,
-        note:          p.note || '',
         data:          slot.data,
         oraInizio:     slot.ora_inizio?.slice(0, 5) || '—',
         oraFine:       slot.ora_fine?.slice(0, 5)   || '—',

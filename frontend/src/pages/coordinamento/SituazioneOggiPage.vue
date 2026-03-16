@@ -126,8 +126,8 @@ const slotDelGiorno = computed(() => {
       list.push({
         prenId:    p.id,
         slotIdx:   si,
-        aulaId:    p.aula_id,
-        corsoId:   p.corso_id,
+        aulaId:    slot.aula_id,
+        corsoId:   slot.corso_id,
         tipo:      p.tipo,
         stato:     p.stato,
         oraInizio: slot.ora_inizio?.slice(0, 5) || '—',

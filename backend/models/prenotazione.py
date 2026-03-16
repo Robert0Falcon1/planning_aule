@@ -6,51 +6,39 @@ Include anche il modello RichiestaPrenotazione e Conflitto.
 
 from datetime import datetime
 from sqlalchemy import (Column, Integer, String, DateTime, ForeignKey, Text,
-                         Enum as SAEnum, Boolean, Date, Time)
+                         Enum as SAEnum, Boolean, Date)
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from backend.models.enums import (StatoPrenotazione, StatoRichiesta,
-                                   TipoPrenotazione, TipoRicorrenza, TipoConflitto)
+                                   TipoPrenotazione, TipoRicorrenza)
 
 
 class Prenotazione(Base):
-    """
-    Prenotazione di un'aula per un corso.
-    Classe base per prenotazioni singole e massive (STI).
-    """
     __tablename__ = "prenotazioni"
 
-    # ── Colonne comuni ────────────────────────────────────────────────────────
     id              = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    tipo            = Column(SAEnum(TipoPrenotazione), nullable=False)  # Discriminatore STI
-    aula_id         = Column(Integer, ForeignKey("aule.id"), nullable=False)
-    corso_id        = Column(Integer, ForeignKey("corsi.id"), nullable=False)
+    tipo            = Column(SAEnum(TipoPrenotazione), nullable=False)
     richiedente_id  = Column(Integer, ForeignKey("utenti.id"), nullable=False)
     stato           = Column(SAEnum(StatoPrenotazione),
                              default=StatoPrenotazione.IN_ATTESA, nullable=False)
-    note            = Column(Text, nullable=True)
-    google_event_id = Column(String(255), nullable=True)  # ID evento Google Calendar
+    google_event_id = Column(String(255), nullable=True)
     data_creazione  = Column(DateTime, default=datetime.utcnow, nullable=False)
     data_aggiornamento = Column(DateTime, default=datetime.utcnow,
-                                 onupdate=datetime.utcnow, nullable=False)
+                                onupdate=datetime.utcnow, nullable=False)
 
-    # ── Colonne per prenotazioni massive ──────────────────────────────────────
+    # Colonne per prenotazioni massive
     tipo_ricorrenza   = Column(SAEnum(TipoRicorrenza), nullable=True)
-    giorni_settimana  = Column(String(20), nullable=True,
-                                comment="Es: '1,3,5' per Lun/Mer/Ven")
+    giorni_settimana  = Column(String(20), nullable=True)
     data_inizio_range = Column(Date, nullable=True)
     data_fine_range   = Column(Date, nullable=True)
     intervallo        = Column(Integer, nullable=True, default=1)
 
-    # ── Mapping polimorfico ───────────────────────────────────────────────────
     __mapper_args__ = {
         "polymorphic_on":       tipo,
         "polymorphic_identity": None,
     }
 
-    # ── Relazioni base ────────────────────────────────────────────────────────
-    aula        = relationship("Aula",   back_populates="prenotazioni")
-    corso       = relationship("Corso",  back_populates="prenotazioni")
+    # Relazioni — aula/corso rimossi, ora sono sullo slot
     richiedente = relationship("Utente", back_populates="prenotazioni_richieste",
                                foreign_keys=[richiedente_id])
     slots       = relationship("SlotOrario", back_populates="prenotazione",
@@ -58,42 +46,30 @@ class Prenotazione(Base):
     richiesta   = relationship("RichiestaPrenotazione", back_populates="prenotazione",
                                uselist=False)
     attrezzature_richieste = relationship("RichiestaAttrezzatura",
-                                           back_populates="prenotazione",
-                                           cascade="all, delete-orphan")
+                                          back_populates="prenotazione",
+                                          cascade="all, delete-orphan")
 
-    # ── Relazioni conflitti ───────────────────────────────────────────────────
-    # FIX: ha_conflitti_attivi dichiarato UNA SOLA VOLTA (era duplicato)
-    ha_conflitti_attivi = Column(Boolean, default=False, nullable=False)
-
-    conflitti_come_pren1 = relationship(
-        "ConflittoPrenotazione",
-        foreign_keys="ConflittoPrenotazione.prenotazione_id_1",
-        back_populates="prenotazione_1",
-        cascade="all, delete-orphan"
-    )
-
-    # FIX: rimosso delete-orphan su pren2 — un conflitto referenzia ENTRAMBE le
-    # prenotazioni, quindi non può essere "orfano" di una sola.
-    # delete-orphan causava IntegrityError quando si eliminava prenotazione_2.
-    conflitti_come_pren2 = relationship(
-        "ConflittoPrenotazione",
-        foreign_keys="ConflittoPrenotazione.prenotazione_id_2",
-        back_populates="prenotazione_2",
-        cascade="all"
-    )
+    ha_conflitti_attivi  = Column(Boolean, default=False, nullable=False)
+    conflitti_come_pren1 = relationship("ConflittoPrenotazione",
+                                        foreign_keys="ConflittoPrenotazione.prenotazione_id_1",
+                                        back_populates="prenotazione_1",
+                                        cascade="all, delete-orphan")
+    conflitti_come_pren2 = relationship("ConflittoPrenotazione",
+                                        foreign_keys="ConflittoPrenotazione.prenotazione_id_2",
+                                        back_populates="prenotazione_2",
+                                        cascade="all")
 
     @property
     def conflitti(self):
-        """Tutti i conflitti di questa prenotazione"""
         return self.conflitti_come_pren1 + self.conflitti_come_pren2
 
     @property
     def ha_conflitti_non_risolti(self) -> bool:
         return any(c.stato_risoluzione is None for c in self.conflitti)
 
-    def __repr__(self) -> str:
-        return f"<Prenotazione #{self.id} [{self.tipo}] - aula {self.aula_id}>"
-
+    def __repr__(self):
+        return f"<Prenotazione #{self.id} [{self.tipo}]>"
+    
 
 class PrenotazioneSingola(Prenotazione):
     """Prenotazione per un singolo slot temporale."""

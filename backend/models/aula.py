@@ -24,7 +24,7 @@ class Aula(Base):
 
     # ── Relazioni ─────────────────────────────────────────────────────────────
     sede         = relationship("Sede",        back_populates="aule")
-    prenotazioni = relationship("Prenotazione", back_populates="aula")
+    slots        = relationship("SlotOrario", back_populates="aula") 
 
     def __repr__(self) -> str:
         return f"<Aula {self.nome} (cap. {self.capienza}) - sede {self.sede_id}>"

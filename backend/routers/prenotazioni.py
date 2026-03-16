@@ -5,6 +5,7 @@ Router per la gestione delle prenotazioni aule - Sistema 2 RUOLI
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
+from pydantic import BaseModel
 from backend.database import get_db
 from backend.core.dependencies import get_utente_corrente, verifica_permesso
 from backend.models.utente import Utente
@@ -22,10 +23,19 @@ from backend.services.booking_service import (
     crea_prenotazione_massiva
 )
 from backend.services.conflitti_service import ConflittoService
-from datetime import date, datetime, timezone
+from datetime import date, time, datetime, timezone
 from typing import Optional
 
 router = APIRouter(prefix="/prenotazioni", tags=["Prenotazioni"])
+
+
+class SlotModificaInput(BaseModel):
+    aula_id:    Optional[int]  = None
+    corso_id:   Optional[int]  = None
+    data:       Optional[date] = None
+    ora_inizio: Optional[time] = None
+    ora_fine:   Optional[time] = None
+    note:       Optional[str]  = None
 
 
 @router.post("/singola", response_model=PrenotazioneRisposta, status_code=201,
@@ -35,14 +45,8 @@ def nuova_prenotazione_singola(
     db: Session = Depends(get_db),
     utente: Utente = Depends(verifica_permesso("prenotazione:richiedere"))
 ):
-    """
-    Crea una prenotazione singola per un'aula.
-    Sistema 2 ruoli: auto-approva immediatamente e rileva conflitti.
-    """
     prenotazione, _ = crea_prenotazione_singola(db, dati, utente)
-
     conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
-
     richiesta = RichiestaPrenotazione(
         prenotazione_id=prenotazione.id,
         stato=StatoRichiesta.APPROVATA,
@@ -53,7 +57,6 @@ def nuova_prenotazione_singola(
     db.add(richiesta)
     db.commit()
     db.refresh(prenotazione)
-
     return prenotazione
 
 
@@ -64,14 +67,8 @@ def nuova_prenotazione_massiva(
     db: Session = Depends(get_db),
     utente: Utente = Depends(verifica_permesso("prenotazione:richiedere"))
 ):
-    """
-    Crea una prenotazione ricorrente generando automaticamente tutti gli slot.
-    Sistema 2 ruoli: auto-approva immediatamente e rileva conflitti.
-    """
     prenotazione, _ = crea_prenotazione_massiva(db, dati, utente)
-
     conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
-
     richiesta = RichiestaPrenotazione(
         prenotazione_id=prenotazione.id,
         stato=StatoRichiesta.APPROVATA,
@@ -82,7 +79,6 @@ def nuova_prenotazione_massiva(
     db.add(richiesta)
     db.commit()
     db.refresh(prenotazione)
-
     return prenotazione
 
 
@@ -94,15 +90,11 @@ def slot_liberi(
     db: Session = Depends(get_db),
     _: Utente = Depends(verifica_permesso("aula:vedere_slot_liberi"))
 ):
-    """
-    Restituisce gli slot occupati per un'aula in un range di date.
-    Il frontend può calcolare gli slot liberi sottraendo quelli occupati.
-    """
     slot_occupati = (
         db.query(SlotOrario)
         .join(Prenotazione)
         .filter(
-            Prenotazione.aula_id == aula_id,
+            SlotOrario.aula_id == aula_id,          # ← ora su slot
             Prenotazione.stato.in_([
                 StatoPrenotazione.CONFERMATA,
                 StatoPrenotazione.IN_ATTESA,
@@ -114,7 +106,6 @@ def slot_liberi(
         )
         .all()
     )
-
     return [{
         "data": s.data,
         "ora_inizio": s.ora_inizio,
@@ -126,43 +117,30 @@ def slot_liberi(
 @router.get("/", response_model=list[PrenotazioneRisposta],
             summary="Lista prenotazioni")
 def lista_prenotazioni(
-    sede_id: Optional[int] = None,
-    corso_id: Optional[int] = None,
-    stato: Optional[StatoPrenotazione] = None,
-    data_dal: Optional[date] = None,
-    data_al: Optional[date] = None,
+    sede_id:  Optional[int]              = None,
+    corso_id: Optional[int]              = None,
+    stato:    Optional[StatoPrenotazione] = None,
+    data_dal: Optional[date]             = None,
+    data_al:  Optional[date]             = None,
     db: Session = Depends(get_db),
     utente: Utente = Depends(get_utente_corrente)
 ):
-    """
-    Restituisce le prenotazioni.
-
-    Sistema 2 ruoli:
-    - OPERATIVO: visualizza tutte le prenotazioni
-    - COORDINAMENTO: visualizza tutte le prenotazioni
-
-    Tutti gli utenti hanno visibilità completa sul sistema.
-    """
     query = db.query(Prenotazione).options(
         joinedload(Prenotazione.richiesta),
         joinedload(Prenotazione.slots),
     )
 
-    if sede_id:
-        query = query.join(Aula).filter(Aula.sede_id == sede_id)
-
-    if corso_id:
-        query = query.filter(Prenotazione.corso_id == corso_id)
-
     if stato:
         query = query.filter(Prenotazione.stato == stato)
 
-    # FIX: filtro date tramite subquery invece di join diretto.
-    # Il join diretto su SlotOrario interferisce con joinedload(Prenotazione.slots)
-    # producendo duplicati o risultati incompleti (prenotazioni con slot nel range
-    # non restituite correttamente). La subquery filtra per id senza toccare il join.
-    if data_dal or data_al:
+    # sede_id, corso_id e date → filtro via subquery su slot_orari
+    if sede_id or corso_id or data_dal or data_al:
         slot_subq = db.query(SlotOrario.prenotazione_id)
+        if sede_id:
+            slot_subq = slot_subq.join(Aula, SlotOrario.aula_id == Aula.id)\
+                                  .filter(Aula.sede_id == sede_id)
+        if corso_id:
+            slot_subq = slot_subq.filter(SlotOrario.corso_id == corso_id)
         if data_dal:
             slot_subq = slot_subq.filter(SlotOrario.data >= data_dal)
         if data_al:
@@ -179,7 +157,6 @@ def dettaglio_prenotazione(
     db: Session = Depends(get_db),
     utente: Utente = Depends(get_utente_corrente)
 ):
-    """Restituisce il dettaglio di una singola prenotazione."""
     p = (
         db.query(Prenotazione)
         .options(
@@ -189,10 +166,8 @@ def dettaglio_prenotazione(
         .filter(Prenotazione.id == prenotazione_id)
         .first()
     )
-
     if not p:
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
-
     return p
 
 
@@ -203,37 +178,76 @@ def elimina_prenotazione(
     db: Session = Depends(get_db),
     utente: Utente = Depends(get_utente_corrente)
 ):
-    """
-    Elimina una prenotazione.
-
-    Permessi Sistema 2 ruoli:
-    - OPERATIVO: può eliminare solo le proprie prenotazioni
-    - COORDINAMENTO: può eliminare qualsiasi prenotazione
-    """
     prenotazione = db.query(Prenotazione).filter(
         Prenotazione.id == prenotazione_id
     ).first()
-
     if not prenotazione:
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
-
     if utente.ruolo != RuoloUtente.COORDINAMENTO:
         if prenotazione.richiedente_id != utente.id:
-            raise HTTPException(
-                status_code=403,
-                detail="Non hai i permessi per eliminare questa prenotazione"
-            )
-
+            raise HTTPException(status_code=403,
+                detail="Non hai i permessi per eliminare questa prenotazione")
     richiesta = db.query(RichiestaPrenotazione).filter(
         RichiestaPrenotazione.prenotazione_id == prenotazione_id
     ).first()
     if richiesta:
         db.delete(richiesta)
-
     db.delete(prenotazione)
     db.commit()
-
     return {"message": f"Prenotazione {prenotazione_id} eliminata con successo"}
+
+
+@router.patch("/{prenotazione_id}/slots/{slot_id}", response_model=PrenotazioneRisposta,
+              summary="Modifica singolo slot")
+def modifica_slot(
+    prenotazione_id: int,
+    slot_id: int,
+    dati: SlotModificaInput,
+    db: Session = Depends(get_db),
+    utente: Utente = Depends(get_utente_corrente)
+):
+    """
+    Modifica un singolo slot. Tutti i campi (aula, corso, note, data, orario)
+    sono ora slot-level — ogni slot è indipendente.
+    """
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.slots), joinedload(Prenotazione.richiesta))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
+    if not prenotazione:
+        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
+    if utente.ruolo != RuoloUtente.COORDINAMENTO:
+        if prenotazione.richiedente_id != utente.id:
+            raise HTTPException(status_code=403,
+                detail="Non hai i permessi per modificare questa prenotazione")
+
+    slot = db.query(SlotOrario).filter(
+        SlotOrario.id == slot_id,
+        SlotOrario.prenotazione_id == prenotazione_id,
+    ).first()
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot non trovato")
+    if slot.annullato:
+        raise HTTPException(status_code=400, detail="Impossibile modificare uno slot annullato")
+
+    if dati.aula_id    is not None: slot.aula_id    = dati.aula_id
+    if dati.corso_id   is not None: slot.corso_id   = dati.corso_id
+    if dati.note       is not None: slot.note       = dati.note
+    if dati.data       is not None: slot.data       = dati.data
+    if dati.ora_inizio is not None: slot.ora_inizio = dati.ora_inizio
+    if dati.ora_fine   is not None: slot.ora_fine   = dati.ora_fine
+
+    db.flush()
+
+    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+    if prenotazione.richiesta:
+        prenotazione.richiesta.ha_conflitti = len(conflitti) > 0
+
+    db.commit()
+    db.refresh(prenotazione)
+    return prenotazione
 
 
 @router.delete("/{prenotazione_id}/slots/{slot_id}", status_code=200,
@@ -244,15 +258,6 @@ def annulla_slot(
     db: Session = Depends(get_db),
     utente: Utente = Depends(get_utente_corrente)
 ):
-    """
-    Annulla un singolo slot di una prenotazione massiva.
-
-    - Imposta slot.annullato = True (non cancella la riga)
-    - Se era l'ultimo slot attivo, elimina l'intera prenotazione
-    - Ricalcola ha_conflitti sulla prenotazione dopo l'annullamento
-    - OPERATIVO: solo proprie prenotazioni
-    - COORDINAMENTO: qualsiasi
-    """
     prenotazione = (
         db.query(Prenotazione)
         .options(joinedload(Prenotazione.slots), joinedload(Prenotazione.richiesta))
@@ -261,11 +266,10 @@ def annulla_slot(
     )
     if not prenotazione:
         raise HTTPException(status_code=404, detail="Prenotazione non trovata")
-
     if utente.ruolo != RuoloUtente.COORDINAMENTO:
         if prenotazione.richiedente_id != utente.id:
             raise HTTPException(status_code=403,
-                                detail="Non hai i permessi per modificare questa prenotazione")
+                detail="Non hai i permessi per modificare questa prenotazione")
 
     slot = db.query(SlotOrario).filter(
         SlotOrario.id == slot_id,
@@ -279,8 +283,6 @@ def annulla_slot(
     slot.annullato = True
     db.flush()
 
-    # Risolvi automaticamente i conflitti NON_RISOLTO che coinvolgevano questo slot.
-    # detect_and_record_conflicts non chiude i conflitti esistenti — va fatto esplicitamente.
     from backend.models.conflitto import ConflittoPrenotazione
     from backend.models.enums import StatoRisoluzioneConflitto
 
@@ -289,12 +291,10 @@ def annulla_slot(
             ConflittoPrenotazione.slot_id_1 == slot_id,
             ConflittoPrenotazione.slot_id_2 == slot_id,
         ),
-        ConflittoPrenotazione.stato_risoluzione == None  # attivi = NULL
+        ConflittoPrenotazione.stato_risoluzione == None
     ).all()
 
     for cf in conflitti_slot:
-        # RISOLTO_MANTENUTA_1 = teniamo prenotazione 1 → slot_2 è quello annullato
-        # RISOLTO_MANTENUTA_2 = teniamo prenotazione 2 → slot_1 è quello annullato
         cf.stato_risoluzione = (
             StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
             if cf.slot_id_1 == slot_id
@@ -315,7 +315,7 @@ def annulla_slot(
         db.delete(prenotazione)
         db.commit()
         return {
-            "message": f"Slot {slot_id} annullato. Prenotazione {prenotazione_id} eliminata (nessun slot rimasto).",
+            "message": f"Slot {slot_id} annullato. Prenotazione {prenotazione_id} eliminata.",
             "prenotazione_eliminata": True,
         }
 
@@ -324,76 +324,9 @@ def annulla_slot(
         prenotazione.richiesta.ha_conflitti = len(conflitti) > 0
 
     db.commit()
-
     return {
         "message": f"Slot {slot_id} annullato.",
         "prenotazione_eliminata": False,
         "slot_attivi_rimasti": len(slot_attivi),
         "prenotazione_id": prenotazione_id,
     }
-
-
-@router.patch("/{prenotazione_id}", response_model=PrenotazioneRisposta,
-              summary="Modifica prenotazione")
-def modifica_prenotazione(
-    prenotazione_id: int,
-    dati: PrenotazioneSingolaInput,
-    db: Session = Depends(get_db),
-    utente: Utente = Depends(get_utente_corrente)
-):
-    """
-    Modifica una prenotazione esistente (solo singole, non massive).
-
-    Permessi Sistema 2 ruoli:
-    - OPERATIVO: può modificare solo le proprie prenotazioni
-    - COORDINAMENTO: può modificare qualsiasi prenotazione
-    """
-    prenotazione = db.query(Prenotazione).filter(
-        Prenotazione.id == prenotazione_id
-    ).first()
-
-    if not prenotazione:
-        raise HTTPException(status_code=404, detail="Prenotazione non trovata")
-
-    if utente.ruolo != RuoloUtente.COORDINAMENTO:
-        if prenotazione.richiedente_id != utente.id:
-            raise HTTPException(
-                status_code=403,
-                detail="Non hai i permessi per modificare questa prenotazione"
-            )
-
-    if prenotazione.tipo.value != "singola":
-        raise HTTPException(
-            status_code=400,
-            detail="Puoi modificare solo prenotazioni singole"
-        )
-
-    prenotazione.aula_id = dati.aula_id
-    prenotazione.corso_id = dati.corso_id
-    prenotazione.note = dati.note
-
-    db.query(SlotOrario).filter(
-        SlotOrario.prenotazione_id == prenotazione_id
-    ).delete()
-
-    nuovo_slot = SlotOrario(
-        prenotazione_id=prenotazione.id,
-        data=dati.slot.data,
-        ora_inizio=dati.slot.ora_inizio,
-        ora_fine=dati.slot.ora_fine
-    )
-    db.add(nuovo_slot)
-    db.flush()
-
-    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
-
-    richiesta = db.query(RichiestaPrenotazione).filter(
-        RichiestaPrenotazione.prenotazione_id == prenotazione_id
-    ).first()
-    if richiesta:
-        richiesta.ha_conflitti = (len(conflitti) > 0)
-
-    db.commit()
-    db.refresh(prenotazione)
-
-    return prenotazione

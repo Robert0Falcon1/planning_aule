@@ -42,8 +42,8 @@
             <tr v-for="p in prenotazioni.slice(0, 10)" :key="p.id">
               <td>{{ p.id }}</td>
               <td>{{ p.tipo }}</td>
-              <td>{{ p.aula_id }}</td>
-              <td>{{ p.corso_id }}</td>
+              <td>{{ p.slots?.[0]?.aula_id }}</td>
+              <td>{{ p.slots?.[0]?.corso_id }}</td>
               <td><BadgeStato :stato="p.stato" /></td>
               <td>{{ p.slots?.length ?? 0 }}</td>
             </tr>

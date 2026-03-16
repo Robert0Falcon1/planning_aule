@@ -32,15 +32,11 @@ class ConflittoService:
         ora_fine: time,
         exclude_booking_id: Optional[int] = None
     ) -> List[tuple[Prenotazione, SlotOrario]]:
-        """
-        Restituisce coppie (prenotazione, slot) in conflitto con il range dato.
-        Ignora slot annullati.
-        """
         query = (
             db.query(Prenotazione, SlotOrario)
             .join(SlotOrario, SlotOrario.prenotazione_id == Prenotazione.id)
             .filter(
-                Prenotazione.aula_id == aula_id,
+                SlotOrario.aula_id == aula_id,      
                 SlotOrario.data == data,
                 SlotOrario.annullato == False,
                 Prenotazione.stato.in_([
@@ -80,7 +76,7 @@ class ConflittoService:
 
             coppie_in_conflitto = ConflittoService.find_conflicting_slots(
                 db,
-                prenotazione.aula_id,
+                slot.aula_id,
                 slot.data,
                 slot.ora_inizio,
                 slot.ora_fine,
@@ -138,11 +134,12 @@ class ConflittoService:
             from backend.models import Aula
             query = (
                 query
-                .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
-                .join(Aula, Prenotazione.aula_id == Aula.id)
+                .join(SlotOrario, ConflittoPrenotazione.slot_id_1 == SlotOrario.id)
+                .join(Aula, SlotOrario.aula_id == Aula.id)
                 .filter(Aula.sede_id == sede_id)
             )
         return query.all()
+
 
     @staticmethod
     def _aggiorna_flag_conflitti(db: Session, prenotazione_id: int):

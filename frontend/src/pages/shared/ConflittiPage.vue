@@ -70,18 +70,18 @@
                   <template v-for="s in [infoSlot(c, 1)]">
                     <template v-if="s">
                       <div class="text-muted small">
-                        Corso {{ prenById(c.prenotazione_id_1)?.corso_id }}
+                        Corso {{ infoSlot(c, 1)?.corso_id }}
                         <span v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'"
                           class="badge bg-info ms-1">Ricorrente</span>
                       </div>
                       <div class="mt-1 small mb-2">
-                        <strong>{{ sedeDiAulaFn(prenById(c.prenotazione_id_1)?.aula_id) }}</strong>
-                        <span class="text-muted ms-1">- {{ nomeAulaFn(prenById(c.prenotazione_id_1)?.aula_id) }}</span>
+                        <strong>{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</strong>
+                        <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
-                      <div v-if="prenById(c.prenotazione_id_1)?.note" class="text-muted small mt-1 fst-italic">
-                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ prenById(c.prenotazione_id_1)?.note }}
+                      <div v-if="infoSlot(c, 1)?.note" class="text-muted small mt-1 fst-italic">
+                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 1)?.note }}
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
@@ -105,18 +105,18 @@
                   <template v-for="s in [infoSlot(c, 2)]">
                     <template v-if="s">
                       <div class="text-muted small">
-                        Corso {{ prenById(c.prenotazione_id_2)?.corso_id }}
+                        Corso {{ infoSlot(c, 2)?.corso_id }}
                         <span v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
                           class="badge bg-info ms-1">Ricorrente</span>
                       </div>
                       <div class="mt-1 small mb-2">
-                        <strong>{{ sedeDiAulaFn(prenById(c.prenotazione_id_2)?.aula_id) }}</strong>
-                        <span class="text-muted ms-1">- {{ nomeAulaFn(prenById(c.prenotazione_id_2)?.aula_id) }}</span>
+                        <strong>{{ sedeDiAulaFn(infoSlot(c, 2)?.aula_id) }}</strong>
+                        <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
-                      <div v-if="prenById(c.prenotazione_id_2)?.note" class="text-muted small mt-1 fst-italic">
-                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ prenById(c.prenotazione_id_2)?.note }}
+                      <div v-if="infoSlot(c, 2)?.note" class="text-muted small mt-1 fst-italic">
+                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 2)?.note }}
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>

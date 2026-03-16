@@ -332,16 +332,16 @@ const eventiFiltrati = computed(() => {
   const list = []
   const ids = slotIdConConflitti.value
   for (const p of prenotazioni.value) {
-    if (filtroAula.value && p.aula_id != filtroAula.value) continue
+    if (filtroAula.value && !p.slots?.some(s => !s.annullato && s.aula_id == filtroAula.value)) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]; if (!slot?.data || slot.annullato) continue
       const oraInizio = slot.ora_inizio?.slice(0, 5) || ''
       const oraFine   = slot.ora_fine?.slice(0, 5)   || ''
       list.push({
-        prenId: p.id, slotIdx: si, aulaId: p.aula_id, corsoId: p.corso_id,
+        prenId: p.id, slotIdx: si, aulaId: slot.aula_id, corsoId: slot.corso_id,
         stato: p.stato,
         haConflitti: ids.has(slot.id),  // slot-level preciso — funziona per tutti i ruoli
-        note: p.note || '',
+        note: slot.note || '',
         data: slot.data, oraInizio, oraFine,
         _ini: oraDec(oraInizio), _fin: oraDec(oraFine),
       })

@@ -67,8 +67,8 @@
             <tr v-for="p in prenotazioni" :key="p.id">
               <td>#{{ p.id }}</td>
               <td>{{ p.tipo }}</td>
-              <td>{{ p.aula_id }}</td>
-              <td>{{ p.corso_id }}</td>
+              <td>{{ p.slots?.[0]?.aula_id }}</td>
+              <td>{{ p.slots?.[0]?.corso_id }}</td>
               <td>{{ p.richiedente_id }}</td>
               <td><BadgeStato :stato="p.stato" /></td>
               <td>{{ p.slots?.length ?? 0 }}</td>
@@ -121,7 +121,7 @@ function esportaCsv() {
   const righe = [
     ['ID', 'Tipo', 'Aula', 'Corso', 'Richiedente', 'Stato', 'Slot', 'Data primo slot'],
     ...prenotazioni.value.map(p => [
-      p.id, p.tipo, p.aula_id, p.corso_id, p.richiedente_id, p.stato,
+      p.id, p.tipo, p.slots?.[0]?.aula_id, p.slots?.[0]?.corso_id, p.richiedente_id, p.stato,
       p.slots?.length ?? 0,
       p.slots?.[0]?.data ?? '',
     ]),

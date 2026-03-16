@@ -75,11 +75,18 @@
                 <!-- Prenotazioni del giorno -->
                 <div v-if="prenotazioniAula(aula.id).length">
                   <small class="text-muted d-block mb-1 fw-semibold">Prenotazioni:</small>
+
                   <div v-for="item in prenotazioniAula(aula.id)" :key="item.prenId + '-' + item.slotIdx"
                     class="prenotazione-chip">
-                    <span class="fw-semibold">{{ item.oraInizio }}–{{ item.oraFine }}</span>
-                    <span class="ms-2 text-truncate text-muted small">Corso {{ item.corsoId }}</span>
+                    <div class="d-flex flex-column">
+                      <div>
+                        <span class="fw-semibold">{{ item.oraInizio }}–{{ item.oraFine }}</span>
+                        <span class="ms-2 text-muted small">Corso {{ item.corsoId }}</span>
+                      </div>
+                      <div v-if="item.note" class="fst-italic text-muted small mt-1">{{ item.note }}</div>
+                    </div>
                   </div>
+                  
                 </div>
                 <div v-else>
                   <small class="text-muted">Nessuna prenotazione per questa data.</small>
@@ -148,12 +155,13 @@ const eventiPerAula = computed(() => {
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
       if (slot?.data !== dataConsulta.value || slot.annullato) continue
-      const aulaId = p.aula_id
+      const aulaId = slot.aula_id
       if (!map[aulaId]) map[aulaId] = []
       map[aulaId].push({
         prenId: p.id,
         slotIdx: si,
-        corsoId: p.corso_id,
+        corsoId: slot.corso_id,
+        note: slot.note || '',
         oraInizio: slot.ora_inizio?.slice(0, 5) || '',
         oraFine: slot.ora_fine?.slice(0, 5) || '',
         oraH: parseInt(slot.ora_inizio?.slice(0, 2) || '0'),

@@ -121,3 +121,7 @@ export async function getStatsConflitti(sedeId = null) {
   const query = sedeId ? `?sede_id=${sedeId}` : ''
   return apiGet(`/conflitti/stats/summary${query}`)
 }
+
+export async function modificaSlot(prenotazioneId, slotId, payload) {
+  return apiPatch(`/prenotazioni/${prenotazioneId}/slots/${slotId}`, payload)
+}

@@ -33,8 +33,8 @@
                   {{ formatOra(p.slots[0].ora_inizio) }}–{{ formatOra(p.slots[0].ora_fine) }}
                 </span>
               </div>
-              <div v-if="p.note" class="small mt-1 text-muted fst-italic">
-                Note: {{ p.note }}
+              <div v-if="p.slots?.[0]?.note" class="small mt-1 text-muted fst-italic">
+                Note: {{ p.slots?.[0]?.note }}
               </div>
               <!-- Alert conflitti -->
               <div v-if="p.stato === 'conflitto'" class="alert alert-warning py-1 small mt-2 mb-0">

@@ -9,11 +9,14 @@ from backend.models.enums import (StatoPrenotazione, TipoPrenotazione,
 
 class SlotOrarioSchema(BaseModel):
     id:         Optional[int] = None
+    aula_id:    int
+    corso_id:   int
+    note:       Optional[str] = None
     data:       date
     ora_inizio: time
     ora_fine:   time
     annullato:  bool = False
-    
+
     @field_validator("ora_fine")
     @classmethod
     def ora_fine_dopo_inizio(cls, v, info):
@@ -26,7 +29,6 @@ class SlotOrarioSchema(BaseModel):
 
 
 class PrenotazioneSingolaInput(BaseModel):
-    """Input per creare una prenotazione singola."""
     aula_id:    int
     corso_id:   int
     slot:       SlotOrarioSchema
@@ -34,7 +36,6 @@ class PrenotazioneSingolaInput(BaseModel):
 
 
 class PrenotazioneMassivaInput(BaseModel):
-    """Input per creare una Prenotazione massiva."""
     aula_id:         int
     corso_id:        int
     data_inizio:     date
@@ -42,7 +43,7 @@ class PrenotazioneMassivaInput(BaseModel):
     ora_inizio:      time
     ora_fine:        time
     tipo_ricorrenza: TipoRicorrenza
-    giorni_settimana: List[int]  # Es: [1, 3, 5] per Lun/Mer/Ven (1=lunedì, 7=domenica)
+    giorni_settimana: List[int]
     note:            Optional[str] = None
 
     @field_validator("giorni_settimana")
@@ -52,40 +53,39 @@ class PrenotazioneMassivaInput(BaseModel):
             raise ValueError("I giorni della settimana devono essere tra 1 (lunedì) e 7 (domenica)")
         return sorted(set(v))
 
+
 class RichiestaEmbedded(BaseModel):
-    id:           int
-    stato:        StatoRichiesta
-    ha_conflitti: bool
-    note_rifiuto: Optional[str] = None
+    id:            int
+    stato:         StatoRichiesta
+    ha_conflitti:  bool
+    note_rifiuto:  Optional[str] = None
     data_gestione: Optional[datetime] = None
+
     class Config:
         from_attributes = True
+
 
 class PrenotazioneRisposta(BaseModel):
     """Schema di risposta per una prenotazione."""
     id:             int
     tipo:           TipoPrenotazione
-    aula_id:        int
-    corso_id:       int
     richiedente_id: int
     stato:          StatoPrenotazione
-    note:           Optional[str] = None
     data_creazione: datetime
     slots:          List[SlotOrarioSchema] = []
-    richiesta: Optional[RichiestaEmbedded] = None
+    richiesta:      Optional[RichiestaEmbedded] = None
 
     class Config:
         from_attributes = True
 
 
 class RichiestaPrenotazioneRisposta(BaseModel):
-    """Schema di risposta per una richiesta di prenotazione."""
-    id:             int
+    id:              int
     prenotazione_id: int
-    stato:          StatoRichiesta
-    ha_conflitti:   bool
-    data_richiesta: datetime
-    note_rifiuto:   Optional[str] = None
+    stato:           StatoRichiesta
+    ha_conflitti:    bool
+    data_richiesta:  datetime
+    note_rifiuto:    Optional[str] = None
 
     class Config:
         from_attributes = True

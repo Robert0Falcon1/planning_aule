@@ -161,9 +161,9 @@ async function carica() {
         const [hF, mF] = s.ora_fine.split(':').map(Number)
         const ore = (hF * 60 + mF - hI * 60 - mI) / 60
 
-        if (!perAula[p.aula_id]) perAula[p.aula_id] = { slot: 0, ore: 0 }
-        perAula[p.aula_id].slot++
-        perAula[p.aula_id].ore += ore
+        const aulaIdS = p.slots?.[0]?.aula_id; if (!aulaIdS) continue; if (!perAula[aulaIdS]) perAula[aulaIdS] = { slot: 0, ore: 0 }
+        perAula[aulaIdR].slot++
+        perAula[aulaIdS].ore += ore
         totaleSlot++
         totaleOre += ore
       }

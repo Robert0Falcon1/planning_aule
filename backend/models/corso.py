@@ -94,11 +94,11 @@ class Corso(Base):
         back_populates="corsi",
         foreign_keys=[sede_id],
     )
-    prenotazioni = relationship("Prenotazione", back_populates="corso")
+    slots        = relationship("SlotOrario", back_populates="corso")
     lezioni      = relationship("Lezione",      back_populates="corso",
                                 cascade="all, delete-orphan")
-    docenti  = relationship("Docente", secondary=corso_docenti, back_populates="corsi")
-    allievi  = relationship("Allievo", secondary=corso_allievi, back_populates="corsi")
+    docenti      = relationship("Docente", secondary=corso_docenti, back_populates="corsi")
+    allievi      = relationship("Allievo", secondary=corso_allievi, back_populates="corsi")
 
     # ── Metodi ────────────────────────────────────────────────────────────────
     def is_attivo(self) -> bool:

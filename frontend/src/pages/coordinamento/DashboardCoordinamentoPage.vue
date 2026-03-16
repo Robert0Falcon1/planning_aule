@@ -170,7 +170,7 @@ onMounted(async () => {
     const slotOggi = []
     for (const p of prenList) {
       for (const s of (p.slots || [])) {
-        if (s.data === dataOggi && !s.annullato) slotOggi.push({ ...s, aula_id: p.aula_id })
+        if (s.data === dataOggi && !s.annullato) slotOggi.push({ ...s })
       }
     }
 

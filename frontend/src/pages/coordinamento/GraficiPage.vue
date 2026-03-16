@@ -172,6 +172,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
+import { getAule } from '@/api/aule'
 import { getUtenti } from '@/api/utenti'
 import { useAule } from '@/composables/useAule'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
@@ -181,14 +182,15 @@ import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
 const loading         = ref(false)
 const sedi            = ref([])
+const aule            = ref([])
 const prenotazioni    = ref([])
 const conflittiAttivi = ref([])
 const granularity     = ref('mese')
 const range           = ref('6')
 const filtroSede      = ref('')
 const topN            = ref(10)
-const accordionAperto = ref(null)   // null = primo aperto di default
-const utenti = ref([])
+const accordionAperto = ref(null)
+const utenti          = ref([])
 
 function toggleAccordion(nome) {
   accordionAperto.value = accordionAperto.value === nome ? '__chiudi__' : nome
@@ -200,28 +202,43 @@ const granularita = [
 ]
 const coloriSede = ['#0066cc','#198754','#ffc107','#dc3545','#6f42c1','#fd7e14']
 
-// ── Helper: estrae la data del primo slot ─────────────────────────────────────
-function dataSlot(p) { return p.slots?.[0]?.data || '' }
+// ── aulaMap per filtro sede slot-level ────────────────────────────────────────
+const aulaMap = computed(() =>
+  Object.fromEntries(aule.value.map(a => [a.id, a]))
+)
 
-// ── Computed ──────────────────────────────────────────────────────────────────
-
-// Espande ogni prenotazione per numero di slot (1 prenotazione massiva = N slot)
+// ── Espande ogni prenotazione in slot individuali ─────────────────────────────
 const slotEspansi = computed(() => {
   const list = []
   for (const p of prenotazioni.value) {
     for (const slot of (p.slots || [])) {
-      list.push({ ...p, _slotData: slot.data })
+      if (slot.annullato) continue
+      list.push({
+        ...p,
+        _slotData: slot.data,
+        aula_id:   slot.aula_id,
+        corso_id:  slot.corso_id,
+        note:      slot.note,
+      })
     }
   }
   return list
 })
 
+// ── Filtra slot per sede a livello slot (non prenotazione) ────────────────────
+const slotEspansiFiltrati = computed(() => {
+  if (!filtroSede.value) return slotEspansi.value
+  return slotEspansi.value.filter(s =>
+    aulaMap.value[s.aula_id]?.sede_id == filtroSede.value
+  )
+})
+
 const confermate = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata'))
 
-// Dati per grafico a barre per periodo (conta slot confermati)
+// ── Grafico 1: Prenotazioni per periodo ───────────────────────────────────────
 const datiPeriodo = computed(() => {
   const buckets = {}
-  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
+  for (const s of slotEspansiFiltrati.value.filter(s => s.stato === 'confermata')) {
     const d = s._slotData; if (!d) continue
     let key
     if (granularity.value === 'settimana') {
@@ -244,30 +261,16 @@ const datiPeriodo = computed(() => {
 
 const maxPeriodo = computed(() => Math.max(...datiPeriodo.value.map(x => x.valore), 1))
 
-// Distribuzione per aula_id
-const datiSede = computed(() => {
-  const map = {}
-  for (const p of confermate.value) {
-    const k = nomeAula(p.aula_id)
-    map[k] = (map[k] || 0) + (p.slots?.length || 1)
-  }
-  const tot = Object.values(map).reduce((s, v) => s + v, 0) || 1
-  return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 8)
-    .map(([label, valore]) => ({ label, valore, pct: Math.round(valore / tot * 100) }))
-})
-
-// Distribuzione per aula raggruppata per sede (accordion)
+// ── Grafico 2: Distribuzione per aula raggruppata per sede ────────────────────
 const datiPerSede = computed(() => {
   const map = {}
-  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
-    const k = s.aula_id
-    map[k] = (map[k] || 0) + 1
+  for (const s of slotEspansiFiltrati.value.filter(s => s.stato === 'confermata')) {
+    map[s.aula_id] = (map[s.aula_id] || 0) + 1
   }
   const sediMap = {}
   for (const [aulaId, slot] of Object.entries(map)) {
     const id = Number(aulaId)
     const nomeSede = sedeDiAula(id)
-    // sedeDiAula restituisce '—' quando sede_id manca: raggruppa come 'Sede non associata'
     const nomeGruppo = (nomeSede && nomeSede !== '—') ? nomeSede : 'Sede non associata'
     if (!sediMap[nomeGruppo]) sediMap[nomeGruppo] = { nome: nomeGruppo, aule: [], totSlot: 0 }
     sediMap[nomeGruppo].aule.push({ aulaId: id, nome: nomeAula(id), slot })
@@ -275,7 +278,6 @@ const datiPerSede = computed(() => {
   }
   return Object.values(sediMap)
     .sort((a, b) => {
-      // 'Sede non associata' sempre in fondo
       if (a.nome === 'Sede non associata') return 1
       if (b.nome === 'Sede non associata') return -1
       return b.totSlot - a.totSlot
@@ -289,36 +291,39 @@ const datiPerSede = computed(() => {
     })
 })
 
-// Top corsi per corso_id
+// ── Grafico 3: Top corsi ──────────────────────────────────────────────────────
 const datiCorsi = computed(() => {
   const map = {}
-  for (const p of confermate.value) {
-    const k = `Corso ${p.corso_id}`
+  for (const s of slotEspansiFiltrati.value.filter(s => s.stato === 'confermata')) {
+    const k = `Corso ${s.corso_id}`
     map[k] = (map[k] || 0) + 1
   }
   return Object.entries(map).sort(([,a],[,b]) => b - a).map(([label, valore]) => ({ label, valore }))
 })
 
-// Slot per aula (conta slot totali confermati)
+// ── Grafico 4: Slot per aula ──────────────────────────────────────────────────
 const datiAule = computed(() => {
   const map = {}
-  for (const s of slotEspansi.value.filter(s => s.stato === 'confermata')) {
-    const k = s.aula_id
-    map[k] = (map[k] || 0) + 1
+  for (const s of slotEspansiFiltrati.value.filter(s => s.stato === 'confermata')) {
+    map[s.aula_id] = (map[s.aula_id] || 0) + 1
   }
   const max = Math.max(...Object.values(map), 1)
   return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 10)
-    .map(([aulaId, slot]) => ({ aulaId, nome: nomeAula(aulaId), sede: sedeDiAula(aulaId), slot, pct: Math.round(slot / max * 100) }))
+    .map(([aulaId, slot]) => ({
+      aulaId,
+      nome: nomeAula(aulaId),
+      sede: sedeDiAula(aulaId),
+      slot,
+      pct: Math.round(slot / max * 100)
+    }))
 })
 
-// KPI riepilogo
+// ── KPI ───────────────────────────────────────────────────────────────────────
 const totPrenotazioni = computed(() => prenotazioni.value.length)
 const totConfermate   = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata').length)
-// FIX: conta conflitti NON_RISOLTO distinti da API (non il flag ha_conflitti inaffidabile)
 const totConflitti    = computed(() => conflittiAttivi.value.length)
 
 // ── Caricamento ───────────────────────────────────────────────────────────────
-
 async function carica() {
   loading.value = true
   try {
@@ -340,26 +345,24 @@ async function carica() {
 
 function esportaCsv() {
   if (!prenotazioni.value.length) { alert('Nessun dato da esportare.'); return }
-
   const mappaUtenti = Object.fromEntries(utenti.value.map(u => [u.id, `${u.nome} ${u.cognome}`]))
-
-  const righe = [['Corso', 'Sede', 'Aula', 'Data', 'Ora inizio', 'Ora fine', 'Creata il', 'Creata da']]
+  const righe = [['Corso', 'Sede', 'Aula', 'Data', 'Ora inizio', 'Ora fine', 'Note', 'Creata il', 'Creata da']]
   for (const p of prenotazioni.value) {
     for (const slot of (p.slots || [])) {
       if (slot.annullato) continue
       righe.push([
-        p.corso_id || '',
-        sedeDiAula(p.aula_id) || '',
-        nomeAula(p.aula_id)   || '',
-        slot.data             || '',
+        slot.corso_id || '',
+        sedeDiAula(slot.aula_id) || '',
+        nomeAula(slot.aula_id)   || '',
+        slot.data                || '',
         slot.ora_inizio?.slice(0, 5) || '',
         slot.ora_fine?.slice(0, 5)   || '',
+        slot.note                || '',
         p.data_creazione?.slice(0, 10) || '',
         mappaUtenti[p.richiedente_id] || `#${p.richiedente_id}`,
       ])
     }
   }
-
   const csv  = righe.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
@@ -372,16 +375,16 @@ function esportaCsv() {
 
 onMounted(async () => {
   await caricaAule()
-  const data = await getSedi()
-  sedi.value = Array.isArray(data) ? data : []
+  const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
+  sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
+  aule.value  = Array.isArray(dataAule)  ? dataAule  : []
   carica()
-  // FIX: conflitti distinti da API — separato per non bloccare su 403 OPERATIVO
   try {
     const cf = await getConflitti({ solo_attivi: true })
     conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
-    const [data, dataUtenti] = await Promise.all([getSedi(), getUtenti()])
-    sedi.value   = Array.isArray(data)       ? data       : []
-    utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
+    const [dataSedi2, dataUtenti] = await Promise.all([getSedi(), getUtenti()])
+    sedi.value   = Array.isArray(dataSedi2)   ? dataSedi2   : []
+    utenti.value = Array.isArray(dataUtenti)  ? dataUtenti  : []
   } catch (e) {
     conflittiAttivi.value = []
   }

@@ -52,7 +52,7 @@ def lista_conflitti(
     if utente.ruolo == RuoloUtente.OPERATIVO:
         mie_pren_ids = db.query(Prenotazione.id).filter(
             Prenotazione.richiedente_id == utente.id
-        ).subquery()
+        ).scalar_subquery()
         query = query.filter(
             or_(
                 ConflittoPrenotazione.prenotazione_id_1.in_(mie_pren_ids),

@@ -24,14 +24,14 @@
             <div class="col-md-8">
               <div class="fw-semibold mb-1">⚠️ Prenotazione #{{ p.id }}</div>
               <div class="text-muted small">
-                Aula {{ p.aula_id }} | Corso {{ p.corso_id }} | {{ p.tipo }} |
+                Aula {{ p.slots?.[0]?.aula_id }} | Corso {{ p.slots?.[0]?.corso_id }} | {{ p.tipo }} |
                 {{ p.slots?.length ?? 0 }} slot
               </div>
               <div v-if="p.slots?.[0]" class="small mt-1">
                 📅 {{ formatData(p.slots[0].data) }}
                 {{ formatOra(p.slots[0].ora_inizio) }}–{{ formatOra(p.slots[0].ora_fine) }}
               </div>
-              <div v-if="p.note" class="small text-muted fst-italic mt-1">Note: {{ p.note }}</div>
+              <div v-if="p.slots?.[0]?.note" class="small text-muted fst-italic mt-1">Note: {{ p.slots?.[0]?.note }}</div>
             </div>
 
             <div class="col-md-4">

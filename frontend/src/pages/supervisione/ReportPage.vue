@@ -104,12 +104,12 @@ async function genera() {
     // Aggrega per aula
     const perAula = {}
     for (const p of dati) {
-      if (!perAula[p.aula_id]) perAula[p.aula_id] = { slot: 0, minuti: 0 }
+      const aulaIdR = p.slots?.[0]?.aula_id; if (!aulaIdR) continue; if (!perAula[aulaIdR]) perAula[aulaIdR] = { slot: 0, minuti: 0 }
       for (const s of (p.slots ?? [])) {
-        perAula[p.aula_id].slot++
+        perAula[aulaIdR].slot++
         const [hi, mi] = s.ora_inizio.split(':').map(Number)
         const [hf, mf] = s.ora_fine.split(':').map(Number)
-        perAula[p.aula_id].minuti += (hf * 60 + mf) - (hi * 60 + mi)
+        perAula[aulaIdR].minuti += (hf * 60 + mf) - (hi * 60 + mi)
       }
     }
 
