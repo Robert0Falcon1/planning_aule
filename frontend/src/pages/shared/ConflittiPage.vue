@@ -8,7 +8,7 @@
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-        <div class="form-check form-switch mb-0">
+        <div class="form-check form-switch mb-0 ps-0 me-3">
           <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
           <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
         </div>
@@ -79,8 +79,8 @@
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
-                      <div v-if="infoSlot(c, 1)?.note" class="text-muted small mt-1 fst-italic">
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0,5) }} alle {{ s.ora_fine?.slice(0,5) }}</div>
+                      <div v-if="infoSlot(c, 1)?.note" class="text-muted small mt-1 fst-italic d-flex align-items-center">
                         <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 1)?.note }}
                       </div>
                     </template>
@@ -114,8 +114,8 @@
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio }} alle {{ s.ora_fine }}</div>
-                      <div v-if="infoSlot(c, 2)?.note" class="text-muted small mt-1 fst-italic">
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0,5) }} alle {{ s.ora_fine?.slice(0,5) }}</div>
+                      <div v-if="infoSlot(c, 2)?.note" class="text-muted small mt-1 fst-italic d-flex align-items-center">
                         <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 2)?.note }}
                       </div>
                     </template>

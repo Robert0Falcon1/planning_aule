@@ -21,25 +21,19 @@
 
     <!-- KPI -->
     <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
           <div class="fs-3 fw-bold text-primary">{{ slotDelGiorno.length }}</div>
           <div class="small text-muted">Slot totali</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
           <div class="fs-3 fw-bold text-success">{{ confermate }}</div>
           <div class="small text-muted">Confermate</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-3 fw-bold text-secondary">{{ cancellate }}</div>
-          <div class="small text-muted">Cancellate</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
           <div class="fs-3 fw-bold text-info">{{ auleOccupate }}</div>
           <div class="small text-muted">Aule occupate</div>

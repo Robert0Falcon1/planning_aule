@@ -319,20 +319,21 @@ const datiAule = computed(() => {
 })
 
 // ── KPI ───────────────────────────────────────────────────────────────────────
-const totPrenotazioni = computed(() => prenotazioni.value.length)
-const totConfermate   = computed(() => prenotazioni.value.filter(p => p.stato === 'confermata').length)
+const totPrenotazioni = computed(() => slotEspansiFiltrati.value.length)
+const totConfermate   = computed(() => slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').length)
 const totConflitti    = computed(() => conflittiAttivi.value.length)
 
 // ── Caricamento ───────────────────────────────────────────────────────────────
 async function carica() {
   loading.value = true
-  try {
+  try {const totPrenotazioni = computed(() => new Set(slotEspansiFiltrati.value.map(s => s.id)).size)
+const totConfermate   = computed(() => new Set(slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').map(s => s.id)).size)
+
     const fine   = oggi()
     const inizio = aggiungiGiorni(fine, -parseInt(range.value) * 30)
     const data   = await getPrenotazioni({
       data_dal: inizio,
       data_al:  fine,
-      ...(filtroSede.value ? { sede_id: filtroSede.value } : {}),
     })
     prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
   } catch (e) {

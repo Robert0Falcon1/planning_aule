@@ -41,10 +41,11 @@ def lista_conflitti(
 
     # Filtro sede (solo COORDINAMENTO)
     if sede_id and utente.ruolo == RuoloUtente.COORDINAMENTO:
+        from backend.models.slot_orario import SlotOrario
         query = (
             query
-            .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
-            .join(Aula, Prenotazione.aula_id == Aula.id)
+            .join(SlotOrario, ConflittoPrenotazione.slot_id_1 == SlotOrario.id)
+            .join(Aula, SlotOrario.aula_id == Aula.id)
             .filter(Aula.sede_id == sede_id)
         )
 
@@ -88,12 +89,12 @@ def statistiche_conflitti(
     query = db.query(ConflittoPrenotazione)
 
     if sede_id:
-        from backend.models.prenotazione import Prenotazione
+        from backend.models.slot_orario import SlotOrario
         from backend.models.aula import Aula
         query = (
             query
-            .join(Prenotazione, ConflittoPrenotazione.prenotazione_id_1 == Prenotazione.id)
-            .join(Aula, Prenotazione.aula_id == Aula.id)
+            .join(SlotOrario, ConflittoPrenotazione.slot_id_1 == SlotOrario.id)
+            .join(Aula, SlotOrario.aula_id == Aula.id)
             .filter(Aula.sede_id == sede_id)
         )
 
@@ -136,13 +137,9 @@ def dettaglio_conflitto(
         },
         "prenotazione_1": {
             "id": conflitto.prenotazione_1.id,
-            "corso_id": conflitto.prenotazione_1.corso_id,
-            "aula_id": conflitto.prenotazione_1.aula_id,
         },
         "prenotazione_2": {
             "id": conflitto.prenotazione_2.id,
-            "corso_id": conflitto.prenotazione_2.corso_id,
-            "aula_id": conflitto.prenotazione_2.aula_id,
         }
     }
 

@@ -62,7 +62,7 @@
               </RouterLink>
               <RouterLink :to="{ name: 'GestioneSediAule' }" class="btn btn-outline-secondary">
                 <svg class="icon icon-sm me-1"><use :href="sprites + '#it-settings'"></use></svg>
-                Gestione Sedi/Aule
+                Sedi/Aule
               </RouterLink>
               <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
                 <svg class="icon icon-sm me-1"><use :href="sprites + '#it-error'"></use></svg>
@@ -76,7 +76,7 @@
 
     <!-- Tabella sedi -->
     <div class="card border-0 shadow-sm">
-      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center px-0">
         <h5 class="card-title mb-0">Saturazione sedi — oggi</h5>
         <RouterLink :to="{ name: 'SituazioneOggi' }" class="btn btn-sm btn-outline-primary">Dettaglio →</RouterLink>
       </div>
