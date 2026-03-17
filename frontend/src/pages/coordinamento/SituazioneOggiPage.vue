@@ -60,7 +60,7 @@
                   <th>Aula</th>
                   <th>Corso&nbsp;ID</th>
                   <th>Orario</th>
-                  <th>Tipo</th>
+                  <!-- <th>Tipo</th> -->
                   <th>Stato</th>
                 </tr>
               </thead>
@@ -69,11 +69,11 @@
                   <td class="fw-semibold">{{ nomeAulaFn(slot.aulaId) }}</td>
                   <td><code class="small">{{ slot.corsoId }}</code></td>
                   <td class="text-nowrap">{{ slot.oraInizio }} – {{ slot.oraFine }}</td>
-                  <td>
+                  <!-- <td>
                     <span class="badge" :class="slot.tipo === 'massiva' ? 'bg-info' : 'bg-secondary'">
                       {{ slot.tipo }}
                     </span>
-                  </td>
+                  </td> -->
                   <td>
                     <span class="badge" :class="badgeStato(slot.stato)">{{ slot.stato }}</span>
                   </td>

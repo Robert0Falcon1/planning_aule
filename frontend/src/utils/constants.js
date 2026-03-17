@@ -89,10 +89,19 @@ export const ORE_SLOT = Array.from({ length: 28 }, (_, i) => {
 
 /** Colori per aula nel calendario (riutilizzati ciclicamente) */
 export const COLORI_AULA = [
-  '#0066CC', // blu BI
-  '#008D62', // verde
-  '#A04000', // marrone
-  '#6C3483', // viola
-  '#B7950B', // giallo scuro
-  '#1A5276', // blu scuro
+  '#0066CC',
+  '#008D62',
+  '#A04000',
+  '#6C3483',
+  '#B7950B',
+  '#C0392B',
+  '#117A65',
+  '#1A5276',
+  '#6E2C00',
+  '#4A235A',
+  '#1E8449',
+  '#784212',
+  '#1B2631',
+  '#922B21',
+  '#0E6655',
 ]

@@ -200,7 +200,23 @@ const granularita = [
   { val: 'settimana', label: 'Settimana' },
   { val: 'mese',      label: 'Mese' },
 ]
-const coloriSede = ['#0066cc','#198754','#ffc107','#dc3545','#6f42c1','#fd7e14']
+const coloriSede = [
+  '#0066CC',
+  '#008D62',
+  '#A04000',
+  '#6C3483',
+  '#B7950B',
+  '#C0392B',
+  '#117A65',
+  '#1A5276',
+  '#6E2C00',
+  '#4A235A',
+  '#1E8449',
+  '#784212',
+  '#1B2631',
+  '#922B21',
+  '#0E6655',
+]
 
 // ── aulaMap per filtro sede slot-level ────────────────────────────────────────
 const aulaMap = computed(() =>

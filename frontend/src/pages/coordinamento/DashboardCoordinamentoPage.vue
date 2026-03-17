@@ -2,7 +2,7 @@
   <div class="page-dashboard-coord">
     <div class="page-header mb-4">
       <h2 class="page-title">Dashboard Coordinamento</h2>
-      <p class="text-muted mb-0">Panoramica generale · {{ oggi }}</p>
+      <p class="text-muted mb-0">Panoramica generale · {{ oggiLabel }}</p>
     </div>
 
     <!-- KPI row -->
@@ -132,7 +132,10 @@ function percentuale(val, tot) {
   return Math.round((val / tot) * 100)
 }
 
-const oggi        = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const oggiLabel = new Date().toLocaleDateString('it-IT', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+}).replace(/\b\w/g, c => c.toUpperCase())
+
 const loadingSedi = ref(false)
 const kpi         = ref({ prenotazioniOggi: '—', auleOccupateOggi: '—', conflittiAperti: '—', utentiAttivi: '—' })
 const saturazioneSedi = ref([])
