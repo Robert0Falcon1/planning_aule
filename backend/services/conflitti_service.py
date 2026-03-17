@@ -239,7 +239,7 @@ class ConflittoService:
 
         if azione == "mantieni_1":
             # Mantieni slot_1, annulla slot_2 (solo lo slot in conflitto)
-            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
+            conflitto.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANUALE
             db.flush()
             ConflittoService._annulla_slot_e_cleanup(
                 db, conflitto.prenotazione_2, conflitto.slot_id_2

@@ -18,10 +18,10 @@
 const { test, expect } = require('@playwright/test')
 
 const BASE         = process.env.FRONTEND_URL   || 'http://localhost:5173'
-const COORD_EMAIL  = process.env.COORD_EMAIL    || 'coord@test.it'
-const COORD_PASS   = process.env.COORD_PASSWORD || 'test'
-const OP_EMAIL     = process.env.OP_EMAIL       || 'segr.did@test.it'
-const OP_PASS      = process.env.OP_PASSWORD    || 'test'
+const COORD_EMAIL  = process.env.COORD_EMAIL    || 'dev@inforcoopecipa.it'
+const COORD_PASS   = process.env.COORD_PASSWORD || 'final'
+const OP_EMAIL     = process.env.OP_EMAIL       || 'colline@inforcoopecipa.it'
+const OP_PASS      = process.env.OP_PASSWORD    || 'colline!'
 
 // ── Helper: login ─────────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ test.describe('Dashboard Coordinamento', () => {
     await page.goto(`${BASE}/coordinamento/dashboard`)
     await page.waitForLoadState('networkidle')
     // Cerca una card/badge con la parola "conflitti" — deve esistere nel DOM
-    const kpi = page.getByText(/conflitti/i).first()
+    const kpi = page.locator('.card').filter({ hasText: /conflitti/i }).first()
     await expect(kpi).toBeVisible()
   })
 

@@ -12,7 +12,12 @@ from backend.models.utente import Utente
 from backend.models.enums import (StatoPrenotazione, StatoRichiesta, TipoRicorrenza)
 from backend.schemas.prenotazione import (PrenotazioneSingolaInput, PrenotazioneMassivaInput)
 
-def crea_prenotazione_singola(db, dati, utente):
+
+def crea_prenotazione_singola(
+    db: Session,
+    dati: PrenotazioneSingolaInput,
+    utente: Utente
+) -> tuple[PrenotazioneSingola, None]:
     prenotazione = PrenotazioneSingola(
         richiedente_id=utente.id,
         stato=StatoPrenotazione.CONFERMATA,
@@ -22,9 +27,9 @@ def crea_prenotazione_singola(db, dati, utente):
 
     slot = SlotOrario(
         prenotazione_id=prenotazione.id,
-        aula_id=dati.aula_id,       
-        corso_id=dati.corso_id,     
-        note=dati.note,             
+        aula_id=dati.aula_id,
+        corso_id=dati.corso_id,
+        note=dati.note,
         data=dati.slot.data,
         ora_inizio=dati.slot.ora_inizio,
         ora_fine=dati.slot.ora_fine,
@@ -33,36 +38,6 @@ def crea_prenotazione_singola(db, dati, utente):
     db.flush()
     return prenotazione, None
 
-
-def crea_prenotazione_massiva(db, dati, utente):
-    prenotazione = PrenotazioneMassiva(
-        richiedente_id=utente.id,
-        stato=StatoPrenotazione.CONFERMATA,
-        tipo_ricorrenza=dati.tipo_ricorrenza,
-        giorni_settimana=",".join(map(str, dati.giorni_settimana)),
-        data_inizio_range=dati.data_inizio,
-        data_fine_range=dati.data_fine,
-    )
-    db.add(prenotazione)
-    db.flush()
-
-    date_ricorrenti = genera_date_ricorrenza(
-        dati.data_inizio, dati.data_fine,
-        dati.tipo_ricorrenza, dati.giorni_settimana,
-    )
-    for d in date_ricorrenti:
-        slot = SlotOrario(
-            prenotazione_id=prenotazione.id,
-            aula_id=dati.aula_id,       
-            corso_id=dati.corso_id,     
-            note=dati.note,             
-            data=d,
-            ora_inizio=dati.ora_inizio,
-            ora_fine=dati.ora_fine,
-        )
-        db.add(slot)
-    db.flush()
-    return prenotazione, None
 
 def genera_date_ricorrenza(
     data_inizio: date,
@@ -100,23 +75,22 @@ def crea_prenotazione_massiva(
     db: Session,
     dati: PrenotazioneMassivaInput,
     utente: Utente
-) -> tuple[PrenotazioneMassiva, RichiestaPrenotazione]:
+) -> tuple[PrenotazioneMassiva, None]:
     """
     Crea una prenotazione massiva generando tutti gli slot ricorrenti.
     Sistema 2 ruoli: stato CONFERMATA immediato.
     """
     prenotazione = PrenotazioneMassiva(
-    richiedente_id=utente.id,
-    stato=StatoPrenotazione.CONFERMATA,
-    tipo_ricorrenza=dati.tipo_ricorrenza,
-    giorni_settimana=",".join(map(str, dati.giorni_settimana)),
-    data_inizio_range=dati.data_inizio,
-    data_fine_range=dati.data_fine,
-)
+        richiedente_id=utente.id,
+        stato=StatoPrenotazione.CONFERMATA,
+        tipo_ricorrenza=dati.tipo_ricorrenza,
+        giorni_settimana=",".join(map(str, dati.giorni_settimana)),
+        data_inizio_range=dati.data_inizio,
+        data_fine_range=dati.data_fine,
+    )
     db.add(prenotazione)
     db.flush()
 
-    # Genera slot
     date_ricorrenti = genera_date_ricorrenza(
         dati.data_inizio,
         dati.data_fine,
@@ -127,6 +101,9 @@ def crea_prenotazione_massiva(
     for d in date_ricorrenti:
         slot = SlotOrario(
             prenotazione_id=prenotazione.id,
+            aula_id=dati.aula_id,
+            corso_id=dati.corso_id,
+            note=dati.note,
             data=d,
             ora_inizio=dati.ora_inizio,
             ora_fine=dati.ora_fine,
@@ -134,5 +111,4 @@ def crea_prenotazione_massiva(
         db.add(slot)
 
     db.flush()
-
-    return prenotazione, None  # Richiesta creata nel router
+    return prenotazione, None

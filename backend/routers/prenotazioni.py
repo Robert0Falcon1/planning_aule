@@ -12,7 +12,8 @@ from backend.models.utente import Utente
 from backend.models.prenotazione import Prenotazione, RichiestaPrenotazione
 from backend.models.slot_orario import SlotOrario
 from backend.models.aula import Aula
-from backend.models.enums import StatoPrenotazione, StatoRichiesta, RuoloUtente
+from backend.models.conflitto import ConflittoPrenotazione
+from backend.models.enums import StatoPrenotazione, StatoRichiesta, RuoloUtente, StatoRisoluzioneConflitto
 from backend.schemas.prenotazione import (
     PrenotazioneSingolaInput,
     PrenotazioneMassivaInput,
@@ -94,7 +95,7 @@ def slot_liberi(
         db.query(SlotOrario)
         .join(Prenotazione)
         .filter(
-            SlotOrario.aula_id == aula_id,          # ← ora su slot
+            SlotOrario.aula_id == aula_id,
             Prenotazione.stato.in_([
                 StatoPrenotazione.CONFERMATA,
                 StatoPrenotazione.IN_ATTESA,
@@ -133,7 +134,6 @@ def lista_prenotazioni(
     if stato:
         query = query.filter(Prenotazione.stato == stato)
 
-    # sede_id, corso_id e date → filtro via subquery su slot_orari
     if sede_id or corso_id or data_dal or data_al:
         slot_subq = db.query(SlotOrario.prenotazione_id)
         if sede_id:
@@ -241,9 +241,38 @@ def modifica_slot(
 
     db.flush()
 
+    # Chiudi i conflitti esistenti su questo slot prima di ricalcolare
+    conflitti_esistenti = db.query(ConflittoPrenotazione).filter(
+        or_(
+            ConflittoPrenotazione.slot_id_1 == slot_id,
+            ConflittoPrenotazione.slot_id_2 == slot_id,
+        ),
+        ConflittoPrenotazione.stato_risoluzione == None
+    ).all()
+
+    # Raccogli gli id delle prenotazioni coinvolte prima di chiudere i conflitti
+    altre_pren_ids = set()
+    for cf in conflitti_esistenti:
+        altra_id = (
+            cf.prenotazione_id_2
+            if cf.prenotazione_id_1 == prenotazione_id
+            else cf.prenotazione_id_1
+        )
+        altre_pren_ids.add(altra_id)
+        cf.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANUALE
+        cf.risolto_il = datetime.now(timezone.utc)
+        cf.note_risoluzione = "Chiuso automaticamente per modifica slot"
+
+    db.flush()
+
+    # Ricalcola conflitti con i nuovi dati dello slot
     conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
     if prenotazione.richiesta:
         prenotazione.richiesta.ha_conflitti = len(conflitti) > 0
+
+    # Aggiorna ha_conflitti sulle altre prenotazioni coinvolte
+    for altra_pren_id in altre_pren_ids:
+        ConflittoService._aggiorna_flag_conflitti(db, altra_pren_id)
 
     db.commit()
     db.refresh(prenotazione)
@@ -283,9 +312,6 @@ def annulla_slot(
     slot.annullato = True
     db.flush()
 
-    from backend.models.conflitto import ConflittoPrenotazione
-    from backend.models.enums import StatoRisoluzioneConflitto
-
     conflitti_slot = db.query(ConflittoPrenotazione).filter(
         or_(
             ConflittoPrenotazione.slot_id_1 == slot_id,
@@ -298,7 +324,7 @@ def annulla_slot(
         cf.stato_risoluzione = (
             StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
             if cf.slot_id_1 == slot_id
-            else StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
+            else StatoRisoluzioneConflitto.RISOLTO_MANUALE
         )
         cf.risolto_il = datetime.now(timezone.utc)
 
