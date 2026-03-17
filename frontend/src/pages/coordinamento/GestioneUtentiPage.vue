@@ -3,7 +3,7 @@
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Gestione Utenti</h2>
       <div class="ms-auto d-flex gap-2 align-items-center">
-        <input v-model="cerca" type="search" class="form-control form-control-sm" style="width:220px" placeholder="Cerca nome o username…" />
+        <!-- <input v-model="cerca" type="search" class="form-control form-control-sm" style="width:220px" placeholder="Cerca nome o username…" /> -->
         <select v-model="filtroRuolo" class="form-select form-select-sm" style="width:auto">
           <option value="">Tutti i ruoli</option>
           <option value="OPERATIVO">OPERATIVO</option>
