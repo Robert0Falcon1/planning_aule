@@ -205,7 +205,7 @@
                 <label class="form-label fw-semibold">Giorni della settimana *</label>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                   <div v-for="(nome, idx) in nomiGiorni" :key="idx" class="form-check form-check-inline my-0">
-                    <input class="form-check-input" type="checkbox" :id="`g${idx}`" :value="idx"
+                    <input class="form-check-input" type="checkbox" :id="`g${idx}`" :value="idx + 1"
                       v-model="massiva.giorni_settimana" />
                     <label class="form-check-label" :for="`g${idx}`">{{ nome }}</label>
                   </div>
@@ -262,7 +262,7 @@ const auleMassiva = ref([])
 const esito = ref(null)
 const esitoMassiva = ref(null)
 
-const nomiGiorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
+const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 // Slot orari ogni 30 minuti dalle 07:00 alle 21:00
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
