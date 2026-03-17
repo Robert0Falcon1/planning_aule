@@ -250,8 +250,8 @@ const titoloPageina = computed(() =>
 )
 
 const auleFiltrate = computed(() =>
-  filtroSede.value
-    ? aule.value.filter(a => a.sede_id == filtroSede.value)
+  filtroSede.value !== ''
+    ? aule.value.filter(a => String(a.sede_id) === String(filtroSede.value))
     : aule.value
 )
 function onSedeChange() { filtroAula.value = '' }
@@ -323,11 +323,15 @@ const tuttiGliSlot = computed(() => {
 const slotFiltrati = computed(() => {
   let list = tuttiGliSlot.value
 
-  if (filtroAula.value) {
-    list = list.filter(s => Number(s.aulaId) === Number(filtroAula.value))
-  } else if (filtroSede.value) {
-    const ids = new Set(aule.value.filter(a => Number(a.sede_id) === Number(filtroSede.value)).map(a => Number(a.id)))
-    list = list.filter(s => ids.has(Number(s.aulaId)))
+  if (filtroAula.value !== '') {
+    list = list.filter(s => String(s.aulaId) === String(filtroAula.value))
+  } else if (filtroSede.value !== '') {
+    const ids = new Set(
+      aule.value
+        .filter(a => String(a.sede_id) === String(filtroSede.value))
+        .map(a => String(a.id))
+    )
+    list = list.filter(s => ids.has(String(s.aulaId)))
   }
 
   if (filtroUtente.value) {
