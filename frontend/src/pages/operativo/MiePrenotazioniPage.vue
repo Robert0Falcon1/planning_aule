@@ -405,6 +405,7 @@ async function caricaTutto() {
     aule.value  = Array.isArray(dataAule)  ? dataAule  : []
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
+    console.log('conflittiAttivi:', conflittiAttivi.value, 'slotIds:', [...slotIdConConflitti.value])
 
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {

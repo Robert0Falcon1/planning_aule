@@ -57,23 +57,19 @@ class ConflittoService:
                 results.append((pren, slot))
         return results
 
+
     @staticmethod
     def detect_and_record_conflicts(
         db: Session,
         prenotazione: Prenotazione
     ) -> List[ConflittoPrenotazione]:
-        """
-        Rileva e registra conflitti automaticamente.
-        Deduplicazione a livello di coppia di SLOT (non di prenotazione):
-        ogni coppia di slot sovrapposti genera un conflitto separato.
-        Questo è necessario per le prenotazioni massive con molti slot.
-        """
         conflitti_creati = []
 
         for slot in prenotazione.slots:
             if slot.annullato:
                 continue
 
+            # ── Conflitti con altre prenotazioni ─────────────────────────────
             coppie_in_conflitto = ConflittoService.find_conflicting_slots(
                 db,
                 slot.aula_id,
@@ -84,7 +80,6 @@ class ConflittoService:
             )
 
             for conflicting_pren, conflicting_slot in coppie_in_conflitto:
-                # Dedup per coppia di SLOT (non prenotazione) — ogni slot ha il suo conflitto
                 s1 = min(slot.id, conflicting_slot.id)
                 s2 = max(slot.id, conflicting_slot.id)
 
@@ -95,7 +90,6 @@ class ConflittoService:
                 ).first()
 
                 if not existing:
-                    # Ordina le prenotazioni per id per normalizzare
                     if prenotazione.id < conflicting_pren.id:
                         id1, id2 = prenotazione.id, conflicting_pren.id
                         sid1, sid2 = slot.id, conflicting_slot.id
@@ -113,9 +107,45 @@ class ConflittoService:
                     db.add(conflitto)
                     conflitti_creati.append(conflitto)
 
+            # ── Conflitti intra-prenotazione (stessa prenotazione) ────────────
+            # Necessario quando uno slot viene spostato su data/orario/aula
+            # già occupata da un altro slot della stessa prenotazione massiva.
+            for altro_slot in prenotazione.slots:
+                if altro_slot.id == slot.id or altro_slot.annullato:
+                    continue
+                if altro_slot.aula_id != slot.aula_id:
+                    continue
+                if altro_slot.data != slot.data:
+                    continue
+                if not ConflittoService.check_time_overlap(
+                    slot.ora_inizio, slot.ora_fine,
+                    altro_slot.ora_inizio, altro_slot.ora_fine
+                ):
+                    continue
+
+                # Conflitto trovato — dedup per coppia di slot
+                s1 = min(slot.id, altro_slot.id)
+                s2 = max(slot.id, altro_slot.id)
+
+                existing = db.query(ConflittoPrenotazione).filter(
+                    ConflittoPrenotazione.slot_id_1 == s1,
+                    ConflittoPrenotazione.slot_id_2 == s2,
+                    ConflittoPrenotazione.stato_risoluzione == None,
+                ).first()
+
+                if not existing:
+                    conflitto = ConflittoPrenotazione(
+                        prenotazione_id_1=prenotazione.id,
+                        prenotazione_id_2=prenotazione.id,
+                        slot_id_1=s1,
+                        slot_id_2=s2,
+                        tipo_conflitto=TipoConflitto.OVERLAP_ORARIO,
+                    )
+                    db.add(conflitto)
+                    conflitti_creati.append(conflitto)
+
         if conflitti_creati:
             prenotazione.ha_conflitti_attivi = True
-            # Aggiorna anche richiesta.ha_conflitti (letto dal frontend)
             if prenotazione.richiesta:
                 prenotazione.richiesta.ha_conflitti = True
 

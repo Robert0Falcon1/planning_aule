@@ -250,7 +250,6 @@ def modifica_slot(
         ConflittoPrenotazione.stato_risoluzione == None
     ).all()
 
-    # Raccogli gli id delle prenotazioni coinvolte prima di chiudere i conflitti
     altre_pren_ids = set()
     for cf in conflitti_esistenti:
         altra_id = (
@@ -265,12 +264,24 @@ def modifica_slot(
 
     db.flush()
 
+    # ── CHIAVE: expire_all + re-fetch ─────────────────────────────────────────
+    # joinedload cacha i relationship in memoria — dopo flush() i valori
+    # degli slot sono aggiornati nel DB ma NON nella collection Python.
+    # expire_all() invalida tutta la cache della sessione, il re-fetch
+    # rilegge tutto dal DB con i valori aggiornati.
+    db.expire_all()
+    prenotazione = (
+        db.query(Prenotazione)
+        .options(joinedload(Prenotazione.slots), joinedload(Prenotazione.richiesta))
+        .filter(Prenotazione.id == prenotazione_id)
+        .first()
+    )
+
     # Ricalcola conflitti con i nuovi dati dello slot
     conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
     if prenotazione.richiesta:
         prenotazione.richiesta.ha_conflitti = len(conflitti) > 0
 
-    # Aggiorna ha_conflitti sulle altre prenotazioni coinvolte
     for altra_pren_id in altre_pren_ids:
         ConflittoService._aggiorna_flag_conflitti(db, altra_pren_id)
 

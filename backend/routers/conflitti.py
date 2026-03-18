@@ -24,13 +24,10 @@ def lista_conflitti(
     db: Session = Depends(get_db),
     utente: Utente = Depends(get_utente_corrente)
 ):
-    """
-    Lista conflitti tra prenotazioni.
-    - COORDINAMENTO: vede tutti i conflitti (filtrabile per sede)
-    - OPERATIVO: vede solo i conflitti che coinvolgono le proprie prenotazioni
-    """
     from backend.models.prenotazione import Prenotazione
     from backend.models.aula import Aula
+
+    print(f"DEBUG: utente.id={utente.id} ruolo={utente.ruolo} solo_attivi={solo_attivi}")
 
     if solo_attivi:
         query = db.query(ConflittoPrenotazione).filter(
@@ -39,7 +36,6 @@ def lista_conflitti(
     else:
         query = db.query(ConflittoPrenotazione)
 
-    # Filtro sede (solo COORDINAMENTO)
     if sede_id and utente.ruolo == RuoloUtente.COORDINAMENTO:
         from backend.models.slot_orario import SlotOrario
         query = (
@@ -49,19 +45,29 @@ def lista_conflitti(
             .filter(Aula.sede_id == sede_id)
         )
 
-    # OPERATIVO: filtra solo i conflitti delle proprie prenotazioni
     if utente.ruolo == RuoloUtente.OPERATIVO:
-        mie_pren_ids = db.query(Prenotazione.id).filter(
-            Prenotazione.richiedente_id == utente.id
-        ).scalar_subquery()
+        mie_pren_ids = [
+            r[0] for r in db.query(Prenotazione.id).filter(
+                Prenotazione.richiedente_id == utente.id
+            ).all()
+        ]
+        print(f"DEBUG OPERATIVO: mie_pren_ids={mie_pren_ids}")
+
+        tutti = db.query(ConflittoPrenotazione).filter(
+            ConflittoPrenotazione.stato_risoluzione == None
+        ).all()
+        print(f"DEBUG: tutti conflitti attivi={[(c.id, c.prenotazione_id_1, c.prenotazione_id_2) for c in tutti]}")
+
         query = query.filter(
             or_(
                 ConflittoPrenotazione.prenotazione_id_1.in_(mie_pren_ids),
                 ConflittoPrenotazione.prenotazione_id_2.in_(mie_pren_ids),
             )
         )
+        print(f"DEBUG: conflitti dopo filtro={query.count()}")
 
     conflitti = query.all()
+    print(f"DEBUG: conflitti restituiti={len(conflitti)}")
 
     return [
         {
@@ -85,7 +91,6 @@ def statistiche_conflitti(
     db: Session = Depends(get_db),
     utente: Utente = Depends(require_coordinamento)
 ):
-    """Statistiche riepilogative sui conflitti"""
     query = db.query(ConflittoPrenotazione)
 
     if sede_id:
@@ -118,7 +123,6 @@ def dettaglio_conflitto(
     db: Session = Depends(get_db),
     utente: Utente = Depends(require_coordinamento)
 ):
-    """Dettaglio completo di un conflitto con le due prenotazioni coinvolte"""
     conflitto = db.query(ConflittoPrenotazione).filter(
         ConflittoPrenotazione.id == conflitto_id
     ).first()
@@ -152,14 +156,6 @@ def risolvi_conflitto(
     db: Session = Depends(get_db),
     utente: Utente = Depends(require_coordinamento)
 ):
-    """
-    Risolve un conflitto.
-
-    Azioni possibili:
-    - mantieni_1: mantiene slot_1, annulla slot_2
-    - mantieni_2: mantiene slot_2, annulla slot_1
-    - elimina_entrambe: annulla entrambi gli slot in conflitto
-    """
     try:
         conflitto = ConflittoService.resolve_conflict(
             db, conflitto_id, utente.id, azione, note
