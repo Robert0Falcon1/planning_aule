@@ -57,7 +57,7 @@
           <thead class="table-light">
             <tr>
               <th>ID</th><th>Tipo</th><th>Aula</th><th>Corso</th>
-              <th>Richiedente</th><th>Stato</th><th>Slot</th><th>Dal</th>
+              <th>Richiedente</th><th>Stato</th><th>Prenotazioni</th><th>Dal</th>
             </tr>
           </thead>
           <tbody>
@@ -119,7 +119,7 @@ async function carica() {
 /** Esporta i dati in CSV scaricabile */
 function esportaCsv() {
   const righe = [
-    ['ID', 'Tipo', 'Aula', 'Corso', 'Richiedente', 'Stato', 'Slot', 'Data primo slot'],
+    ['ID', 'Tipo', 'Aula', 'Corso', 'Richiedente', 'Stato', 'Prenotazioni', 'Data primo slot'],
     ...prenotazioni.value.map(p => [
       p.id, p.tipo, p.slots?.[0]?.aula_id, p.slots?.[0]?.corso_id, p.richiedente_id, p.stato,
       p.slots?.length ?? 0,

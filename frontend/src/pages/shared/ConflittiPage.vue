@@ -54,7 +54,7 @@
             <span class="badge bg-danger">Conflitto tra {{
               nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }} e {{
                 nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
-            <span v-if="c.stato_risoluzione !== null" class="badge bg-success ms-1">Risolto</span>
+            <span v-if="c.stato_risoluzione" class="badge bg-success ms-1">Risolto</span>
             <small class="ms-auto text-muted">{{ formatData(c.rilevato_il) }}</small>
           </div>
 
@@ -71,17 +71,21 @@
                     <template v-if="s">
                       <div class="text-muted small">
                         Corso {{ infoSlot(c, 1)?.corso_id }}
-                        <span v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'"
-                          class="badge bg-info ms-1">Ricorrente</span>
+                        <!-- <span v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'"
+                          class="badge bg-info ms-1">Ricorrente</span> -->
                       </div>
                       <div class="mt-1 small mb-2">
                         <strong>{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</strong>
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0,5) }} alle {{ s.ora_fine?.slice(0,5) }}</div>
-                      <div v-if="infoSlot(c, 1)?.note" class="text-muted small mt-1 fst-italic d-flex align-items-center">
-                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 1)?.note }}
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5) }}
+                      </div>
+                      <div v-if="infoSlot(c, 1)?.note"
+                        class="text-muted small mt-1 fst-italic d-flex align-items-center">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-note'"></use>
+                        </svg> {{ infoSlot(c, 1)?.note }}
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
@@ -106,17 +110,21 @@
                     <template v-if="s">
                       <div class="text-muted small">
                         Corso {{ infoSlot(c, 2)?.corso_id }}
-                        <span v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
-                          class="badge bg-info ms-1">Ricorrente</span>
+                        <!-- <span v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
+                          class="badge bg-info ms-1">Ricorrente</span> -->
                       </div>
                       <div class="mt-1 small mb-2">
                         <strong>{{ sedeDiAulaFn(infoSlot(c, 2)?.aula_id) }}</strong>
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0,5) }} alle {{ s.ora_fine?.slice(0,5) }}</div>
-                      <div v-if="infoSlot(c, 2)?.note" class="text-muted small mt-1 fst-italic d-flex align-items-center">
-                        <svg class="icon icon-xs me-1"><use :href="sprites + '#it-note'"></use></svg> {{ infoSlot(c, 2)?.note }}
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5) }}
+                      </div>
+                      <div v-if="infoSlot(c, 2)?.note"
+                        class="text-muted small mt-1 fst-italic d-flex align-items-center">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-note'"></use>
+                        </svg> {{ infoSlot(c, 2)?.note }}
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
@@ -127,21 +135,21 @@
           </div>
 
           <!-- Azioni risoluzione -->
-          <div v-if="c.stato_risoluzione === null" class="card-footer bg-white">
+          <div v-if="!c.stato_risoluzione" class="card-footer bg-white">
             <div class="d-flex flex-wrap gap-2 align-items-center">
               <small class="text-muted me-1">Risolvi:</small>
 
               <button class="btn btn-sm btn-outline-warning" @click="risolvi(c.id, 'mantieni_1')"
-                :disabled="risolvendo === c.id" title="Mantieni lo slot A, annulla lo slot B in conflitto">
-                Mantieni A, annulla slot B
+                :disabled="risolvendo === c.id" title="Mantieni A, annulla B">
+                Mantieni A, annulla B
               </button>
               <button class="btn btn-sm btn-outline-warning" @click="risolvi(c.id, 'mantieni_2')"
-                :disabled="risolvendo === c.id" title="Mantieni lo slot B, annulla lo slot A in conflitto">
-                Mantieni B, annulla slot A
+                :disabled="risolvendo === c.id" title="Mantieni B, annulla A">
+                Mantieni B, annulla A
               </button>
               <button class="btn btn-sm btn-outline-danger" @click="risolvi(c.id, 'elimina_entrambe')"
-                :disabled="risolvendo === c.id" title="Annulla entrambi gli slot in conflitto">
-                Annulla entrambi gli slot
+                :disabled="risolvendo === c.id" title="Annulla entrambe le prenotazioni in conflitto">
+                Annulla entrambe le prenotazioni
               </button>
               <span v-if="risolvendo === c.id" class="spinner-border spinner-border-sm align-self-center ms-2"></span>
             </div>
@@ -221,7 +229,11 @@ async function carica() {
     if (Array.isArray(dataConflitti)) conflitti.value = dataConflitti
     else if (dataConflitti?.items) conflitti.value = dataConflitti.items
     else conflitti.value = []
-
+    console.log('CONFLITTI:', JSON.stringify(conflitti.value.map(c => ({
+      id: c.id,
+      stato_risoluzione: c.stato_risoluzione,
+      tipo: typeof c.stato_risoluzione
+    })), null, 2))
     const prenIds = [...new Set(
       conflitti.value.flatMap(c => [c.prenotazione_id_1, c.prenotazione_id_2])
     )]

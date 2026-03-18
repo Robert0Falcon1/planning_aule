@@ -92,7 +92,7 @@
                     type="button"
                     @click="toggleAccordion(sede.nome)">
                     <p class="mb-0">{{ sede.nome }}</p>
-                    <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} slot</span>
+                    <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} Prenotazioni</span>
                   </button>
                 </h2>
                 <div :class="{ show: accordionAperto === sede.nome || (si === 0 && accordionAperto === null) }"
@@ -101,7 +101,7 @@
                     <div v-for="(aula, ai) in sede.aule" :key="aula.aulaId" class="mb-2">
                       <div class="d-flex justify-content-between mb-1">
                         <small class="fw-semibold text-truncate" style="max-width:150px">{{ aula.nome }}</small>
-                        <small class="text-nowrap ms-1">{{ aula.slot }}&nbsp;<span class="text-muted">slot&nbsp;({{ aula.pct }}%)</span></small>
+                        <small class="text-nowrap ms-1">{{ aula.slot }}&nbsp;<span class="text-muted">Prenotazioni&nbsp;({{ aula.pct }}%)</span></small>
                       </div>
                       <div class="progress" style="height:6px">
                         <div class="progress-bar"
@@ -147,13 +147,13 @@
       <div class="col-12 col-xl-5">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0">
-            <h5 class="card-title mb-0">Slot per aula</h5>
+            <h5 class="card-title mb-0">Prenotazioni per aula</h5>
           </div>
           <div class="card-body">
             <div v-for="(a, i) in datiAule" :key="i" class="mb-3">
               <div class="d-flex justify-content-between mb-1">
                 <small class="fw-semibold">{{ a.nome }} <span class="text-muted fw-normal">({{ a.sede }})</span></small>
-                <small class="fw-bold">{{ a.slot }} slot</small>
+                <small class="fw-bold">{{ a.slot }} Prenotazioni</small>
               </div>
               <div class="progress" style="height:10px">
                 <div class="progress-bar"

@@ -63,6 +63,9 @@ def login(
         sede_id=utente.sede_id,
     )
 
+@router.get("/logout", summary="Logout utente")
+def logout():
+    return {"ok": True}
 
 @router.get("/me", response_model=UtenteRisposta, summary="Profilo utente corrente")
 def get_me(utente: Utente = Depends(get_utente_corrente)):

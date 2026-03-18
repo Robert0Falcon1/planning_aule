@@ -272,7 +272,7 @@ const oreSlot = Array.from({ length: 29 }, (_, i) => {
 
 const singola = reactive({
   sede_id: '', aula_id: '', corso_id: null,
-  data: '', ora_inizio: '08:00', ora_fine: '13:00', note: '',
+  data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '',
 })
 const err = reactive({
   sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '', ora_fine: '',
@@ -284,7 +284,7 @@ const errM = reactive({
 const massiva = reactive({
   sede_id: '', aula_id: '', corso_id: null,
   data_inizio: '', data_fine: '',
-  ora_inizio: '08:00', ora_fine: '13:00',
+  ora_inizio: '09:00', ora_fine: '13:00',
   tipo_ricorrenza: 'settimanale',
   giorni_settimana: [],
   note: '',
@@ -399,7 +399,7 @@ async function submitMassiva() {
 }
 
 function resetSingola() {
-  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: null, data: '', ora_inizio: '08:00', ora_fine: '13:00', note: '' })
+  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: null, data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '' })
   Object.keys(err).forEach(k => (err[k] = ''))
   aule.value = []
 }
@@ -411,7 +411,7 @@ function resetMassiva() {
     corso_id: null,
     data_inizio: '',
     data_fine: '',
-    ora_inizio: '08:00',
+    ora_inizio: '09:00',
     ora_fine: '13:00',
     tipo_ricorrenza: 'settimanale',
     giorni_settimana: [],

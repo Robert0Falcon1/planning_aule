@@ -59,7 +59,7 @@
     <div v-else-if="vista !== 'mese'" class="card border-0 shadow-sm">
       <div class="card-body p-0">
         <div class="cal-week">
-          <div class="cal-week-header" :style="headerGridStyle">
+          <div class="cal-week-header pe-3" :style="headerGridStyle">
             <div class="cal-gutter-head"></div>
             <div v-for="(g, i) in giorniVista" :key="i"
               class="cal-day-head" :class="{ 'is-today': isToday(g) }">
@@ -465,6 +465,7 @@ onMounted(async () => {
 .page-title { font-size: 1.4rem; font-weight: 700; }
 
 .cal-week { overflow-x: auto; min-width: 420px; display: flex; flex-direction: column; }
+
 
 .cal-week-header {
   display: grid;

@@ -45,7 +45,7 @@
               <th>Aula</th>
               <th>Corso</th>
               <th>Stato</th>
-              <th>Slot</th>
+              <th>Prenotazioni</th>
               <th>Primo slot</th>
             </tr>
           </thead>

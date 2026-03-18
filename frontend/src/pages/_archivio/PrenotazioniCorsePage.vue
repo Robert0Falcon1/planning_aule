@@ -40,7 +40,7 @@
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
-              <th>ID</th><th>Aula</th><th>Corso</th><th>Stato</th><th>Slot</th><th>Dal</th>
+              <th>ID</th><th>Aula</th><th>Corso</th><th>Stato</th><th>Prenotazioni</th><th>Dal</th>
             </tr>
           </thead>
           <tbody>

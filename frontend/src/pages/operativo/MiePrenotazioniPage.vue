@@ -55,7 +55,7 @@
       <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
           <div class="fs-3 fw-bold text-primary">{{ conteggioSlot }}</div>
-          <div class="small text-muted">Slot totali</div>
+          <div class="small text-muted">Prenotazioni totali</div>
         </div>
       </div>
       <div class="col-6 col-md-4">
@@ -125,8 +125,8 @@
                 </td>
 
                 <td>
-                  <span v-if="slot.haConflitti" class="badge bg-danger">
-                    <svg class="icon icon-xs icon-white"><use :href="sprites + '#it-error'"></use></svg>
+                  <span v-if="slot.haConflitti" class="badge bg-danger d-flex justify-content-center width-fit-content">
+                    <svg class="icon icon-xs icon-white me-1"><use :href="sprites + '#it-error'"></use></svg>
                     Sì
                   </span>
                   <span v-else class="text-muted small">—</span>
@@ -135,7 +135,7 @@
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
                     <button class="btn btn-sm btn-outline-primary" @click="apriModifica(slot)"
-                      title="Modifica slot">
+                      title="Modifica prenotazione">
                       <svg class="icon icon-sm"><use :href="sprites + '#it-pencil'"></use></svg>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
@@ -219,7 +219,7 @@ import { getUtenti } from '@/api/utenti'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
-import { formatData } from '@/utils/formatters'
+import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
 
@@ -235,7 +235,7 @@ const filtroSede    = ref('')
 const filtroAula    = ref('')
 const filtroUtente  = ref('')
 const filtroStato   = ref('')
-const filtroDa      = ref('')
+const filtroDa      = ref(oggi())
 const filtroA       = ref('')
 const pagina        = ref(1)
 const PER_PAGINA    = 20
@@ -405,7 +405,7 @@ async function caricaTutto() {
     aule.value  = Array.isArray(dataAule)  ? dataAule  : []
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
-    console.log('conflittiAttivi:', conflittiAttivi.value, 'slotIds:', [...slotIdConConflitti.value])
+    // console.log('conflittiAttivi:', conflittiAttivi.value, 'slotIds:', [...slotIdConConflitti.value])
 
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {

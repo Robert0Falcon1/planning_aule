@@ -8,16 +8,16 @@
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.totali)"     label="Slot totali"          icon="it-calendar"     color="primary" />
+        <StatCard :value="String(kpi.totali)"     label="Prenotazioni totali"          icon="it-calendar"     color="primary" />
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.oggi)"       label="Slot oggi"            icon="it-check-circle" color="success" />
+        <StatCard :value="String(kpi.oggi)"       label="Prenotazioni oggi"            icon="it-check-circle" color="success" />
       </div>
       <div class="col-6 col-lg-3">
         <StatCard :value="String(kpi.conflitti)"  label="Conflitti"            icon="it-error"        color="danger" />
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.prossimi7)"  label="Slot prossimi 7 gg"   icon="it-calendar"     color="info" />
+        <StatCard :value="String(kpi.prossimi7)"  label="Prenotazioni prossimi 7 gg"   icon="it-calendar"     color="info" />
       </div>
     </div>
 
@@ -105,20 +105,25 @@
               <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
             </div>
             <div v-else-if="!prossimi.length" class="text-muted small text-center py-3">
-              Nessuno slot nei prossimi 7 giorni.
+              Nessuna prenotazione nei prossimi 7 giorni.
             </div>
             <ul v-else class="list-unstyled mb-0">
               <li v-for="s in prossimi" :key="s.key"
-                class="d-flex align-items-start gap-2 py-2 border-bottom">
-                <div class="cal-badge text-center flex-shrink-0">
-                  <span class="cal-badge-day">{{ new Date(s.data + 'T00:00:00').getDate() }}</span>
+                class="d-flex align-items-start gap-2 py-2 border-bottom"
+                :class="{ 'bg-danger bg-opacity-10 px-3 py-4': s.haConflitti }">
+                <div class="cal-badge text-center flex-shrink-0"
+                  :style="s.haConflitti ? 'background:#dc3545' : ''">
+                  <span class="cal-badge-day pt-2">{{ new Date(s.data + 'T00:00:00').getDate() }}</span>
                   <span class="cal-badge-month">{{ meseBreve(s.data) }}</span>
                 </div>
-                <div class="small overflow-hidden">
+                <div class="small overflow-hidden flex-grow-1">
                   <div class="fw-semibold text-truncate">{{ nomeAulaFn(s.aulaId) }}</div>
                   <div class="text-muted">{{ s.oraInizio }} – {{ s.oraFine }}</div>
                   <div class="text-muted">Corso {{ s.corsoId }}</div>
                 </div>
+                <span v-if="s.haConflitti" class="badge bg-danger align-self-center flex-shrink-0 d-flex justify-content-center align-items-center">
+                  <svg class="icon icon-xs icon-white me-2"><use :href="sprites + '#it-error'"></use></svg> Conflitto
+                </span>
               </li>
             </ul>
             <RouterLink :to="{ name: 'Calendario' }" class="btn btn-outline-primary btn-sm mt-3 w-100">
@@ -186,7 +191,7 @@ const tuttiSlot = computed(() => {
     if (!auth.isCoordinamento && auth.utente?.id && p.richiedente_id !== auth.utente.id) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
-      if (!slot?.data) continue
+      if (!slot?.data || slot.annullato) continue
       list.push({
         key:         `${p.id}-${si}`,
         prenId:      p.id,

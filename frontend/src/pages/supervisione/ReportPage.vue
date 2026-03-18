@@ -29,7 +29,7 @@
         <StatCard titolo="Aule Analizzate"  :valore="stats.auleAnalizzate"  colore="primary" icon="it-list" />
       </div>
       <div class="col-sm-4">
-        <StatCard titolo="Slot Totali"      :valore="stats.slotTotali"      colore="info"    icon="it-calendar" />
+        <StatCard titolo="Prenotazioni Totali"      :valore="stats.slotTotali"      colore="info"    icon="it-calendar" />
       </div>
       <div class="col-sm-4">
         <StatCard titolo="Ore Totali"       :valore="`${stats.oreTotali}h`" colore="success" icon="it-clock" />
@@ -47,7 +47,7 @@
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="table-light">
-            <tr><th>Aula ID</th><th>Slot</th><th>Ore</th><th>Occupazione</th></tr>
+            <tr><th>Aula ID</th><th>Prenotazioni</th><th>Ore</th><th>Occupazione</th></tr>
           </thead>
           <tbody>
             <tr v-for="r in righe" :key="r.aula_id">

@@ -12,7 +12,10 @@ from backend.config import settings
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    connect_args={"charset": "utf8mb4"},
+    connect_args={
+        "charset": "utf8mb4",
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    },
 )
 
 

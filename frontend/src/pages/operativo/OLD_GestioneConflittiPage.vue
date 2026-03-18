@@ -25,7 +25,7 @@
               <div class="fw-semibold mb-1">⚠️ Prenotazione #{{ p.id }}</div>
               <div class="text-muted small">
                 Aula {{ p.slots?.[0]?.aula_id }} | Corso {{ p.slots?.[0]?.corso_id }} | {{ p.tipo }} |
-                {{ p.slots?.length ?? 0 }} slot
+                {{ p.slots?.length ?? 0 }} Prenotazioni
               </div>
               <div v-if="p.slots?.[0]" class="small mt-1">
                 📅 {{ formatData(p.slots[0].data) }}

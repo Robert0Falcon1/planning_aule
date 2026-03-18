@@ -86,7 +86,6 @@ class ConflittoService:
                 existing = db.query(ConflittoPrenotazione).filter(
                     ConflittoPrenotazione.slot_id_1 == s1,
                     ConflittoPrenotazione.slot_id_2 == s2,
-                    ConflittoPrenotazione.stato_risoluzione == None,
                 ).first()
 
                 if not existing:
@@ -130,7 +129,6 @@ class ConflittoService:
                 existing = db.query(ConflittoPrenotazione).filter(
                     ConflittoPrenotazione.slot_id_1 == s1,
                     ConflittoPrenotazione.slot_id_2 == s2,
-                    ConflittoPrenotazione.stato_risoluzione == None,
                 ).first()
 
                 if not existing:

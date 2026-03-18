@@ -30,6 +30,10 @@
     border-color: #fff;
 }
 
+.width-fit-content{
+    max-width: fit-content;
+}
+
 /* Fix colori ICE */
 /* .custom-bg{
     background-color: #ffffff !important;

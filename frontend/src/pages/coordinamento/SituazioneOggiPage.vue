@@ -24,7 +24,7 @@
       <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
           <div class="fs-3 fw-bold text-primary">{{ slotDelGiorno.length }}</div>
-          <div class="small text-muted">Slot totali</div>
+          <div class="small text-muted">Prenotazioni totali</div>
         </div>
       </div>
       <div class="col-6 col-md-4">
@@ -50,7 +50,7 @@
         <h5 class="fw-bold text-primary mb-2">
           <svg class="icon icon-primary icon-sm me-1"><use :href="sprites + '#it-map-marker'"></use></svg>
           {{ gruppo.sedeNome }}
-          <span class="badge bg-primary-subtle text-primary ms-2 fw-normal">{{ gruppo.slots.length }} slot</span>
+          <span class="badge bg-primary-subtle text-primary ms-2 fw-normal">{{ gruppo.slots.length }} Prenotazioni</span>
         </h5>
         <div class="card border-0 shadow-sm">
           <div class="table-responsive">
