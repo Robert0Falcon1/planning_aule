@@ -161,8 +161,6 @@ const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = u
 // Esempio: const API_CITAZIONI_URL = 'https://your-quotes-api.vercel.app'
 // Se null, usa solo le citazioni locali
 const API_CITAZIONI_URL = null
-console.log('🔍 DEBUG auth.utente:', auth.utente)
-console.log('🔍 DEBUG auth.utente?.id:', auth.utente?.id)
 
 const { 
   citazione, 
