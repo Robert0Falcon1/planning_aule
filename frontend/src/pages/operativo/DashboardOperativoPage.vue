@@ -2,7 +2,13 @@
   <div class="page-operativo">
     <div class="page-header mb-4">
       <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
-      <p class="text-muted mb-0">Riepilogo di oggi — <span class="fw-600 text-primary">{{oggiLabel }}</span>:</p>
+      
+      <!-- Citazione del giorno -->
+      <p>
+         <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span> <span class="text-muted">({{ citazione.author }})</span>
+      </p>
+      
+      <p class="text-muted mb-0">Riepilogo di oggi — <span class="fw-600 text-primary">{{ oggiLabel }}</span>:</p>
     </div>
 
     <!-- KPI -->
@@ -139,6 +145,7 @@ import { useAuthStore } from '@/stores/auth'
 import StatCard from '@/components/ui/StatCard.vue'
 import { getMiePrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
+import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
 import { formatData, oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
@@ -148,6 +155,22 @@ const prenotazioni   = ref([])
 const conflittiAttivi = ref([])
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+
+// ── Citazione del giorno ──────────────────────────────────────────────────────
+// CONFIGURAZIONE: inserisci qui l'URL della tua API se vuoi usarla
+// Esempio: const API_CITAZIONI_URL = 'https://your-quotes-api.vercel.app'
+// Se null, usa solo le citazioni locali
+const API_CITAZIONI_URL = null
+console.log('🔍 DEBUG auth.utente:', auth.utente)
+console.log('🔍 DEBUG auth.utente?.id:', auth.utente?.id)
+
+const { 
+  citazione, 
+  loading: citazioneLoading, 
+  errore: citazioneErrore 
+} = useCitazioneDelGiorno(API_CITAZIONI_URL, auth.utente?.id)
+
+// ──────────────────────────────────────────────────────────────────────────────
 
 const oggiISO = oggi()
 const fra7    = aggiungiGiorni(oggiISO, 7)
@@ -248,11 +271,55 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title { font-size: 1.5rem; font-weight: 700; }
-.cal-badge {
-  background: #0066cc; color: #fff; border-radius: 6px;
-  padding: 4px 8px; min-width: 38px;
+.page-title { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
 }
-.cal-badge-day   { display: block; font-size: 1.1rem; font-weight: 700; line-height: 1; }
-.cal-badge-month { display: block; font-size: .6rem; font-weight: 600; opacity: .85; }
+
+/* Citazione del giorno */
+.citazione-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f0fe 100%);
+  border-left: 4px solid #0066cc;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.citazione-text {
+  color: #0073e6;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.citazione-author {
+  color: #5a6772;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  text-align: right;
+}
+
+.cal-badge {
+  background: #0066cc; 
+  color: #fff; 
+  border-radius: 6px;
+  padding: 4px 8px; 
+  min-width: 38px;
+}
+
+.cal-badge-day { 
+  display: block; 
+  font-size: 1.1rem; 
+  font-weight: 700; 
+  line-height: 1; 
+}
+
+.cal-badge-month { 
+  display: block; 
+  font-size: .6rem; 
+  font-weight: 600; 
+  opacity: .85; 
+}
 </style>

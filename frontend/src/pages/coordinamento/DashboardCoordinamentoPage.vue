@@ -1,7 +1,14 @@
 <template>
   <div class="page-dashboard-coord">
     <div class="page-header mb-4">
-      <h2 class="page-title">Dashboard Coordinamento</h2>
+
+      <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
+      
+      <!-- Citazione del giorno -->
+      <p>
+         <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span> <span class="text-muted">({{ citazione.author }})</span>
+      </p>
+      
       <p class="text-muted mb-0">Panoramica generale · {{ oggiLabel }}</p>
     </div>
 
@@ -137,6 +144,21 @@ import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { getUtenti } from '@/api/utenti'
 import { oggi as isoOggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useAuthStore } from '@/stores/auth'
+import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
+
+// ─── CITAZIONE DEL GIORNO ────────────────────────────────────────────────────
+// Imposta a null per usare citazioni locali (raccomandato)
+// Oppure imposta URL API: 'https://citazionidev.vercel.app'
+const API_CITAZIONI_URL = null
+
+const auth = useAuthStore()
+const { citazione, loading: loadingCitazione, errore: erroreCitazione } = useCitazioneDelGiorno(
+  API_CITAZIONI_URL,
+  auth.utente?.id
+)
+
+// ─── RESTO DELLA LOGICA ──────────────────────────────────────────────────────
 
 function percentuale(val, tot) {
   if (!tot) return 0
