@@ -2,8 +2,23 @@
   <div class="page-conflitti">
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Conflitti</h2>
+
+      <!-- Conflitti + numero -->
       <span v-if="conflittiOrdinati.length" class="badge bg-danger fs-6 ms-1">{{ conflittiOrdinati.length }}</span>
+
+
+
       <div class="ms-auto d-flex gap-2 align-items-center">
+
+
+
+      <!-- Solo attivi -->
+      <div class="form-check form-switch mb-0 ps-0 me-3">
+        <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
+        <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
+      </div>
+
+        <!-- Filtro Sedi -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="carica">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
@@ -11,9 +26,9 @@
 
         <!-- Filtro utenti multi-selezione (max 2) -->
         <div class="dropdown">
-          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+          <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
             style="min-width: 180px">
-            <span v-if="!filtroUtenti.length">Filtra per utente...</span>
+            <span v-if="!filtroUtenti.length">Filtra per utente</span>
             <span v-else-if="filtroUtenti.length === 1">1 utente</span>
             <span v-else>2 utenti</span>
           </button>
@@ -34,10 +49,7 @@
           </div>
         </div>
 
-        <div class="form-check form-switch mb-0 ps-0 me-3">
-          <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
-          <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
-        </div>
+        <!-- Aggiorna -->
         <button class="btn btn-sm btn-outline-secondary" @click="carica">
           <svg class="icon icon-sm me-1">
             <use :href="sprites + '#it-refresh'"></use>

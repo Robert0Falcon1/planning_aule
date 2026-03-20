@@ -47,26 +47,37 @@
         <div class="card border-0 shadow-sm">
           <div class="card-body">
             <h5 class="card-title mb-3">Accesso rapido</h5>
+
             <div class="d-flex flex-wrap gap-2">
               <RouterLink :to="{ name: 'SituazioneOggi' }" class="btn btn-outline-primary">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-calendar'"></use>
+                </svg>
                 Situazione Oggi
               </RouterLink>
+              <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-error'"></use>
+                </svg>
+                Conflitti
+              </RouterLink>
               <RouterLink :to="{ name: 'Grafici' }" class="btn btn-outline-primary">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-presentation'"></use></svg>
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-presentation'"></use>
+                </svg>
                 Grafici & Report
               </RouterLink>
-              <RouterLink :to="{ name: 'GestioneUtenti' }" class="btn btn-outline-secondary">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-user'"></use></svg>
-                Gestione Utenti
-              </RouterLink>
               <RouterLink :to="{ name: 'GestioneSediAule' }" class="btn btn-outline-secondary">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-settings'"></use></svg>
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-settings'"></use>
+                </svg>
                 Sedi/Aule
               </RouterLink>
-              <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-error'"></use></svg>
-                Conflitti
+              <RouterLink :to="{ name: 'GestioneUtenti' }" class="btn btn-outline-secondary">
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-user'"></use>
+                </svg>
+                Gestione Utenti
               </RouterLink>
             </div>
           </div>
@@ -137,7 +148,7 @@ const oggiLabel = new Date().toLocaleDateString('it-IT', {
 }).replace(/\b\w/g, c => c.toUpperCase())
 
 const loadingSedi = ref(false)
-const kpi         = ref({ prenotazioniOggi: '—', auleOccupateOggi: '—', conflittiAperti: '—', utentiAttivi: '—' })
+const kpi = ref({ prenotazioniOggi: '—', auleOccupateOggi: '—', conflittiAperti: '—', utentiAttivi: '—' })
 const saturazioneSedi = ref([])
 
 onMounted(async () => {
@@ -163,11 +174,11 @@ onMounted(async () => {
       return []
     }
 
-    const sediList   = val(rSedi)
-    const auleList   = val(rAule)
-    const prenList   = val(rPren)
+    const sediList = val(rSedi)
+    const auleList = val(rAule)
+    const prenList = val(rPren)
     const utentiList = val(rUtenti)
-    const conflList  = val(rConflitti)
+    const conflList = val(rConflitti)
 
     // Slot di oggi (ogni prenotazione può avere più slot — filtra per data)
     const slotOggi = []
@@ -180,13 +191,13 @@ onMounted(async () => {
     kpi.value = {
       prenotazioniOggi: slotOggi.length,
       auleOccupateOggi: new Set(slotOggi.map(s => s.aula_id)).size,
-      conflittiAperti:  conflList.length,
+      conflittiAperti: conflList.length,
       utentiAttivi: utentiList.filter(u => u.attivo).length,
     }
 
     saturazioneSedi.value = sediList.map(sede => {
-      const auleS    = auleList.filter(a => a.sede_id === sede.id)
-      const aulaIds  = new Set(auleS.map(a => a.id))
+      const auleS = auleList.filter(a => a.sede_id === sede.id)
+      const aulaIds = new Set(auleS.map(a => a.id))
       const occupate = new Set(slotOggi.filter(s => aulaIds.has(s.aula_id)).map(s => s.aula_id)).size
       return {
         id: sede.id,
@@ -205,8 +216,24 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title { font-size: 1.5rem; font-weight: 700; }
-.kpi-card   { border-radius: 12px; }
-.kpi-value  { font-size: 2rem; font-weight: 800; line-height: 1; }
-.kpi-label  { font-size: .8rem; color: #666; margin-top: .25rem; }
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.kpi-card {
+  border-radius: 12px;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.kpi-label {
+  font-size: .8rem;
+  color: #666;
+  margin-top: .25rem;
+}
 </style>

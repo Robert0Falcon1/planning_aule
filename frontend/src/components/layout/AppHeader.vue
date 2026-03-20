@@ -102,8 +102,8 @@
             <SidebarSection titolo="Coordinamento">
               <SidebarLink :to="{ name: 'DashboardCoordinamento' }" icon="it-chart-line" label="Dashboard" />
               <SidebarLink :to="{ name: 'SituazioneOggi' }" icon="it-pa" label="Situazione Oggi" />
-              <SidebarLink :to="{ name: 'Grafici' }" icon="it-presentation" label="Grafici &amp; Report" />
               <SidebarLink :to="{ name: 'Conflitti' }" icon="it-error" label="Conflitti" />
+              <SidebarLink :to="{ name: 'Grafici' }" icon="it-presentation" label="Grafici &amp; Report" />
             </SidebarSection>
 
             <SidebarSection titolo="Amministrazione">

@@ -36,10 +36,6 @@
                 <svg class="icon icon-sm me-1"><use :href="sprites + '#it-calendar'"></use></svg>
                 Calendario
               </RouterLink>
-              <!-- <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
-                <svg class="icon icon-sm me-1"><use :href="sprites + '#it-error'"></use></svg>
-                Conflitti
-              </RouterLink> -->
             </div>
           </div>
         </div>
