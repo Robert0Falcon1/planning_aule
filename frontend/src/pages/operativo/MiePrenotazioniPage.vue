@@ -11,19 +11,14 @@
         </select>
 
         <!-- Filtro aula -->
-        <select 
-          v-model="filtroAula" 
-          class="form-select form-select-sm" 
-          style="width:auto"
-          :disabled="!filtroSede"
-        >
+        <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto" :disabled="!filtroSede">
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
         </select>
 
         <!-- Filtro utente (solo COORDINAMENTO) -->
-        <select v-if="authStore.isCoordinamento" v-model="filtroUtente"
-          class="form-select form-select-sm" style="width:auto">
+        <select v-if="authStore.isCoordinamento" v-model="filtroUtente" class="form-select form-select-sm"
+          style="width:auto">
           <option value="">Tutti gli utenti</option>
           <option v-for="u in utenti" :key="u.id" :value="u.id">
             {{ u.nome }} {{ u.cognome }}
@@ -37,14 +32,20 @@
           <option value="conflitto">Con conflitti</option>
         </select>
 
+        <!-- Filtro ID Corso -->
+        <input v-model.number="filtroCorso" type="number" class="form-control form-control-sm" style="width:180px"
+          placeholder="Titolo Corso (ID)" />
+
         <!-- Filtro date -->
         <input v-model="filtroDa" type="date" class="form-control form-control-sm" style="width:auto" />
         <span class="text-muted small">→</span>
-        <input v-model="filtroA"  type="date" class="form-control form-control-sm" style="width:auto" />
+        <input v-model="filtroA" type="date" class="form-control form-control-sm" style="width:auto" />
         <button class="btn btn-sm btn-outline-secondary" @click="resetFiltri">Reset</button>
 
         <RouterLink :to="{ name: 'NuovaPrenotazione' }" class="btn btn-sm btn-primary">
-          <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
+          <svg class="icon icon-white icon-sm me-1">
+            <use :href="sprites + '#it-plus-circle'"></use>
+          </svg>
           Nuova
         </RouterLink>
       </div>
@@ -96,8 +97,8 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="slot in paginaCorrente" :key="slot.key"
-                :class="{ 'row-conflitto': slot.haConflitti }">
+              <tr v-for="slot in paginaCorrente" :key="slot.key" :class="{ 'row-conflitto': slot.haConflitti }"
+                @click="vaiACalendario(slot.data)" style="cursor: pointer;">
 
                 <td>
                   <span class="fw-semibold">{{ formatData(slot.data) }}</span>
@@ -126,7 +127,9 @@
 
                 <td>
                   <span v-if="slot.haConflitti" class="badge bg-danger d-flex justify-content-center width-fit-content">
-                    <svg class="icon icon-xs icon-white me-1"><use :href="sprites + '#it-error'"></use></svg>
+                    <svg class="icon icon-xs icon-white me-1">
+                      <use :href="sprites + '#it-error'"></use>
+                    </svg>
                     Sì
                   </span>
                   <span v-else class="text-muted small">—</span>
@@ -134,15 +137,18 @@
 
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
-                    <button class="btn btn-sm btn-outline-primary" @click="apriModifica(slot)"
+                    <button class="btn btn-sm btn-outline-primary" @click.stop="apriModifica(slot)"
                       title="Modifica prenotazione">
-                      <svg class="icon icon-sm"><use :href="sprites + '#it-pencil'"></use></svg>
+                      <svg class="icon icon-sm">
+                        <use :href="sprites + '#it-pencil'"></use>
+                      </svg>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger"
-                      :disabled="cancellando === slot.prenId"
-                      @click="richiediCancellazione(slot)">
+                    <button class="btn btn-sm btn-outline-danger" :disabled="cancellando === slot.prenId"
+                      @click.stop="richiediCancellazione(slot)">
                       <span v-if="cancellando === slot.prenId" class="spinner-border spinner-border-sm"></span>
-                      <svg v-else class="icon icon-sm"><use :href="sprites + '#it-delete'"></use></svg>
+                      <svg v-else class="icon icon-sm">
+                        <use :href="sprites + '#it-delete'"></use>
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -202,17 +208,13 @@
       </div>
     </div>
   </div>
-  <ModificaSlotModal
-  v-model:aperta="modalModifica"
-  :slot="slotInModifica"
-  :sedi="sedi"
-  :aula-map="aulaMap"
-  @salvato="caricaTutto"
-/>
+  <ModificaSlotModal v-model:aperta="modalModifica" :slot="slotInModifica" :sedi="sedi" :aula-map="aulaMap"
+    @salvato="caricaTutto" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getMiePrenotazioni, cancellaPrenotazione, annullaSlot, getConflitti } from '@/api/prenotazioni'
 import { getUtenti } from '@/api/utenti'
@@ -223,26 +225,29 @@ import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
 
+
+const router = useRouter()
 const authStore = useAuthStore()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 
-const loading       = ref(false)
-const prenotazioni  = ref([])
-const sedi          = ref([])
-const aule          = ref([])
-const utenti        = ref([])
-const filtroSede    = ref('')
-const filtroAula    = ref('')
-const filtroUtente  = ref('')
-const filtroStato   = ref('')
-const filtroDa      = ref(oggi())
-const filtroA       = ref('')
-const pagina        = ref(1)
-const PER_PAGINA    = 20
-const cancellando   = ref(null)
+const loading = ref(false)
+const prenotazioni = ref([])
+const sedi = ref([])
+const aule = ref([])
+const utenti = ref([])
+const filtroSede = ref('')
+const filtroAula = ref('')
+const filtroUtente = ref('')
+const filtroStato = ref('')
+const filtroCorso = ref('')
+const filtroDa = ref(oggi())
+const filtroA = ref('')
+const pagina = ref(1)
+const PER_PAGINA = 20
+const cancellando = ref(null)
 const modalCancella = ref(null)
 const conflittiAttivi = ref([])
-const modalModifica  = ref(false)
+const modalModifica = ref(false)
 const slotInModifica = ref(null)
 
 const titoloPageina = computed(() =>
@@ -284,7 +289,7 @@ function nomeUtente(id) {
 
 function apriModifica(slot) {
   slotInModifica.value = slot
-  modalModifica.value  = true
+  modalModifica.value = true
 }
 
 const tuttiGliSlot = computed(() => {
@@ -299,20 +304,20 @@ const tuttiGliSlot = computed(() => {
       const slot = p.slots[si]
       if (!slot?.data || slot.annullato) continue
       list.push({
-        key:           `${p.id}-${si}`,
-        prenId:        p.id,
-        slotId:        slot.id,
-        slotIdx:       si,
-        aulaId:        slot.aula_id,    // ← da slot
-        corsoId:       slot.corso_id,   // ← da slot
-        note:          slot.note || '', // ← da slot
+        key: `${p.id}-${si}`,
+        prenId: p.id,
+        slotId: slot.id,
+        slotIdx: si,
+        aulaId: slot.aula_id,    // ← da slot
+        corsoId: slot.corso_id,   // ← da slot
+        note: slot.note || '', // ← da slot
         richiedenteId: p.richiedente_id,
-        haConflitti:   ids.has(slot.id),
+        haConflitti: ids.has(slot.id),
         isMassiva,
-        totaleSlot:    p.slots.length,
-        data:          slot.data,
-        oraInizio:     slot.ora_inizio?.slice(0, 5) || '—',
-        oraFine:       slot.ora_fine?.slice(0, 5)   || '—',
+        totaleSlot: p.slots.length,
+        data: slot.data,
+        oraInizio: slot.ora_inizio?.slice(0, 5) || '—',
+        oraFine: slot.ora_fine?.slice(0, 5) || '—',
       })
     }
   }
@@ -344,8 +349,12 @@ const slotFiltrati = computed(() => {
     list = list.filter(s => !s.haConflitti)
   }
 
+  if (filtroCorso.value) {
+    list = list.filter(s => Number(s.corsoId) === Number(filtroCorso.value))
+  }
+
   if (filtroDa.value) list = list.filter(s => s.data >= filtroDa.value)
-  if (filtroA.value)  list = list.filter(s => s.data <= filtroA.value)
+  if (filtroA.value) list = list.filter(s => s.data <= filtroA.value)
 
   return list
 })
@@ -355,8 +364,8 @@ const paginaCorrente = computed(() => {
   return slotFiltrati.value.slice(ini, ini + PER_PAGINA)
 })
 
-const totalePagine       = computed(() => Math.ceil(slotFiltrati.value.length / PER_PAGINA) || 1)
-const conteggioSlot      = computed(() => tuttiGliSlot.value.length)
+const totalePagine = computed(() => Math.ceil(slotFiltrati.value.length / PER_PAGINA) || 1)
+const conteggioSlot = computed(() => tuttiGliSlot.value.length)
 // Conta conflitti DISTINTI che coinvolgono le prenotazioni dell'utente corrente
 // (non gli slot, per evitare doppio conteggio: 1 conflitto = 2 slot marcati)
 
@@ -369,6 +378,7 @@ const conteggioConflitti = computed(() =>
 
 function resetFiltri() {
   filtroSede.value = ''; filtroAula.value = ''; filtroUtente.value = ''
+  filtroStato.value = ''; filtroCorso.value = ''
   filtroStato.value = ''; filtroDa.value = ''; filtroA.value = ''
   pagina.value = 1
 }
@@ -401,8 +411,8 @@ async function caricaTutto() {
     const results = await Promise.all(calls)
     const [dataSedi, dataAule, dataPren, dataConflitti] = results
     const dataUtenti = results[4]
-    sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
-    aule.value  = Array.isArray(dataAule)  ? dataAule  : []
+    sedi.value = Array.isArray(dataSedi) ? dataSedi : []
+    aule.value = Array.isArray(dataAule) ? dataAule : []
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
     // console.log('conflittiAttivi:', conflittiAttivi.value, 'slotIds:', [...slotIdConConflitti.value])
@@ -415,6 +425,11 @@ async function caricaTutto() {
   }
 }
 
+// ── Naviga al calendario sulla data esatta ───────────────────────────────────
+function vaiACalendario(data) {
+  router.push({ name: 'Calendario', query: { data } })
+}
+
 onMounted(async () => {
   await caricaAule()
   await caricaTutto()
@@ -425,11 +440,28 @@ onActivated(caricaTutto)
 </script>
 
 <style scoped>
-.page-title { font-size: 1.4rem; font-weight: 700; }
-.row-conflitto { background: #fff3f3 !important; }
-.modal-backdrop-custom {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; z-index: 2000;
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
 }
-.modal-dialog-custom { width: 100%; max-width: 500px; border-radius: 12px; }
+
+.row-conflitto {
+  background: #fff3f3 !important;
+}
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-dialog-custom {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+}
 </style>

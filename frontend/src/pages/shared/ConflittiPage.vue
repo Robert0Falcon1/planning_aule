@@ -2,12 +2,38 @@
   <div class="page-conflitti">
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Conflitti</h2>
-      <span v-if="conflitti.length" class="badge bg-danger fs-6 ms-1">{{ conflitti.length }}</span>
+      <span v-if="conflittiOrdinati.length" class="badge bg-danger fs-6 ms-1">{{ conflittiOrdinati.length }}</span>
       <div class="ms-auto d-flex gap-2 align-items-center">
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="carica">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
+
+        <!-- Filtro utenti multi-selezione (max 2) -->
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            style="min-width: 180px">
+            <span v-if="!filtroUtenti.length">Filtra per utente...</span>
+            <span v-else-if="filtroUtenti.length === 1">1 utente</span>
+            <span v-else>2 utenti</span>
+          </button>
+          <div class="dropdown-menu p-2" style="max-height: 300px; overflow-y: auto; min-width: 250px">
+            <div class="small text-muted mb-2 px-2">Seleziona max 2 utenti</div>
+            <div v-for="u in opzioniUtenti" :key="u.value" class="form-check">
+              <input :id="`user-${u.value}`" v-model="filtroUtenti" :value="u.value" type="checkbox"
+                class="form-check-input" :disabled="filtroUtenti.length >= 2 && !filtroUtenti.includes(u.value)" />
+              <label :for="`user-${u.value}`" class="form-check-label small">
+                {{ u.label }}
+              </label>
+            </div>
+            <div v-if="filtroUtenti.length > 0" class="border-top mt-2 pt-2">
+              <button class="btn btn-sm btn-outline-secondary w-100" @click.stop="filtroUtenti = []">
+                Cancella selezione
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="form-check form-switch mb-0 ps-0 me-3">
           <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
           <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
@@ -46,15 +72,16 @@
       </div> -->
 
       <div class="d-flex flex-column gap-3">
-        <div v-for="c in conflitti" :key="c.id" class="card border-0 shadow-sm">
+        <div v-for="c in conflittiOrdinati" :key="c.id" class="card border-0 shadow-sm">
 
           <!-- Header -->
           <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
-            <!-- <span class="badge bg-danger">Conflitto #{{ c.id }}</span> -->
             <span class="badge bg-danger">Conflitto tra {{
               nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }} e {{
                 nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
-            <span v-if="c.stato_risoluzione" class="badge bg-success ms-1">Risolto</span>
+            <span v-if="c.stato_risoluzione" class="badge bg-success ms-1">
+              {{ messaggioRisoluzione(c) }}
+            </span>
             <small class="ms-auto text-muted">{{ formatData(c.rilevato_il) }}</small>
           </div>
 
@@ -79,7 +106,8 @@
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5) }}
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
+                      }}
                       </div>
                       <div v-if="infoSlot(c, 1)?.note"
                         class="text-muted small mt-1 fst-italic d-flex align-items-center">
@@ -118,7 +146,8 @@
                         <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5) }}
+                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
+                      }}
                       </div>
                       <div v-if="infoSlot(c, 2)?.note"
                         class="text-muted small mt-1 fst-italic d-flex align-items-center">
@@ -172,6 +201,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useUiStore } from '@/stores/ui'
 import { getConflitti, risolviConflitto, getMiePrenotazioni, getPrenotazione } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
@@ -180,13 +210,14 @@ import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { getUtenti } from '@/api/utenti'
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
-
+const uiStore = useUiStore()
 const utenti = ref([])
 const loading = ref(false)
 const conflitti = ref([])
 const prenotazioni = ref([])   // cache prenotazioni per lookup
 const sedi = ref([])
 const filtroSede = ref('')
+const filtroUtenti = ref([])
 const soloAttivi = ref(true)
 const risolvendo = ref(null)
 
@@ -199,6 +230,47 @@ function prenById(id) { return mappaPrenotazioni.value[id] || null }
 const mappaUtenti = computed(() =>
   Object.fromEntries(utenti.value.map(u => [u.id, u]))
 )
+
+// ── Opzioni utenti ordinate alfabeticamente ──────────────────────────────────
+const opzioniUtenti = computed(() =>
+  utenti.value
+    .map(u => ({
+      value: u.id,
+      label: `${u.nome} ${u.cognome}`
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+)
+
+// ── Conflitti ordinati cronologicamente e filtrati per utenti ────────────────
+const conflittiOrdinati = computed(() => {
+  let lista = conflitti.value
+
+  // Filtra per utenti selezionati (esattamente quei due)
+  if (filtroUtenti.value.length === 2) {
+    const [id1, id2] = filtroUtenti.value
+    lista = lista.filter(c => {
+      const richA = prenById(c.prenotazione_id_1)?.richiedente_id
+      const richB = prenById(c.prenotazione_id_2)?.richiedente_id
+      // Mostra solo conflitti tra esattamente questi due utenti
+      return (richA === id1 && richB === id2) || (richA === id2 && richB === id1)
+    })
+  } else if (filtroUtenti.value.length === 1) {
+    // Se solo 1 utente: mostra tutti i suoi conflitti con chiunque
+    const idUtente = filtroUtenti.value[0]
+    lista = lista.filter(c => {
+      const richA = prenById(c.prenotazione_id_1)?.richiedente_id
+      const richB = prenById(c.prenotazione_id_2)?.richiedente_id
+      return richA === idUtente || richB === idUtente
+    })
+  }
+
+  // Ordina cronologicamente
+  return [...lista].sort((a, b) => {
+    const dataA = infoSlot(a, 1)?.data || infoSlot(a, 2)?.data || '9999-12-31'
+    const dataB = infoSlot(b, 1)?.data || infoSlot(b, 2)?.data || '9999-12-31'
+    return dataA.localeCompare(dataB)
+  })
+})
 
 // ── Info slot specifico dal conflitto ─────────────────────────────────────────
 // c.slot_id_1 / c.slot_id_2 → cerca nello slot array della prenotazione
@@ -261,9 +333,17 @@ async function risolvi(id, azione) {
   risolvendo.value = id
   try {
     await risolviConflitto(id, azione)
+
+    // Messaggio di successo
+    let msg = 'Conflitto risolto con successo'
+    if (azione === 'mantieni_1') msg = '✓ Conflitto risolto: mantenuta prenotazione A'
+    else if (azione === 'mantieni_2') msg = '✓ Conflitto risolto: mantenuta prenotazione B'
+    else if (azione === 'elimina_entrambe') msg = '✓ Conflitto risolto: entrambe le prenotazioni annullate'
+
+    uiStore.successo(msg)
     await carica()
   } catch (e) {
-    alert(`Errore: ${e.message}`)
+    uiStore.errore(e.response?.data?.detail || e.message || 'Errore durante la risoluzione del conflitto')
   } finally {
     risolvendo.value = null
   }
@@ -283,6 +363,23 @@ onMounted(async () => {
 function nomeUtente(id) {
   const u = mappaUtenti.value[id]
   return u ? `${u.nome} ${u.cognome}` : `#${id}`
+}
+
+// ── Messaggio risoluzione conflitto ──────────────────────────────────────────
+function messaggioRisoluzione(c) {
+  if (!c.stato_risoluzione) return null
+
+  const stato = c.stato_risoluzione.toUpperCase()
+
+  if (stato.includes('MANTENUTA_1')) {
+    return '✓ Mantenuta A'
+  } else if (stato.includes('MANTENUTA_2')) {
+    return '✓ Mantenuta B'
+  } else if (stato.includes('ELIMINATE_ENTRAMBE')) {
+    return '✗ Entrambe annullate'
+  }
+
+  return 'Risolto'
 }
 </script>
 

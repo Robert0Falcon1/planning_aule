@@ -28,7 +28,7 @@
 
               <!-- Corso -->
               <div class="mb-3">
-                <label class="form-label fw-semibold">ID Corso *</label>
+                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
                 <input v-model.number="form.corso_id" type="number" min="1" class="form-control" placeholder="Es: 1" />
                 <div class="form-text">⚠️ Il corso deve esistere nel sistema.</div>
               </div>

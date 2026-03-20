@@ -173,15 +173,23 @@ function nomeSede(sedeId) {
 }
 
 const utentiFiltrati = computed(() => {
-  return utenti.value.filter(u => {
-    const q = cerca.value.toLowerCase()
-    if (q && !u.nome_completo?.toLowerCase().includes(q) && !u.username?.toLowerCase().includes(q)) return false
-    if (filtroRuolo.value && u.ruolo !== filtroRuolo.value) return false
-    if (filtroAttivo.value !== '') {
-      if (u.attivo !== (filtroAttivo.value === 'true')) return false
-    }
-    return true
-  })
+  return utenti.value
+    .filter(u => {
+      const q = cerca.value.toLowerCase()
+      if (q && !u.nome_completo?.toLowerCase().includes(q) && !u.username?.toLowerCase().includes(q)) return false
+      if (filtroRuolo.value && u.ruolo !== filtroRuolo.value) return false
+      if (filtroAttivo.value !== '') {
+        if (u.attivo !== (filtroAttivo.value === 'true')) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      // Ordine alfabetico: prima per cognome, poi per nome
+      const cognomeA = (a.cognome || '').toLowerCase()
+      const cognomeB = (b.cognome || '').toLowerCase()
+      if (cognomeA !== cognomeB) return cognomeA.localeCompare(cognomeB)
+      return (a.nome || '').toLowerCase().localeCompare((b.nome || '').toLowerCase())
+    })
 })
 
 function iniziali(u) {

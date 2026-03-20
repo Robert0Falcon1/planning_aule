@@ -54,7 +54,7 @@
 
               <!-- Corso&nbsp;ID -->
               <div class="col-12">
-                <label class="form-label fw-semibold">ID Corso *</label>
+                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
                 <input v-model.number="singola.corso_id" type="number" min="1" class="form-control"
                   :class="{ 'is-invalid': err.corso_id }" placeholder="Inserisci l'ID del corso" />
                 <div class="invalid-feedback">{{ err.corso_id }}</div>
@@ -151,7 +151,7 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label fw-semibold">ID Corso *</label>
+                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
                 <input v-model.number="massiva.corso_id" type="number" min="1" class="form-control"
                   :class="{ 'is-invalid': errM.corso_id }" placeholder="ID numerico corso" />
                 <div class="invalid-feedback">{{ errM.corso_id }}</div>
@@ -240,19 +240,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getSedi } from '@/api/sedi'
 import { getAuleBySede } from '@/api/aule'
 import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
-// import { getCorsi } from '@/api/corsi'
 
 const route = useRoute()
 const tab = ref(route.query.tipo === 'massiva' ? 'massiva' : 'singola')
 const oggiISO = oggi()
-
 const loading = ref(false)
 const loadingMassiva = ref(false)
 const caricandoAule = ref(false)
@@ -261,10 +259,8 @@ const aule = ref([])
 const auleMassiva = ref([])
 const esito = ref(null)
 const esitoMassiva = ref(null)
-
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
-// Slot orari ogni 30 minuti dalle 07:00 alle 21:00
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
   return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
@@ -274,13 +270,16 @@ const singola = reactive({
   sede_id: '', aula_id: '', corso_id: null,
   data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '',
 })
+
 const err = reactive({
   sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '', ora_fine: '',
 })
+
 const errM = reactive({
   sede_id: '', aula_id: '', corso_id: '', ora_inizio: '', ora_fine: '',
   data_inizio: '', data_fine: '', giorni_settimana: '',
 })
+
 const massiva = reactive({
   sede_id: '', aula_id: '', corso_id: null,
   data_inizio: '', data_fine: '',
@@ -288,6 +287,20 @@ const massiva = reactive({
   tipo_ricorrenza: 'settimanale',
   giorni_settimana: [],
   note: '',
+})
+
+// ── AUTO-AGGIORNAMENTO ORA FINE (14:00 → 18:00) ──────────────────────────
+
+watch(() => singola.ora_inizio, (nuovaOra) => {
+  if (nuovaOra === '14:00') {
+    singola.ora_fine = '18:00'
+  }
+})
+
+watch(() => massiva.ora_inizio, (nuovaOra) => {
+  if (nuovaOra === '14:00') {
+    massiva.ora_fine = '18:00'
+  }
 })
 
 async function onSedeChange() {
@@ -380,7 +393,6 @@ async function submitMassiva() {
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
     massiva.giorni_settimana = []
   } catch (e) {
-    // Gestisce sia stringa semplice che array di errori Pydantic [{loc,msg,type}]
     let msg = e.message || 'Errore durante la creazione massiva.'
     try {
       const parsed = JSON.parse(msg)
@@ -425,10 +437,6 @@ function resetMassiva() {
 onMounted(async () => {
   const data = await getSedi()
   sedi.value = data || []
-  // corsi.value = await getCorsi({ attivo: true, sede_id: sedeSelezionata.value })
-
-
-  // Pre-popola da query params (link da SediAulePage)
   if (route.query.sede_id) {
     singola.sede_id = Number(route.query.sede_id)
     await onSedeChange()

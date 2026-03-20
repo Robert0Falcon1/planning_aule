@@ -48,7 +48,7 @@
 
               <!-- Corso ID -->
               <div class="col-12">
-                <label class="form-label fw-semibold">ID Corso *</label>
+                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
                 <input v-model.number="form.corso_id" type="number" min="1"
                   class="form-control" :class="{ 'is-invalid': err.corso_id }" />
                 <div class="invalid-feedback">{{ err.corso_id }}</div>

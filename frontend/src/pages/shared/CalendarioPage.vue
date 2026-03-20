@@ -174,6 +174,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getCalendario, getConflitti } from '@/api/prenotazioni'
@@ -181,12 +182,12 @@ import { useAule } from '@/composables/useAule'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const ORA_INIZIO    = 7
-const ORA_FINE      = 21
-const SLOT_H        = 56
-const GAP           = 2
-const altezzaTotale = (ORA_FINE - ORA_INIZIO) * SLOT_H
-
+const ORA_INIZIO      = 7
+const ORA_FINE        = 21
+const SLOT_H          = 56
+const GAP             = 2
+const altezzaTotale   = (ORA_FINE - ORA_INIZIO) * SLOT_H
+const route           = useRoute() 
 const loading         = ref(false)
 const filtroSede      = ref('')
 const filtroAula      = ref('')
@@ -197,6 +198,8 @@ const prenotazioni    = ref([])
 const conflittiAttivi = ref([])
 const dataRef         = ref(oggi())
 const nowTop          = ref(-1)
+
+
 
 // ── FIX TIMEZONE ─────────────────────────────────────────────────────────────
 // toISOString() converte in UTC: in Italia (UTC+1/+2) mezzanotte locale
@@ -452,6 +455,11 @@ async function caricaDati() {
 watch([dataRef, filtroSede, vista], caricaDati)
 
 onMounted(async () => {
+  // Leggi data da query param se presente
+  if (route.query.data) {
+    dataRef.value = route.query.data
+  }
+  
   aggiornaNow()
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
