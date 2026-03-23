@@ -5,6 +5,7 @@ Router per la gestione delle prenotazioni aule - Sistema 2 RUOLI
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError  # ← AGGIUNTO
 from pydantic import BaseModel
 from backend.database import get_db
 from backend.core.dependencies import get_utente_corrente, verifica_permesso
@@ -46,19 +47,46 @@ def nuova_prenotazione_singola(
     db: Session = Depends(get_db),
     utente: Utente = Depends(verifica_permesso("prenotazione:richiedere"))
 ):
-    prenotazione, _ = crea_prenotazione_singola(db, dati, utente)
-    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
-    richiesta = RichiestaPrenotazione(
-        prenotazione_id=prenotazione.id,
-        stato=StatoRichiesta.APPROVATA,
-        ha_conflitti=(len(conflitti) > 0),
-        data_richiesta=datetime.now(timezone.utc),
-        data_gestione=datetime.now(timezone.utc)
-    )
-    db.add(richiesta)
-    db.commit()
-    db.refresh(prenotazione)
-    return prenotazione
+    try:
+        prenotazione, _ = crea_prenotazione_singola(db, dati, utente)
+        conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+        richiesta = RichiestaPrenotazione(
+            prenotazione_id=prenotazione.id,
+            stato=StatoRichiesta.APPROVATA,
+            ha_conflitti=(len(conflitti) > 0),
+            data_richiesta=datetime.now(timezone.utc),
+            data_gestione=datetime.now(timezone.utc)
+        )
+        db.add(richiesta)
+        db.commit()
+        db.refresh(prenotazione)
+        return prenotazione
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        
+        # Foreign key per corso_id
+        if 'fk_slot_corso' in error_msg or 'corso_id' in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Il corso con ID {dati.corso_id} non esiste. Verifica l'ID inserito."
+            )
+        
+        # Foreign key per aula_id
+        if 'fk_slot_aula' in error_msg or 'aula_id' in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"L'aula con ID {dati.aula_id} non esiste."
+            )
+        
+        # Errore generico di integrità
+        raise HTTPException(
+            status_code=400,
+            detail="Errore nei dati inseriti. Verifica che tutti i riferimenti (corso, aula) esistano."
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
 
 @router.post("/massiva", response_model=PrenotazioneRisposta, status_code=201,
@@ -68,19 +96,46 @@ def nuova_prenotazione_massiva(
     db: Session = Depends(get_db),
     utente: Utente = Depends(verifica_permesso("prenotazione:richiedere"))
 ):
-    prenotazione, _ = crea_prenotazione_massiva(db, dati, utente)
-    conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
-    richiesta = RichiestaPrenotazione(
-        prenotazione_id=prenotazione.id,
-        stato=StatoRichiesta.APPROVATA,
-        ha_conflitti=(len(conflitti) > 0),
-        data_richiesta=datetime.now(timezone.utc),
-        data_gestione=datetime.now(timezone.utc)
-    )
-    db.add(richiesta)
-    db.commit()
-    db.refresh(prenotazione)
-    return prenotazione
+    try:
+        prenotazione, _ = crea_prenotazione_massiva(db, dati, utente)
+        conflitti = ConflittoService.detect_and_record_conflicts(db, prenotazione)
+        richiesta = RichiestaPrenotazione(
+            prenotazione_id=prenotazione.id,
+            stato=StatoRichiesta.APPROVATA,
+            ha_conflitti=(len(conflitti) > 0),
+            data_richiesta=datetime.now(timezone.utc),
+            data_gestione=datetime.now(timezone.utc)
+        )
+        db.add(richiesta)
+        db.commit()
+        db.refresh(prenotazione)
+        return prenotazione
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        
+        # Foreign key per corso_id
+        if 'fk_slot_corso' in error_msg or 'corso_id' in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Il corso con ID {dati.corso_id} non esiste. Verifica l'ID inserito."
+            )
+        
+        # Foreign key per aula_id
+        if 'fk_slot_aula' in error_msg or 'aula_id' in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"L'aula con ID {dati.aula_id} non esiste."
+            )
+        
+        # Errore generico di integrità
+        raise HTTPException(
+            status_code=400,
+            detail="Errore nei dati inseriti. Verifica che tutti i riferimenti (corso, aula) esistano."
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
 
 @router.get("/slot-liberi/{aula_id}", summary="Slot liberi per aula")

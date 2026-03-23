@@ -233,7 +233,7 @@ async function salvaSede() {
     }
     modaleSede.value = false
   } catch (e) {
-    errSede.value = e.message || 'Errore'
+    errSede.value = e.message
   } finally {
     salvandoSede.value = false
   }
@@ -284,7 +284,7 @@ async function salvaAula() {
     }
     modaleAula.value = false
   } catch (e) {
-    errAula.value = e.message || 'Errore'
+    errAula.value = e.message
   } finally {
     salvandoAula.value = false
   }

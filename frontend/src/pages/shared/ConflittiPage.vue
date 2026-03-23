@@ -355,7 +355,7 @@ async function risolvi(id, azione) {
     uiStore.successo(msg)
     await carica()
   } catch (e) {
-    uiStore.errore(e.response?.data?.detail || e.message || 'Errore durante la risoluzione del conflitto')
+    uiStore.errore(e.message)
   } finally {
     risolvendo.value = null
   }

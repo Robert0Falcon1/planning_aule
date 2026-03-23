@@ -130,7 +130,7 @@ async function submit() {
         esito.value = { tipo: 'ok', msg: '✓ Password aggiornata con successo.' }
         setTimeout(chiudi, 1500)
     } catch (e) {
-        esito.value = { tipo: 'err', msg: e.message || 'Errore durante il salvataggio.' }
+        esito.value = { tipo: 'err', msg: e.message }
     } finally {
         loading.value = false
     }

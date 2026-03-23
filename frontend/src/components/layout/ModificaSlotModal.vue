@@ -203,7 +203,7 @@ async function submit() {
     emit('salvato')
     setTimeout(chiudi, 1200)
   } catch (e) {
-    esito.value = { tipo: 'err', msg: e.message || 'Errore durante il salvataggio.' }
+    esito.value = { tipo: 'err', msg: e.message }
   } finally {
     loading.value = false
   }

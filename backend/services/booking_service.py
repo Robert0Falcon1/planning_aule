@@ -98,6 +98,8 @@ def crea_prenotazione_massiva(
         dati.giorni_settimana,
     )
 
+    print(f"DEBUG: Creazione {len(date_ricorrenti)} slot con corso_id={dati.corso_id}")  # ← AGGIUNGI
+
     for d in date_ricorrenti:
         slot = SlotOrario(
             prenotazione_id=prenotazione.id,
@@ -110,5 +112,7 @@ def crea_prenotazione_massiva(
         )
         db.add(slot)
 
+    # print(f"DEBUG: Prima del flush...")
     db.flush()
+    # print(f"DEBUG: Flush completato senza errori!")
     return prenotazione, None

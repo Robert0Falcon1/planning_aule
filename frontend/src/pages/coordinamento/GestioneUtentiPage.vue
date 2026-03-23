@@ -245,7 +245,7 @@ async function salva() {
     }
     chiudiModale()
   } catch (e) {
-    errModale.value = e.message || 'Errore durante il salvataggio'
+    errModale.value = e.message
   } finally {
     salvando.value = false
   }

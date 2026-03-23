@@ -351,7 +351,7 @@ async function submitSingola() {
     esito.value = { tipo: 'ok', msg: '✓ Prenotazione confermata con successo.' }
     resetSingola()
   } catch (e) {
-    esito.value = { tipo: 'err', msg: e.message || 'Errore durante la creazione.' }
+    esito.value = { tipo: 'err', msg: e.message }
   } finally {
     loading.value = false
   }
@@ -393,18 +393,7 @@ async function submitMassiva() {
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
     massiva.giorni_settimana = []
   } catch (e) {
-    let msg = e.message || 'Errore durante la creazione massiva.'
-    try {
-      const parsed = JSON.parse(msg)
-      if (Array.isArray(parsed)) {
-        msg = parsed.map(x => x.msg || JSON.stringify(x)).join(' — ')
-      } else if (parsed?.detail) {
-        msg = Array.isArray(parsed.detail)
-          ? parsed.detail.map(x => x.msg || JSON.stringify(x)).join(' — ')
-          : parsed.detail
-      }
-    } catch (_) { }
-    esitoMassiva.value = { tipo: 'err', msg }
+    esitoMassiva.value = { tipo: 'err', msg: e.message }
   } finally {
     loadingMassiva.value = false
   }
