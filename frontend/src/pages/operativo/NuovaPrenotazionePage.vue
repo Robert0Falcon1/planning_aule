@@ -192,7 +192,6 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Tipo ricorrenza *</label>
                 <select v-model="massiva.tipo_ricorrenza" class="form-select">
-                  <option value="giornaliera">Giornaliera</option>
                   <option value="settimanale">Settimanale</option>
                   <option value="bisettimanale">Bisettimanale</option>
                   <option value="mensile">Mensile</option>
@@ -386,9 +385,10 @@ async function submitMassiva() {
       ora_inizio: massiva.ora_inizio,
       ora_fine: massiva.ora_fine,
       tipo_ricorrenza: massiva.tipo_ricorrenza,
+      giorni_settimana: massiva.giorni_settimana,
       note: massiva.note || undefined,
     }
-    if (massiva.giorni_settimana.length) payload.giorni_settimana = massiva.giorni_settimana
+    
     await creaPrenotazioneMassiva(payload)
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
     massiva.giorni_settimana = []

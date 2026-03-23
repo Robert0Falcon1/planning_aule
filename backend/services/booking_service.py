@@ -80,11 +80,12 @@ def crea_prenotazione_massiva(
     Crea una prenotazione massiva generando tutti gli slot ricorrenti.
     Sistema 2 ruoli: stato CONFERMATA immediato.
     """
+    
     prenotazione = PrenotazioneMassiva(
         richiedente_id=utente.id,
         stato=StatoPrenotazione.CONFERMATA,
         tipo_ricorrenza=dati.tipo_ricorrenza,
-        giorni_settimana=",".join(map(str, dati.giorni_settimana)),
+        giorni_settimana=",".join(map(str, giorni)),
         data_inizio_range=dati.data_inizio,
         data_fine_range=dati.data_fine,
     )
@@ -98,8 +99,6 @@ def crea_prenotazione_massiva(
         dati.giorni_settimana,
     )
 
-    print(f"DEBUG: Creazione {len(date_ricorrenti)} slot con corso_id={dati.corso_id}")  # ← AGGIUNGI
-
     for d in date_ricorrenti:
         slot = SlotOrario(
             prenotazione_id=prenotazione.id,
@@ -112,7 +111,5 @@ def crea_prenotazione_massiva(
         )
         db.add(slot)
 
-    # print(f"DEBUG: Prima del flush...")
     db.flush()
-    # print(f"DEBUG: Flush completato senza errori!")
     return prenotazione, None
