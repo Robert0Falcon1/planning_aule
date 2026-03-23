@@ -63,6 +63,12 @@ class ConflittoService:
         db: Session,
         prenotazione: Prenotazione
     ) -> List[ConflittoPrenotazione]:
+        """
+        Rileva e registra TUTTI i conflitti per ogni slot della prenotazione.
+        
+        FIX PERMANENTE: quando trova N slot in conflitto (N>1), genera TUTTE
+        le coppie possibili, non solo quelle con il nuovo slot.
+        """
         conflitti_creati = []
 
         for slot in prenotazione.slots:
@@ -79,36 +85,45 @@ class ConflittoService:
                 exclude_booking_id=prenotazione.id
             )
 
-            for conflicting_pren, conflicting_slot in coppie_in_conflitto:
-                s1 = min(slot.id, conflicting_slot.id)
-                s2 = max(slot.id, conflicting_slot.id)
+            # Raccogli tutti gli slot in conflitto (incluso quello nuovo)
+            tutti_slot_in_conflitto = [slot] + [conflicting_slot for _, conflicting_slot in coppie_in_conflitto]
+            
+            # Genera TUTTE le coppie possibili
+            for i in range(len(tutti_slot_in_conflitto)):
+                for j in range(i + 1, len(tutti_slot_in_conflitto)):
+                    slot_a = tutti_slot_in_conflitto[i]
+                    slot_b = tutti_slot_in_conflitto[j]
+                    
+                    # Ordina per ID slot (minore sempre come slot_id_1)
+                    s1 = min(slot_a.id, slot_b.id)
+                    s2 = max(slot_a.id, slot_b.id)
 
-                existing = db.query(ConflittoPrenotazione).filter(
-                    ConflittoPrenotazione.slot_id_1 == s1,
-                    ConflittoPrenotazione.slot_id_2 == s2,
-                ).first()
+                    # Verifica se esiste già
+                    existing = db.query(ConflittoPrenotazione).filter(
+                        ConflittoPrenotazione.slot_id_1 == s1,
+                        ConflittoPrenotazione.slot_id_2 == s2,
+                    ).first()
 
-                if not existing:
-                    if prenotazione.id < conflicting_pren.id:
-                        id1, id2 = prenotazione.id, conflicting_pren.id
-                        sid1, sid2 = slot.id, conflicting_slot.id
-                    else:
-                        id1, id2 = conflicting_pren.id, prenotazione.id
-                        sid1, sid2 = conflicting_slot.id, slot.id
+                    if not existing:
+                        # Ordina per ID prenotazione
+                        if slot_a.prenotazione_id < slot_b.prenotazione_id:
+                            id1, id2 = slot_a.prenotazione_id, slot_b.prenotazione_id
+                            sid1, sid2 = slot_a.id, slot_b.id
+                        else:
+                            id1, id2 = slot_b.prenotazione_id, slot_a.prenotazione_id
+                            sid1, sid2 = slot_b.id, slot_a.id
 
-                    conflitto = ConflittoPrenotazione(
-                        prenotazione_id_1=id1,
-                        prenotazione_id_2=id2,
-                        slot_id_1=sid1,
-                        slot_id_2=sid2,
-                        tipo_conflitto=TipoConflitto.OVERLAP_ORARIO,
-                    )
-                    db.add(conflitto)
-                    conflitti_creati.append(conflitto)
+                        conflitto = ConflittoPrenotazione(
+                            prenotazione_id_1=id1,
+                            prenotazione_id_2=id2,
+                            slot_id_1=sid1,
+                            slot_id_2=sid2,
+                            tipo_conflitto=TipoConflitto.OVERLAP_ORARIO,
+                        )
+                        db.add(conflitto)
+                        conflitti_creati.append(conflitto)
 
             # ── Conflitti intra-prenotazione (stessa prenotazione) ────────────
-            # Necessario quando uno slot viene spostato su data/orario/aula
-            # già occupata da un altro slot della stessa prenotazione massiva.
             for altro_slot in prenotazione.slots:
                 if altro_slot.id == slot.id or altro_slot.annullato:
                     continue

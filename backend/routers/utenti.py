@@ -115,12 +115,21 @@ def modifica_utente(
                 detail=f"Email '{dati.email}' già registrata"
             )
 
-    if dati.nome     is not None: utente.nome    = dati.nome
-    if dati.cognome  is not None: utente.cognome = dati.cognome
-    if dati.email    is not None: utente.email   = dati.email
-    if dati.ruolo    is not None: utente.ruolo   = dati.ruolo
-    if dati.sede_id  is not None: utente.sede_id = dati.sede_id
-    if dati.password is not None: utente.password_hash = hash_password(dati.password)
+    # Usa model_dump(exclude_unset=True) per distinguere tra "campo non fornito" e "campo null"
+    dati_dict = dati.model_dump(exclude_unset=True)
+
+    if 'nome' in dati_dict:
+        utente.nome = dati.nome
+    if 'cognome' in dati_dict:
+        utente.cognome = dati.cognome
+    if 'email' in dati_dict:
+        utente.email = dati.email
+    if 'ruolo' in dati_dict:
+        utente.ruolo = dati.ruolo
+    if 'sede_id' in dati_dict:
+        utente.sede_id = dati.sede_id
+    if 'password' in dati_dict:
+        utente.password_hash = hash_password(dati.password)
 
     db.commit()
     db.refresh(utente)

@@ -74,14 +74,6 @@
     </div>
 
     <div v-else>
-      <!-- <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
-        <svg class="icon icon-warning flex-shrink-0">
-          <use :href="sprites + '#it-error'"></use>
-        </svg>
-        <span>
-          <strong>{{ conflitti.length }} {{ conflitti.length === 1 ? 'conflitto' : 'conflitti' }}</strong> {{
-            conflitti.length === 1 ? 'rilevato' : 'rilevati' }}. </span>
-      </div> -->
 
       <div class="d-flex flex-column gap-3">
         <div v-for="c in conflittiOrdinati" :key="c.id" class="card border-0 shadow-sm">
@@ -98,36 +90,67 @@
           </div>
 
           <!-- Corpo: slot in conflitto -->
+          <!-- Corpo: dati comuni + slot in conflitto -->
           <div class="card-body pb-2">
+            <!-- DATI COMUNI -->
+            <div class="mb-3 p-2 bg-lighter rounded d-flex gap-3 align-items-center flex-wrap">
+              <div class="d-flex align-items-center gap-1">
+                <svg class="icon icon-sm text-primary">
+                  <use :href="sprites + '#it-map-marker'"></use>
+                </svg>
+                <strong class="small">Sede:</strong>
+                <span class="small">{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <i class="bi bi-door-open"></i>
+                <strong class="small pe-1">Aula:</strong>
+                <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 1)?.aula_id))"></span>
+                <span class="small">{{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <svg class="icon icon-sm text-primary">
+                  <use :href="sprites + '#it-calendar'"></use>
+                </svg>
+                <strong class="small">Data:</strong>
+                <span class="small">{{ formatData(infoSlot(c, 1)?.data) }}</span>
+              </div>
+            </div>
+
+            <!-- PRENOTAZIONI A vs B -->
             <div class="row g-3 align-items-stretch">
 
               <!-- Prenotazione A -->
               <div class="col-md-5">
                 <div class="conflitto-pill pill-a h-100">
-                  <strong>Prenotazione A ({{
-                    nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }})</strong>
+                  <div class="fw-bold mb-2">Prenotazione A</div>
                   <template v-for="s in [infoSlot(c, 1)]">
                     <template v-if="s">
-                      <div class="text-muted small">
-                        Corso {{ infoSlot(c, 1)?.corso_id }}
-                        <!-- <span v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'"
-                          class="badge bg-info ms-1">Ricorrente</span> -->
-                      </div>
-                      <div class="mt-1 small mb-2 d-flex align-items-center gap-1">
-                        <div>
-                          <strong>{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</strong>
-                          <span class="text-muted ms-1">- <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 1)?.aula_id))"></span>{{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
-                        </div>
-                      </div>
-                      <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
-                      }}
-                      </div>
-                      <div v-if="infoSlot(c, 1)?.note"
-                        class="text-muted small mt-1 fst-italic d-flex align-items-center">
+                      <div class="mb-1">
                         <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-note'"></use>
-                        </svg> {{ infoSlot(c, 1)?.note }}
+                          <use :href="sprites + '#it-user'"></use>
+                        </svg>
+                        <span class="small">{{ nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }}</span>
+                      </div>
+                      <div class="mb-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-card'"></use>
+                        </svg>
+                        <span class="small">Corso {{ s.corso_id }}</span>
+                      </div>
+                      <div class="mb-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-clock'"></use>
+                        </svg>
+                        <span class="small fw-semibold">{{ s.ora_inizio?.slice(0, 5) }} – {{ s.ora_fine?.slice(0, 5)
+                          }}</span>
+                      </div>
+                      <div v-if="s.note" class="mt-2 pt-2 border-top">
+                        <div class="text-muted small fst-italic d-flex align-items-start">
+                          <svg class="icon icon-xs me-1 mt-1 flex-shrink-0">
+                            <use :href="sprites + '#it-note'"></use>
+                          </svg>
+                          <span>{{ s.note }}</span>
+                        </div>
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>
@@ -146,31 +169,35 @@
               <!-- Prenotazione B -->
               <div class="col-md-5">
                 <div class="conflitto-pill pill-b h-100">
-                  <strong>Prenotazione B ({{
-                    nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }})</strong>
+                  <div class="fw-bold mb-2">Prenotazione B</div>
                   <template v-for="s in [infoSlot(c, 2)]">
                     <template v-if="s">
-                      <div class="text-muted small">
-                        Corso {{ infoSlot(c, 2)?.corso_id }}
-                        <!-- <span v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
-                          class="badge bg-info ms-1">Ricorrente</span> -->
-                      </div>
-                      <div class="mt-1 small mb-2 d-flex align-items-center gap-1">
-                        
-                        <div>
-                          <strong>{{ sedeDiAulaFn(infoSlot(c, 2)?.aula_id) }}</strong>
-                          <span class="text-muted ms-1">- <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 2)?.aula_id))"></span>{{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
-                        </div>
-                      </div>
-                      <div class="fw-bold">{{ formatData(s.data) }}</div>
-                      <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
-                      }}
-                      </div>
-                      <div v-if="infoSlot(c, 2)?.note"
-                        class="text-muted small mt-1 fst-italic d-flex align-items-center">
+                      <div class="mb-1">
                         <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-note'"></use>
-                        </svg> {{ infoSlot(c, 2)?.note }}
+                          <use :href="sprites + '#it-user'"></use>
+                        </svg>
+                        <span class="small">{{ nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
+                      </div>
+                      <div class="mb-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-card'"></use>
+                        </svg>
+                        <span class="small">Corso {{ s.corso_id }}</span>
+                      </div>
+                      <div class="mb-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-clock'"></use>
+                        </svg>
+                        <span class="small fw-semibold">{{ s.ora_inizio?.slice(0, 5) }} – {{ s.ora_fine?.slice(0, 5)
+                          }}</span>
+                      </div>
+                      <div v-if="s.note" class="mt-2 pt-2 border-top">
+                        <div class="text-muted small fst-italic d-flex align-items-start">
+                          <svg class="icon icon-xs me-1 mt-1 flex-shrink-0">
+                            <use :href="sprites + '#it-note'"></use>
+                          </svg>
+                          <span>{{ s.note }}</span>
+                        </div>
                       </div>
                     </template>
                     <div v-else class="text-muted small">Caricamento...</div>

@@ -7,6 +7,7 @@
     --bs-primary: #0066CC; /* BLU: #0066CC;  ICE: #000000*/
     --bs-primary-accent: #0066CC; /* BLU: #0066CC;  ICE: #e5313e */
     --bs-blue: var(--bs-primary);
+    --bs-lighter: #ededed;
     
     /* Varianti del primary */
     --bs-primary-dark: color-mix(in srgb, var(--bs-primary) 85%, black);
@@ -221,6 +222,9 @@ input[type="date"]:focus {
 }
 .bg-primary {
     background-color: var(--bs-primary) !important;
+}
+.bg-lighter{
+    background-color: var(--bs-lighter) !important;
 }
 
 .avatar-coord {

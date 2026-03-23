@@ -15,7 +15,9 @@
           <option value="false">Disattivati</option>
         </select>
         <button class="btn btn-sm btn-primary" @click="apriModale()">
-          <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-plus-circle'"></use></svg>
+          <svg class="icon icon-white icon-sm me-1">
+            <use :href="sprites + '#it-plus-circle'"></use>
+          </svg>
           Nuovo
         </button>
       </div>
@@ -31,8 +33,12 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light sticky-top">
               <tr>
-                <th>Utente</th><th>Ruolo</th><th>Sede</th>
-                <th>Stato</th><th>Creato&nbsp;il</th><th class="text-end">Azioni</th>
+                <th>Utente</th>
+                <th>Ruolo</th>
+                <th>Sede</th>
+                <th>Stato</th>
+                <th>Creato&nbsp;il</th>
+                <th class="text-end">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -64,14 +70,12 @@
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
                     <button class="btn btn-sm btn-outline-success" @click="apriModale(u)">
-                      <svg class="icon icon-sm"><use :href="sprites + '#it-pencil'"></use></svg>
+                      <svg class="icon icon-sm">
+                        <use :href="sprites + '#it-pencil'"></use>
+                      </svg>
                     </button>
-                    <button
-                      class="btn btn-sm"
-                      :class="u.attivo ? 'btn-outline-danger' : 'btn-outline-success'"
-                      @click="toggleAttivo(u)"
-                      :disabled="toggling === u.id"
-                    >
+                    <button class="btn btn-sm" :class="u.attivo ? 'btn-outline-danger' : 'btn-outline-success'"
+                      @click="toggleAttivo(u)" :disabled="toggling === u.id">
                       <span v-if="toggling === u.id" class="spinner-border spinner-border-sm"></span>
                       <svg v-else class="icon icon-sm">
                         <use :href="`${sprites}#${u.attivo ? 'it-close-circle' : 'it-check-circle'}`"></use>
@@ -127,7 +131,8 @@
             </div>
             <div v-if="!utenteInEdit" class="col-md-6">
               <label class="form-label fw-semibold">Password *</label>
-              <input v-model="form.password" type="password" class="form-control" :class="{ 'is-invalid': fe.password }" autocomplete="new-password" />
+              <input v-model="form.password" type="password" class="form-control" :class="{ 'is-invalid': fe.password }"
+                autocomplete="new-password" />
               <div class="invalid-feedback">{{ fe.password }}</div>
             </div>
           </div>
@@ -152,20 +157,20 @@ import { getSedi } from '@/api/sedi'
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const loading      = ref(false)
-const salvando     = ref(false)
-const toggling     = ref(null)
-const utenti       = ref([])
-const sedi         = ref([])
-const cerca        = ref('')
-const filtroRuolo  = ref('')
+const loading = ref(false)
+const salvando = ref(false)
+const toggling = ref(null)
+const utenti = ref([])
+const sedi = ref([])
+const cerca = ref('')
+const filtroRuolo = ref('')
 const filtroAttivo = ref('')
-const modale       = ref(false)
+const modale = ref(false)
 const utenteInEdit = ref(null)
-const errModale    = ref('')
+const errModale = ref('')
 
 const form = reactive({ nome: '', cognome: '', email: '', ruolo: '', sede_id: '', password: '' })
-const fe   = reactive({ nome: '', cognome: '', ruolo: '', password: '' })
+const fe = reactive({ nome: '', cognome: '', ruolo: '', password: '' })
 
 function nomeSede(sedeId) {
   if (!sedeId) return '—'
@@ -199,12 +204,12 @@ function iniziali(u) {
 
 function apriModale(u = null) {
   utenteInEdit.value = u
-  errModale.value    = ''
+  errModale.value = ''
   Object.assign(form, {
-    nome:    u?.nome    || '',
+    nome: u?.nome || '',
     cognome: u?.cognome || '',
-    email:   u?.email   || '',
-    ruolo:   u?.ruolo   || '',
+    email: u?.email || '',
+    ruolo: u?.ruolo || '',
     sede_id: u?.sede_id || '',
     password: '',
   })
@@ -217,9 +222,9 @@ function chiudiModale() {
 }
 
 function valida() {
-  fe.nome    = form.nome.trim()    ? '' : 'Obbligatorio'
+  fe.nome = form.nome.trim() ? '' : 'Obbligatorio'
   fe.cognome = form.cognome.trim() ? '' : 'Obbligatorio'
-  fe.ruolo   = form.ruolo          ? '' : 'Obbligatorio'
+  fe.ruolo = form.ruolo ? '' : 'Obbligatorio'
   fe.password = (utenteInEdit.value || form.password) ? '' : 'Obbligatoria per nuovo utente'
   return !Object.values(fe).some(Boolean)
 }
@@ -229,11 +234,11 @@ async function salva() {
   salvando.value = true; errModale.value = ''
   try {
     const payload = {
-      nome:    form.nome,
+      nome: form.nome,
       cognome: form.cognome,
-      email:   form.email || undefined,
-      ruolo:   form.ruolo,
-      sede_id: form.sede_id || undefined,
+      email: form.email || undefined,
+      ruolo: form.ruolo,
+      sede_id: form.sede_id ? Number(form.sede_id) : null,
     }
     if (utenteInEdit.value) {
       const updated = await modificaUtente(utenteInEdit.value.id, payload)
@@ -269,7 +274,7 @@ onMounted(async () => {
   try {
     const [du, ds] = await Promise.all([getUtenti(), getSedi()])
     utenti.value = du?.items || du || []
-    sedi.value   = ds?.items || ds || []
+    sedi.value = ds?.items || ds || []
   } catch (e) {
     console.warn('GestioneUtenti:', e.message)
   } finally {
@@ -279,18 +284,51 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title { font-size: 1.4rem; font-weight: 700; }
-.row-disattivato td { opacity: .5; }
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.row-disattivato td {
+  opacity: .5;
+}
+
 .avatar-circle {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .75rem; font-weight: 700; color: white; flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
 }
-.avatar-op    { background: #0066cc; }
-.avatar-coord { background: #cc8800; }
+
+.avatar-op {
+  background: #0066cc;
+}
+
+.avatar-coord {
+  background: #cc8800;
+}
+
 .modal-backdrop-custom {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; z-index: 2000;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
 }
-.modal-dialog-custom { width: 100%; max-width: 560px; border-radius: 12px; max-height: 90vh; overflow-y: auto; }
+
+.modal-dialog-custom {
+  width: 100%;
+  max-width: 560px;
+  border-radius: 12px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
 </style>

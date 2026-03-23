@@ -67,7 +67,6 @@
                   <th>Aula</th>
                   <th>Corso&nbsp;ID</th>
                   <th>Orario</th>
-                  <!-- <th>Tipo</th> -->
                   <th>Stato</th>
                 </tr>
               </thead>
@@ -81,13 +80,8 @@
                   </td>
                   <td><code class="small">{{ slot.corsoId }}</code></td>
                   <td class="text-nowrap">{{ slot.oraInizio }} – {{ slot.oraFine }}</td>
-                  <!-- <td>
-                    <span class="badge" :class="slot.tipo === 'massiva' ? 'bg-info' : 'bg-secondary'">
-                      {{ slot.tipo }}
-                    </span>
-                  </td> -->
                   <td>
-                    <span class="badge" :class="badgeStato(slot.stato)">{{ slot.stato }}</span>
+                    <span class="badge" :class="badgeStato(slot)">{{ statoLabel(slot) }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -108,7 +102,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
-import { getPrenotazioni } from '@/api/prenotazioni'
+import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
@@ -117,6 +111,7 @@ import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 const loading = ref(false)
 const sedi = ref([])
 const prenotazioni = ref([])
+const conflittiAttivi = ref([])
 const oggiISO = oggi()
 const dataSelezionata = ref(oggiISO)
 const filtroSede = ref('')
@@ -124,8 +119,19 @@ const filtroSede = ref('')
 const { nomeAula: nomeAulaFn, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
 
+// Set di slot_id con conflitti NON_RISOLTO
+const slotIdConConflitti = computed(() => {
+  const s = new Set()
+  for (const cf of conflittiAttivi.value) {
+    if (cf.slot_id_1) s.add(cf.slot_id_1)
+    if (cf.slot_id_2) s.add(cf.slot_id_2)
+  }
+  return s
+})
+
 // ── Espande prenotazioni in slot per la data selezionata ──────────────────────
 const slotDelGiorno = computed(() => {
+  const ids = slotIdConConflitti.value
   const list = []
   for (const p of prenotazioni.value) {
     for (let si = 0; si < (p.slots?.length || 0); si++) {
@@ -134,22 +140,22 @@ const slotDelGiorno = computed(() => {
       list.push({
         prenId: p.id,
         slotIdx: si,
+        slotId: slot.id,
         aulaId: slot.aula_id,
         corsoId: slot.corso_id,
         tipo: p.tipo,
         stato: p.stato,
+        haConflitti: ids.has(slot.id),
         oraInizio: slot.ora_inizio?.slice(0, 5) || '—',
         oraFine: slot.ora_fine?.slice(0, 5) || '—',
       })
     }
   }
-  // Ordina per ora inizio
   return list.sort((a, b) => a.oraInizio.localeCompare(b.oraInizio))
 })
 
 // KPI
-const confermate = computed(() => slotDelGiorno.value.filter(s => s.stato === 'confermata').length)
-const cancellate = computed(() => slotDelGiorno.value.filter(s => s.stato === 'annullata').length)
+const confermate = computed(() => slotDelGiorno.value.filter(s => !s.haConflitti && s.stato === 'confermata').length)
 const auleOccupate = computed(() => new Set(slotDelGiorno.value.filter(s => s.stato === 'confermata').map(s => s.aulaId)).size)
 
 // Raggruppa per sede usando sedeDiAula dal composable
@@ -164,14 +170,19 @@ const sediConSlot = computed(() => {
   return Object.values(map).sort((a, b) => a.sedeNome.localeCompare(b.sedeNome))
 })
 
-function badgeStato(stato) {
+function badgeStato(slot) {
+  if (slot.haConflitti) return 'bg-danger'
+  
   return {
     confermata: 'bg-success',
     in_attesa: 'bg-warning text-dark',
     rifiutata: 'bg-danger',
     annullata: 'bg-secondary',
-    conflitto: 'bg-danger',
-  }[stato] || 'bg-secondary'
+  }[slot.stato] || 'bg-secondary'
+}
+
+function statoLabel(slot) {
+  return slot.haConflitti ? 'conflitto' : slot.stato
 }
 
 function spostaGiorno(n) {
@@ -182,12 +193,16 @@ function spostaGiorno(n) {
 async function carica() {
   loading.value = true
   try {
-    const data = await getPrenotazioni({
-      data_dal: dataSelezionata.value,
-      data_al: dataSelezionata.value,
-      ...(filtroSede.value ? { sede_id: filtroSede.value } : {}),
-    })
-    prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
+    const [dataPren, dataConflitti] = await Promise.all([
+      getPrenotazioni({
+        data_dal: dataSelezionata.value,
+        data_al: dataSelezionata.value,
+        ...(filtroSede.value ? { sede_id: filtroSede.value } : {}),
+      }),
+      getConflitti({ solo_attivi: true })
+    ])
+    prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
+    conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
   } catch (e) {
     console.warn('SituazioneOggi:', e.message)
   } finally {
