@@ -18,7 +18,9 @@
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
         <button class="btn btn-sm btn-success" @click="esportaCsv">
-          <svg class="icon icon-white icon-sm me-1"><use :href="sprites + '#it-download'"></use></svg>
+          <svg class="icon icon-white icon-sm me-1">
+            <use :href="sprites + '#it-download'"></use>
+          </svg>
           CSV
         </button>
       </div>
@@ -59,18 +61,18 @@
           <div class="card-body">
             <div v-if="!datiPeriodo.length" class="text-muted text-center py-4 small">Nessun dato</div>
             <div v-else style="overflow-x:auto">
-            <svg :viewBox="`0 0 ${Math.max(datiPeriodo.length * 60 + 60, 400)} 260`"
-              :style="`width:${Math.max(datiPeriodo.length * 60 + 60, 400)}px;height:260px;max-width:100%`"
-              preserveAspectRatio="xMinYMin meet">
-              <template v-for="(item, i) in datiPeriodo" :key="i">
-                <rect :x="30 + i * 60 + 8" :y="40 + 190 - (item.valore / maxPeriodo) * 190"
-                  width="44" :height="(item.valore / maxPeriodo) * 190" rx="3" fill="#0066cc" opacity="0.85" />
-                <text :x="30 + i * 60 + 30" :y="40 + 190 - (item.valore / maxPeriodo) * 190 - 4"
-                  text-anchor="middle" font-size="9" fill="#333" font-weight="600">{{ item.valore }}</text>
-                <text :x="30 + i * 60 + 30" y="254"
-                  text-anchor="middle" font-size="8" fill="#888">{{ item.label }}</text>
-              </template>
-            </svg>
+              <svg :viewBox="`0 0 ${Math.max(datiPeriodo.length * 60 + 60, 400)} 260`"
+                :style="`width:${Math.max(datiPeriodo.length * 60 + 60, 400)}px;height:260px;max-width:100%`"
+                preserveAspectRatio="xMinYMin meet">
+                <template v-for="(item, i) in datiPeriodo" :key="i">
+                  <rect :x="30 + i * 60 + 8" :y="40 + 190 - (item.valore / maxPeriodo) * 190" width="44"
+                    :height="(item.valore / maxPeriodo) * 190" rx="3" fill="#0066cc" opacity="0.85" />
+                  <text :x="30 + i * 60 + 30" :y="40 + 190 - (item.valore / maxPeriodo) * 190 - 4" text-anchor="middle"
+                    font-size="9" fill="#333" font-weight="600">{{ item.valore }}</text>
+                  <text :x="30 + i * 60 + 30" y="254" text-anchor="middle" font-size="8" fill="#888">{{ item.label
+                  }}</text>
+                </template>
+              </svg>
             </div>
           </div>
         </div>
@@ -89,8 +91,7 @@
                 <h2 class="accordion-header">
                   <button class="accordion-button py-2 px-3 small fw-semibold"
                     :class="{ collapsed: !(accordionAperto === sede.nome || (si === 0 && accordionAperto === null)) }"
-                    type="button"
-                    @click="toggleAccordion(sede.nome)">
+                    type="button" @click="toggleAccordion(sede.nome)">
                     <p class="mb-0">{{ sede.nome }}</p>
                     <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} Prenotazioni</span>
                   </button>
@@ -100,12 +101,18 @@
                   <div class="accordion-body py-2 px-3">
                     <div v-for="(aula, ai) in sede.aule" :key="aula.aulaId" class="mb-2">
                       <div class="d-flex justify-content-between mb-1">
-                        <small class="fw-semibold text-truncate" style="max-width:150px">{{ aula.nome }}</small>
-                        <small class="text-nowrap ms-1">{{ aula.slot }}&nbsp;<span class="text-muted">Prenotazioni&nbsp;({{ aula.pct }}%)</span></small>
+                        <small class="fw-semibold text-truncate d-flex align-items-center gap-1"
+                          style="max-width:150px">
+                          <span :style="getAulaBadgeStyle(aula.nome)"></span>
+                          {{ aula.nome }}
+                        </small>
+                        <small class="text-nowrap ms-1">{{ aula.slot }}&nbsp;<span
+                            class="text-muted">Prenotazioni&nbsp;({{
+                              aula.pct }}%)</span></small>
                       </div>
                       <div class="progress" style="height:6px">
                         <div class="progress-bar"
-                          :style="{ width: aula.pct + '%', background: coloriSede[si % coloriSede.length] }">
+                          :style="{ width: aula.pct + '%', backgroundColor: getAulaColor(aula.nome) }">
                         </div>
                       </div>
                     </div>
@@ -134,7 +141,9 @@
               <div v-for="(item, i) in datiCorsi.slice(0, topN)" :key="i" class="mb-2 d-flex align-items-center gap-2">
                 <small class="text-truncate" style="width:180px">{{ item.label }}</small>
                 <div class="progress flex-grow-1" style="height:10px">
-                  <div class="progress-bar bg-primary" :style="{ width: (item.valore / datiCorsi[0].valore * 100) + '%' }"></div>
+                  <div class="progress-bar bg-primary"
+                    :style="{ width: (item.valore / datiCorsi[0].valore * 100) + '%' }">
+                  </div>
                 </div>
                 <small class="fw-semibold" style="width:28px">{{ item.valore }}</small>
               </div>
@@ -152,13 +161,14 @@
           <div class="card-body">
             <div v-for="(a, i) in datiAule" :key="i" class="mb-3">
               <div class="d-flex justify-content-between mb-1">
-                <small class="fw-semibold">{{ a.nome }} <span class="text-muted fw-normal">({{ a.sede }})</span></small>
+                <small class="fw-semibold d-flex align-items-center gap-1">
+                  <span :style="getAulaBadgeStyle(a.nome)"></span>
+                  {{ a.nome }} <span class="text-muted fw-normal">({{ a.sede }})</span>
+                </small>
                 <small class="fw-bold">{{ a.slot }} Prenotazioni</small>
               </div>
               <div class="progress" style="height:10px">
-                <div class="progress-bar"
-                  :class="a.pct >= 80 ? 'bg-danger' : a.pct >= 50 ? 'bg-warning' : 'bg-success'"
-                  :style="{ width: a.pct + '%' }"></div>
+                <div class="progress-bar" :style="{ width: a.pct + '%', backgroundColor: getAulaColor(a.nome) }"></div>
               </div>
             </div>
             <div v-if="!datiAule.length" class="text-muted small text-center">Nessun dato</div>
@@ -175,22 +185,24 @@ import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getUtenti } from '@/api/utenti'
 import { useAule } from '@/composables/useAule'
+import { useAulaColor } from '@/composables/useAulaColor'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
-const loading         = ref(false)
-const sedi            = ref([])
-const aule            = ref([])
-const prenotazioni    = ref([])
+const { getAulaBadgeStyle, getAulaColor } = useAulaColor()
+const loading = ref(false)
+const sedi = ref([])
+const aule = ref([])
+const prenotazioni = ref([])
 const conflittiAttivi = ref([])
-const granularity     = ref('mese')
-const range           = ref('6')
-const filtroSede      = ref('')
-const topN            = ref(10)
+const granularity = ref('mese')
+const range = ref('6')
+const filtroSede = ref('')
+const topN = ref(10)
 const accordionAperto = ref(null)
-const utenti          = ref([])
+const utenti = ref([])
 
 function toggleAccordion(nome) {
   accordionAperto.value = accordionAperto.value === nome ? '__chiudi__' : nome
@@ -198,7 +210,7 @@ function toggleAccordion(nome) {
 
 const granularita = [
   { val: 'settimana', label: 'Settimana' },
-  { val: 'mese',      label: 'Mese' },
+  { val: 'mese', label: 'Mese' },
 ]
 const coloriSede = [
   '#0066CC',
@@ -232,9 +244,9 @@ const slotEspansi = computed(() => {
       list.push({
         ...p,
         _slotData: slot.data,
-        aula_id:   slot.aula_id,
-        corso_id:  slot.corso_id,
-        note:      slot.note,
+        aula_id: slot.aula_id,
+        corso_id: slot.corso_id,
+        note: slot.note,
       })
     }
   }
@@ -314,7 +326,7 @@ const datiCorsi = computed(() => {
     const k = `Corso ${s.corso_id}`
     map[k] = (map[k] || 0) + 1
   }
-  return Object.entries(map).sort(([,a],[,b]) => b - a).map(([label, valore]) => ({ label, valore }))
+  return Object.entries(map).sort(([, a], [, b]) => b - a).map(([label, valore]) => ({ label, valore }))
 })
 
 // ── Grafico 4: Slot per aula ──────────────────────────────────────────────────
@@ -324,7 +336,7 @@ const datiAule = computed(() => {
     map[s.aula_id] = (map[s.aula_id] || 0) + 1
   }
   const max = Math.max(...Object.values(map), 1)
-  return Object.entries(map).sort(([,a],[,b]) => b - a).slice(0, 10)
+  return Object.entries(map).sort(([, a], [, b]) => b - a).slice(0, 10)
     .map(([aulaId, slot]) => ({
       aulaId,
       nome: nomeAula(aulaId),
@@ -336,20 +348,21 @@ const datiAule = computed(() => {
 
 // ── KPI ───────────────────────────────────────────────────────────────────────
 const totPrenotazioni = computed(() => slotEspansiFiltrati.value.length)
-const totConfermate   = computed(() => slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').length)
-const totConflitti    = computed(() => conflittiAttivi.value.length)
+const totConfermate = computed(() => slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').length)
+const totConflitti = computed(() => conflittiAttivi.value.length)
 
 // ── Caricamento ───────────────────────────────────────────────────────────────
 async function carica() {
   loading.value = true
-  try {const totPrenotazioni = computed(() => new Set(slotEspansiFiltrati.value.map(s => s.id)).size)
-const totConfermate   = computed(() => new Set(slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').map(s => s.id)).size)
+  try {
+    const totPrenotazioni = computed(() => new Set(slotEspansiFiltrati.value.map(s => s.id)).size)
+    const totConfermate = computed(() => new Set(slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').map(s => s.id)).size)
 
-    const fine   = oggi()
+    const fine = oggi()
     const inizio = aggiungiGiorni(fine, -parseInt(range.value) * 30)
-    const data   = await getPrenotazioni({
+    const data = await getPrenotazioni({
       data_dal: inizio,
-      data_al:  fine,
+      data_al: fine,
     })
     prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
   } catch (e) {
@@ -370,21 +383,21 @@ function esportaCsv() {
       righe.push([
         slot.corso_id || '',
         sedeDiAula(slot.aula_id) || '',
-        nomeAula(slot.aula_id)   || '',
-        slot.data                || '',
+        nomeAula(slot.aula_id) || '',
+        slot.data || '',
         slot.ora_inizio?.slice(0, 5) || '',
-        slot.ora_fine?.slice(0, 5)   || '',
-        slot.note                || '',
+        slot.ora_fine?.slice(0, 5) || '',
+        slot.note || '',
         p.data_creazione?.slice(0, 10) || '',
         mappaUtenti[p.richiedente_id] || `#${p.richiedente_id}`,
       ])
     }
   }
-  const csv  = righe.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
+  const csv = righe.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href     = url
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
   a.download = `prenotazioni_${oggi()}.csv`
   a.click()
   URL.revokeObjectURL(url)
@@ -393,15 +406,15 @@ function esportaCsv() {
 onMounted(async () => {
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
-  sedi.value  = Array.isArray(dataSedi)  ? dataSedi  : []
-  aule.value  = Array.isArray(dataAule)  ? dataAule  : []
+  sedi.value = Array.isArray(dataSedi) ? dataSedi : []
+  aule.value = Array.isArray(dataAule) ? dataAule : []
   carica()
   try {
     const cf = await getConflitti({ solo_attivi: true })
     conflittiAttivi.value = Array.isArray(cf) ? cf : (cf?.items || [])
     const [dataSedi2, dataUtenti] = await Promise.all([getSedi(), getUtenti()])
-    sedi.value   = Array.isArray(dataSedi2)   ? dataSedi2   : []
-    utenti.value = Array.isArray(dataUtenti)  ? dataUtenti  : []
+    sedi.value = Array.isArray(dataSedi2) ? dataSedi2 : []
+    utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
     conflittiAttivi.value = []
   }
@@ -409,16 +422,50 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title { font-size: 1.4rem; font-weight: 700; }
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
 .bar-chart {
-  display: flex; align-items: flex-end; gap: 6px; height: 220px;
-  padding: 24px 8px 32px; overflow-x: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 220px;
+  padding: 24px 8px 32px;
+  overflow-x: auto;
 }
+
 .bar-col {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-end; flex: 1; min-width: 32px; max-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 32px;
+  max-width: 64px;
 }
-.bar-val  { font-size: .7rem; font-weight: 700; color: #333; margin-bottom: 2px; }
-.bar-fill { width: 100%; background: #0066cc; opacity: .85; border-radius: 3px 3px 0 0; transition: height .3s; }
-.bar-label { font-size: .65rem; color: #888; margin-top: 4px; text-align: center; white-space: nowrap; }
+
+.bar-val {
+  font-size: .7rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.bar-fill {
+  width: 100%;
+  background: #0066cc;
+  opacity: .85;
+  border-radius: 3px 3px 0 0;
+  transition: height .3s;
+}
+
+.bar-label {
+  font-size: .65rem;
+  color: #888;
+  margin-top: 4px;
+  text-align: center;
+  white-space: nowrap;
+}
 </style>

@@ -4,12 +4,16 @@
       <h2 class="page-title mb-0">Situazione Oggi</h2>
       <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
         <button class="btn" @click="spostaGiorno(-1)">
-          <svg class="icon icon-sm"><use :href="sprites + '#it-chevron-left'"></use></svg>
+          <svg class="icon icon-sm">
+            <use :href="sprites + '#it-chevron-left'"></use>
+          </svg>
         </button>
-        <input v-model="dataSelezionata" type="date" class="form-control form-control-sm"
-          style="width:auto" @change="carica" />
+        <input v-model="dataSelezionata" type="date" class="form-control form-control-sm" style="width:auto"
+          @change="carica" />
         <button class="btn" @click="spostaGiorno(1)">
-          <svg class="icon icon-sm"><use :href="sprites + '#it-chevron-right'"></use></svg>
+          <svg class="icon icon-sm">
+            <use :href="sprites + '#it-chevron-right'"></use>
+          </svg>
         </button>
         <button class="btn btn-sm btn-outline-primary" @click="dataSelezionata = oggiISO; carica()">Oggi</button>
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="carica">
@@ -48,9 +52,12 @@
       <!-- Raggruppa per sede tramite useAule -->
       <div v-for="gruppo in sediConSlot" :key="gruppo.sedeId" class="mb-4">
         <h5 class="fw-bold text-primary mb-2">
-          <svg class="icon icon-primary icon-sm me-1"><use :href="sprites + '#it-map-marker'"></use></svg>
+          <svg class="icon icon-primary icon-sm me-1">
+            <use :href="sprites + '#it-map-marker'"></use>
+          </svg>
           {{ gruppo.sedeNome }}
-          <span class="badge bg-primary-subtle text-primary ms-2 fw-normal">{{ gruppo.slots.length }} Prenotazioni</span>
+          <span class="badge bg-primary-subtle text-primary ms-2 fw-normal">{{ gruppo.slots.length }}
+            Prenotazioni</span>
         </h5>
         <div class="card border-0 shadow-sm">
           <div class="table-responsive">
@@ -66,7 +73,12 @@
               </thead>
               <tbody>
                 <tr v-for="slot in gruppo.slots" :key="slot.prenId + '-' + slot.slotIdx">
-                  <td class="fw-semibold">{{ nomeAulaFn(slot.aulaId) }}</td>
+                  <td class="fw-semibold">
+                    <div class="d-flex align-items-center gap-1">
+                      <span :style="getAulaBadgeStyle(nomeAulaFn(slot.aulaId))"></span>
+                      {{ nomeAulaFn(slot.aulaId) }}
+                    </div>
+                  </td>
                   <td><code class="small">{{ slot.corsoId }}</code></td>
                   <td class="text-nowrap">{{ slot.oraInizio }} – {{ slot.oraFine }}</td>
                   <!-- <td>
@@ -98,17 +110,19 @@ import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getPrenotazioni } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
+import { useAulaColor } from '@/composables/useAulaColor'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
-const loading         = ref(false)
-const sedi            = ref([])
-const prenotazioni    = ref([])
-const oggiISO         = oggi()
+const loading = ref(false)
+const sedi = ref([])
+const prenotazioni = ref([])
+const oggiISO = oggi()
 const dataSelezionata = ref(oggiISO)
-const filtroSede      = ref('')
+const filtroSede = ref('')
 
 const { nomeAula: nomeAulaFn, sedeDiAula, carica: caricaAule } = useAule()
+const { getAulaBadgeStyle } = useAulaColor()
 
 // ── Espande prenotazioni in slot per la data selezionata ──────────────────────
 const slotDelGiorno = computed(() => {
@@ -118,14 +132,14 @@ const slotDelGiorno = computed(() => {
       const slot = p.slots[si]
       if (slot?.data !== dataSelezionata.value) continue
       list.push({
-        prenId:    p.id,
-        slotIdx:   si,
-        aulaId:    slot.aula_id,
-        corsoId:   slot.corso_id,
-        tipo:      p.tipo,
-        stato:     p.stato,
+        prenId: p.id,
+        slotIdx: si,
+        aulaId: slot.aula_id,
+        corsoId: slot.corso_id,
+        tipo: p.tipo,
+        stato: p.stato,
         oraInizio: slot.ora_inizio?.slice(0, 5) || '—',
-        oraFine:   slot.ora_fine?.slice(0, 5)   || '—',
+        oraFine: slot.ora_fine?.slice(0, 5) || '—',
       })
     }
   }
@@ -134,8 +148,8 @@ const slotDelGiorno = computed(() => {
 })
 
 // KPI
-const confermate   = computed(() => slotDelGiorno.value.filter(s => s.stato === 'confermata').length)
-const cancellate   = computed(() => slotDelGiorno.value.filter(s => s.stato === 'annullata').length)
+const confermate = computed(() => slotDelGiorno.value.filter(s => s.stato === 'confermata').length)
+const cancellate = computed(() => slotDelGiorno.value.filter(s => s.stato === 'annullata').length)
 const auleOccupate = computed(() => new Set(slotDelGiorno.value.filter(s => s.stato === 'confermata').map(s => s.aulaId)).size)
 
 // Raggruppa per sede usando sedeDiAula dal composable
@@ -143,7 +157,7 @@ const sediConSlot = computed(() => {
   const map = {}
   for (const slot of slotDelGiorno.value) {
     const sedeNome = sedeDiAula(slot.aulaId)
-    const sedeKey  = sedeNome
+    const sedeKey = sedeNome
     if (!map[sedeKey]) map[sedeKey] = { sedeId: sedeKey, sedeNome, slots: [] }
     map[sedeKey].slots.push(slot)
   }
@@ -153,10 +167,10 @@ const sediConSlot = computed(() => {
 function badgeStato(stato) {
   return {
     confermata: 'bg-success',
-    in_attesa:  'bg-warning text-dark',
-    rifiutata:  'bg-danger',
-    annullata:  'bg-secondary',
-    conflitto:  'bg-danger',
+    in_attesa: 'bg-warning text-dark',
+    rifiutata: 'bg-danger',
+    annullata: 'bg-secondary',
+    conflitto: 'bg-danger',
   }[stato] || 'bg-secondary'
 }
 
@@ -170,7 +184,7 @@ async function carica() {
   try {
     const data = await getPrenotazioni({
       data_dal: dataSelezionata.value,
-      data_al:  dataSelezionata.value,
+      data_al: dataSelezionata.value,
       ...(filtroSede.value ? { sede_id: filtroSede.value } : {}),
     })
     prenotazioni.value = Array.isArray(data) ? data : (data?.items || [])
@@ -190,5 +204,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-title { font-size: 1.4rem; font-weight: 700; }
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
 </style>

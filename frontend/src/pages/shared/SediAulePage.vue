@@ -35,9 +35,11 @@
         <div class="row g-3">
           <div v-for="aula in auleDiSede(sede.id)" :key="aula.id" class="col-12 col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100 aula-card" :class="{ 'aula-inattiva': !aula.attiva }">
+
               <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="fw-bold mb-0">
+                  <h6 class="fw-bold mb-0 d-flex align-items-center">
+                    <span :style="getAulaBadgeStyle(aula.nome)"></span>
                     {{ aula.nome }}
                     <span v-if="!aula.attiva" class="badge bg-secondary ms-1" style="font-size:.65rem">Inattiva</span>
                   </h6>
@@ -86,7 +88,7 @@
                       <div v-if="item.note" class="fst-italic text-muted small mt-1">{{ item.note }}</div>
                     </div>
                   </div>
-                  
+
                 </div>
                 <div v-else>
                   <small class="text-muted">Nessuna prenotazione per questa data.</small>
@@ -122,6 +124,7 @@ import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getPrenotazioni } from '@/api/prenotazioni'
+import { useAulaColor } from '@/composables/useAulaColor'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
@@ -131,6 +134,7 @@ const aule = ref([])
 const prenotazioni = ref([])
 const oggiISO = oggi()
 const dataConsulta = ref(oggiISO)
+const { getAulaBadgeStyle } = useAulaColor()
 
 const oreGiornata = Array.from({ length: 11 }, (_, i) => i + 8) // 08–18
 

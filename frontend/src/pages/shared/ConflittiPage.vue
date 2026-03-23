@@ -12,11 +12,11 @@
 
 
 
-      <!-- Solo attivi -->
-      <div class="form-check form-switch mb-0 ps-0 me-3">
-        <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
-        <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
-      </div>
+        <!-- Solo attivi -->
+        <div class="form-check form-switch mb-0 ps-0 me-3">
+          <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
+          <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
+        </div>
 
         <!-- Filtro Sedi -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="carica">
@@ -113,9 +113,11 @@
                         <!-- <span v-if="prenById(c.prenotazione_id_1)?.tipo === 'massiva'"
                           class="badge bg-info ms-1">Ricorrente</span> -->
                       </div>
-                      <div class="mt-1 small mb-2">
-                        <strong>{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</strong>
-                        <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+                      <div class="mt-1 small mb-2 d-flex align-items-center gap-1">
+                        <div>
+                          <strong>{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</strong>
+                          <span class="text-muted ms-1">- <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 1)?.aula_id))"></span>{{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+                        </div>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
@@ -153,9 +155,12 @@
                         <!-- <span v-if="prenById(c.prenotazione_id_2)?.tipo === 'massiva'"
                           class="badge bg-info ms-1">Ricorrente</span> -->
                       </div>
-                      <div class="mt-1 small mb-2">
-                        <strong>{{ sedeDiAulaFn(infoSlot(c, 2)?.aula_id) }}</strong>
-                        <span class="text-muted ms-1">- {{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
+                      <div class="mt-1 small mb-2 d-flex align-items-center gap-1">
+                        
+                        <div>
+                          <strong>{{ sedeDiAulaFn(infoSlot(c, 2)?.aula_id) }}</strong>
+                          <span class="text-muted ms-1">- <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 2)?.aula_id))"></span>{{ nomeAulaFn(infoSlot(c, 2)?.aula_id) }}</span>
+                        </div>
                       </div>
                       <div class="fw-bold">{{ formatData(s.data) }}</div>
                       <div class="text-nowrap">Dalle {{ s.ora_inizio?.slice(0, 5) }} alle {{ s.ora_fine?.slice(0, 5)
@@ -217,11 +222,13 @@ import { useUiStore } from '@/stores/ui'
 import { getConflitti, risolviConflitto, getMiePrenotazioni, getPrenotazione } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
+import { useAulaColor } from '@/composables/useAulaColor'
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { getUtenti } from '@/api/utenti'
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+const { getAulaBadgeStyle } = useAulaColor()
 const uiStore = useUiStore()
 const utenti = ref([])
 const loading = ref(false)

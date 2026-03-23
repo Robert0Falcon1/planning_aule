@@ -109,8 +109,14 @@
                 </td>
 
                 <td>
-                  <span class="small fw-semibold">{{ nomeAulaFn(slot.aulaId) }}</span><br>
-                  <small class="text-muted">{{ sedeDiAulaFn(slot.aulaId) }}</small>
+                  <div class="d-flex align-items-center gap-1">
+                    <div>
+                      <span class="small fw-semibold">
+                        <span :style="getAulaBadgeStyle(nomeAulaFn(slot.aulaId))"></span>
+                        {{ nomeAulaFn(slot.aulaId) }}</span><br>
+                      <small class="text-muted">{{ sedeDiAulaFn(slot.aulaId) }}</small>
+                    </div>
+                  </div>
                 </td>
 
                 <td><code class="small">{{ slot.corsoId }}</code></td>
@@ -221,6 +227,7 @@ import { getUtenti } from '@/api/utenti'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
+import { useAulaColor } from '@/composables/useAulaColor'
 import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
@@ -229,6 +236,7 @@ import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+const { getAulaBadgeStyle } = useAulaColor()
 
 const loading = ref(false)
 const prenotazioni = ref([])
