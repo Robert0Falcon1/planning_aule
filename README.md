@@ -12,7 +12,7 @@ Start MySQL
 
 ### Backend - Terminale 1
 
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --log-config backend/utils/logging_config.json
 (http://localhost:8000/api/docs)
 
 ### Frontend - Terminale 2
