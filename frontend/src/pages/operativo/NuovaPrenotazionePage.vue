@@ -194,7 +194,6 @@
                 <select v-model="massiva.tipo_ricorrenza" class="form-select">
                   <option value="settimanale">Settimanale</option>
                   <option value="bisettimanale">Bisettimanale</option>
-                  <option value="mensile">Mensile</option>
                 </select>
               </div>
 

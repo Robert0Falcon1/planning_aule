@@ -3,7 +3,6 @@ Servizio principale per la gestione delle prenotazioni - Sistema 2 RUOLI
 """
 
 from datetime import date, timedelta
-from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 from backend.models.prenotazione import (Prenotazione, PrenotazioneSingola,
                                           PrenotazioneMassiva, RichiestaPrenotazione)
@@ -48,6 +47,9 @@ def genera_date_ricorrenza(
     """
     Genera tutte le date di una prenotazione ricorrente.
     isoweekday(): 1=lunedì … 7=domenica
+    
+    SETTIMANALE: ogni settimana nei giorni specificati
+    BISETTIMANALE: settimane alterne nei giorni specificati
     """
     date_generate = []
     corrente = data_inizio
@@ -55,12 +57,9 @@ def genera_date_ricorrenza(
     while corrente <= data_fine:
         if corrente.isoweekday() in giorni_settimana:
             date_generate.append(corrente)
+        corrente += timedelta(days=1)
 
-        if tipo == TipoRicorrenza.MENSILE:
-            corrente += relativedelta(months=1)
-        else:
-            corrente += timedelta(days=1)
-
+    # Filtro bisettimanale: mantieni solo settimane pari rispetto alla prima
     if tipo == TipoRicorrenza.BISETTIMANALE:
         prima_settimana = data_inizio.isocalendar()[1]
         date_generate = [
@@ -85,7 +84,7 @@ def crea_prenotazione_massiva(
         richiedente_id=utente.id,
         stato=StatoPrenotazione.CONFERMATA,
         tipo_ricorrenza=dati.tipo_ricorrenza,
-        giorni_settimana=",".join(map(str, giorni)),
+        giorni_settimana=",".join(map(str, dati.giorni_settimana)),
         data_inizio_range=dati.data_inizio,
         data_fine_range=dati.data_fine,
     )
@@ -98,6 +97,9 @@ def crea_prenotazione_massiva(
         dati.tipo_ricorrenza,
         dati.giorni_settimana,
     )
+    
+    # Deduplica date (previene slot duplicati)
+    date_ricorrenti = sorted(set(date_ricorrenti))
 
     for d in date_ricorrenti:
         slot = SlotOrario(
