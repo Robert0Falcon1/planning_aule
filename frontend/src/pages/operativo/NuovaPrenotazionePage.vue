@@ -304,14 +304,33 @@ const massiva = reactive({
   note: '',
 })
 
-// Funzione per controllare se è la prima prenotazione
+// Funzione per controllare se è la prima prenotazione IN ASSOLUTO
 async function checkPrimaPrenotazione() {
   const key = `prima_prenotazione_${auth.utente?.id}`
   const giaMostrato = localStorage.getItem(key)
-
-  if (!giaMostrato) {
-    mostraPrimaPrenotazione.value = true
-    localStorage.setItem(key, 'true')
+  
+  if (giaMostrato) return
+  
+  try {
+    const { getPrenotazioni } = await import('@/api/prenotazioni')
+    const response = await getPrenotazioni()
+    const prenotazioniUtente = response?.items || response || []
+    
+    // Conta solo le prenotazioni ATTIVE di questo utente
+    const miePrenotazioni = prenotazioniUtente.filter(p => 
+      p.richiedente_id === auth.utente?.id && 
+      p.stato === 'confermata' && // ← AGGIUNGI QUESTO
+      p.slots?.some(s => !s.annullato) // ← E QUESTO (almeno 1 slot non annullato)
+    )
+    
+    console.log('Mie prenotazioni ATTIVE:', miePrenotazioni.length)
+    
+    if (miePrenotazioni.length === 1) {
+      mostraPrimaPrenotazione.value = true
+      localStorage.setItem(key, 'true')
+    }
+  } catch (error) {
+    console.warn('Errore verifica prima prenotazione:', error)
   }
 }
 

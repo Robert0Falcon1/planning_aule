@@ -9,9 +9,9 @@ export function useAulaColor() {
     'Aula Azzurra': { bg: '#16d4f1', border: '#16d4f1' },
     'Aula Viola': { bg: '#9b59b6', border: '#9b59b6' },
     'Aula Mango': { bg: '#fcb500', border: '#22ca1a' },
-    'Aula Lime': { bg: '#00ff04', border: '#00ff04' },
-    'Aula Dragonfruit': { bg: '#ffffff', border: '#9e0242' },
-    'Aula Cocco': { bg: '#6a3f14', border: '#6a3f14' },
+    'Aula Lime': { bg: '#f2ff5e', border: '#00ff04' },
+    'Aula Dragonfruit': { bg: '#ffffff', border: '#c70185' },
+    'Aula Cocco': { bg: '#ffffff', border: '#6a3f14' },
   }
 
   const defaultColors = { bg: '#6c757d', border: '#6c757d' }
