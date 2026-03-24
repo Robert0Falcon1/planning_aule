@@ -6,8 +6,8 @@
         <!-- <input v-model="cerca" type="search" class="form-control form-control-sm" style="width:220px" placeholder="Cerca nome o username…" /> -->
         <select v-model="filtroRuolo" class="form-select form-select-sm" style="width:auto">
           <option value="">Tutti i ruoli</option>
-          <option value="OPERATIVO">OPERATIVO</option>
-          <option value="COORDINAMENTO">COORDINAMENTO</option>
+          <option value="OPERATIVO">USER</option>
+          <option value="COORDINAMENTO">ADMIN</option>
         </select>
         <select v-model="filtroAttivo" class="form-select form-select-sm" style="width:auto">
           <option value="">Tutti</option>
@@ -57,7 +57,7 @@
                 <!-- <td><code class="small">{{ u.username }}</code></td> -->
                 <td>
                   <span class="badge" :class="u.ruolo === 'COORDINAMENTO' ? 'bg-warning text-dark' : 'badge-ruolo'">
-                    {{ u.ruolo }}
+                    {{ labelRuolo(u.ruolo) }}
                   </span>
                 </td>
                 <td>{{ nomeSede(u.sede_id) }}</td>
@@ -117,8 +117,8 @@
               <label class="form-label fw-semibold">Ruolo *</label>
               <select v-model="form.ruolo" class="form-select" :class="{ 'is-invalid': fe.ruolo }">
                 <option value="">— seleziona —</option>
-                <option value="OPERATIVO">OPERATIVO</option>
-                <option value="COORDINAMENTO">COORDINAMENTO</option>
+                <option value="OPERATIVO">USER</option>
+                <option value="COORDINAMENTO">ADMIN</option>
               </select>
               <div class="invalid-feedback">{{ fe.ruolo }}</div>
             </div>
@@ -154,7 +154,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { getUtenti, creaUtente, modificaUtente, disattivaUtente, attivaUtente } from '@/api/utenti'
 import { getSedi } from '@/api/sedi'
-import { formatData } from '@/utils/formatters'
+import { formatData, labelRuolo } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const loading = ref(false)

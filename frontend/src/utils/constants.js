@@ -11,10 +11,11 @@ export const RUOLI = {
   COORDINAMENTO: 'COORDINAMENTO',
 }
 
+
 /** Etichette leggibili per i ruoli */
 export const RUOLI_LABEL = {
-  OPERATIVO:     'Operativo',
-  COORDINAMENTO: 'Coordinamento',
+  OPERATIVO:     'USER',
+  COORDINAMENTO: 'ADMIN',
 }
 
 /**
