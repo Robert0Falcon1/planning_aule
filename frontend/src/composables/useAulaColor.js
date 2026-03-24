@@ -11,7 +11,7 @@ export function useAulaColor() {
     'Aula Mango': { bg: '#fcb500', border: '#22ca1a' },
     'Aula Lime': { bg: '#00ff04', border: '#00ff04' },
     'Aula Dragonfruit': { bg: '#ffffff', border: '#9e0242' },
-    'Aula Cocco': { bg: '#6a3f14', border: '#2e221b' },
+    'Aula Cocco': { bg: '#6a3f14', border: '#6a3f14' },
   }
 
   const defaultColors = { bg: '#6c757d', border: '#6c757d' }
