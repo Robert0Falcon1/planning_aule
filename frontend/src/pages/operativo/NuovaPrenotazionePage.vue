@@ -238,11 +238,23 @@
       </div>
     </div>
   </div>
+
+
+  <!-- Modal prima prenotazione -->
+  <div v-if="mostraPrimaPrenotazione" class="modal-backdrop-celebration" @click="mostraPrimaPrenotazione = false">
+    <div class="modal-celebration" @click.stop>
+      <div class="celebration-icon">🎉</div>
+      <h3 class="celebration-title">Complimenti, {{ auth.nomeUtenteInformale }}!</h3>
+      <p class="celebration-text">Hai effettuato la tua prima prenotazione!</p>
+      <button class="btn btn-primary" @click="mostraPrimaPrenotazione = false">Fantastico!</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { getSedi } from '@/api/sedi'
 import { getAuleBySede } from '@/api/aule'
 import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
@@ -250,6 +262,7 @@ import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const route = useRoute()
+const auth = useAuthStore()
 const tab = ref(route.query.tipo === 'massiva' ? 'massiva' : 'singola')
 const oggiISO = oggi()
 const loading = ref(false)
@@ -261,6 +274,7 @@ const auleMassiva = ref([])
 const esito = ref(null)
 const esitoMassiva = ref(null)
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+const mostraPrimaPrenotazione = ref(false)
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
@@ -289,6 +303,17 @@ const massiva = reactive({
   giorni_settimana: [],
   note: '',
 })
+
+// Funzione per controllare se è la prima prenotazione
+async function checkPrimaPrenotazione() {
+  const key = `prima_prenotazione_${auth.utente?.id}`
+  const giaMostrato = localStorage.getItem(key)
+
+  if (!giaMostrato) {
+    mostraPrimaPrenotazione.value = true
+    localStorage.setItem(key, 'true')
+  }
+}
 
 // ── AUTO-AGGIORNAMENTO ORA FINE (14:00 → 18:00) ──────────────────────────
 
@@ -350,6 +375,9 @@ async function submitSingola() {
       note: singola.note || undefined,
     })
     esito.value = { tipo: 'ok', msg: '✓ Prenotazione confermata con successo.' }
+
+    await checkPrimaPrenotazione()
+
     resetSingola()
   } catch (e) {
     esito.value = { tipo: 'err', msg: e.message }
@@ -441,5 +469,80 @@ onMounted(async () => {
 .page-title {
   font-size: 1.4rem;
   font-weight: 700;
+}
+
+/* Modal celebrazione prima prenotazione */
+.modal-backdrop-celebration {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-celebration {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease-out;
+}
+
+.celebration-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease-out;
+}
+
+.celebration-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0066cc;
+  margin-bottom: 12px;
+}
+
+.celebration-text {
+  font-size: 1.125rem;
+  color: #5c6f82;
+  margin-bottom: 24px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
 }
 </style>
