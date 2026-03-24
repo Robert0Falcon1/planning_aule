@@ -19,6 +19,12 @@
             <use :href="sprites + '#it-files'"></use>
           </svg>
           Prenotazione massiva
+          <span class="info-popover">
+            <i class="bi bi-info-circle" style="font-size: .8rem;"></i>
+            <span class="popover-content">
+              Crea più prenotazioni contemporaneamente per date ricorrenti
+            </span>
+          </span>
         </button>
       </li>
     </ul>
@@ -124,9 +130,6 @@
     <div v-else>
       <div class="card border-0 shadow-sm">
         <div class="card-body">
-          <p class="text-muted mb-4 small">
-            Prenota la stessa aula in modo ricorrente (es. ogni lunedì e mercoledì per un mese).
-          </p>
           <form @submit.prevent="submitMassiva" novalidate>
             <div class="row g-3">
 
@@ -387,7 +390,7 @@ async function submitMassiva() {
       giorni_settimana: massiva.giorni_settimana,
       note: massiva.note || undefined,
     }
-    
+
     await creaPrenotazioneMassiva(payload)
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
     massiva.giorni_settimana = []

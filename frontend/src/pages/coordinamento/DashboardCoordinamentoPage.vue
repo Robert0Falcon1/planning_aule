@@ -3,12 +3,13 @@
     <div class="page-header mb-4">
 
       <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
-      
+
       <!-- Citazione del giorno -->
       <p>
-         <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span> <span class="text-muted">({{ citazione.author }})</span>
+        <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span> <span class="text-muted">({{
+          citazione.author }})</span>
       </p>
-      
+
       <p class="text-muted mb-0">Panoramica generale · {{ oggiLabel }}</p>
     </div>
 
@@ -18,7 +19,15 @@
         <div class="card border-0 shadow-sm kpi-card">
           <div class="card-body">
             <div class="kpi-value text-primary">{{ kpi.prenotazioniOggi }}</div>
-            <div class="kpi-label">Prenotazioni oggi</div>
+            <div class="kpi-label">
+              Prenotazioni oggi
+              <span class="info-popover">
+                <i class="bi bi-info-circle"></i>
+                <span class="popover-content">
+                  Questo numero specifica le prenotazioni del giorno
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -26,7 +35,15 @@
         <div class="card border-0 shadow-sm kpi-card">
           <div class="card-body">
             <div class="kpi-value text-success">{{ kpi.auleOccupateOggi }}</div>
-            <div class="kpi-label">Aule occupate oggi</div>
+            <div class="kpi-label">
+              Aule occupate oggi
+              <span class="info-popover">
+                <i class="bi bi-info-circle"></i>
+                <span class="popover-content">
+                  Indica il numero di aule con almeno una prenotazione nella giornata di oggi
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -34,7 +51,15 @@
         <div class="card border-0 shadow-sm kpi-card">
           <div class="card-body">
             <div class="kpi-value text-warning">{{ kpi.conflittiAperti }}</div>
-            <div class="kpi-label">Conflitti aperti</div>
+            <div class="kpi-label">
+              Conflitti aperti
+              <span class="info-popover">
+                <i class="bi bi-info-circle"></i>
+                <span class="popover-content">
+                  Le prenotazioni sovrapposte da risolvere
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -42,7 +67,15 @@
         <div class="card border-0 shadow-sm kpi-card">
           <div class="card-body">
             <div class="kpi-value text-info">{{ kpi.utentiAttivi }}</div>
-            <div class="kpi-label">Utenti attivi</div>
+            <div class="kpi-label">
+              Utenti attivi
+              <span class="info-popover">
+                <i class="bi bi-info-circle"></i>
+                <span class="popover-content">
+                  Numero totale di utenti abilitati ad accedere al sistema
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -137,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
@@ -147,18 +180,12 @@ import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useAuthStore } from '@/stores/auth'
 import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
 
-// ─── CITAZIONE DEL GIORNO ────────────────────────────────────────────────────
-// Imposta a null per usare citazioni locali (raccomandato)
-// Oppure imposta URL API: 'https://citazionidev.vercel.app'
 const API_CITAZIONI_URL = null
-
 const auth = useAuthStore()
 const { citazione, loading: loadingCitazione, errore: erroreCitazione } = useCitazioneDelGiorno(
   API_CITAZIONI_URL,
   auth.utente?.id
 )
-
-// ─── RESTO DELLA LOGICA ──────────────────────────────────────────────────────
 
 function percentuale(val, tot) {
   if (!tot) return 0
@@ -172,13 +199,13 @@ const oggiLabel = new Date().toLocaleDateString('it-IT', {
 const loadingSedi = ref(false)
 const kpi = ref({ prenotazioniOggi: '—', auleOccupateOggi: '—', conflittiAperti: '—', utentiAttivi: '—' })
 const saturazioneSedi = ref([])
+let popoverInstance = null
 
 onMounted(async () => {
   loadingSedi.value = true
   try {
     const dataOggi = isoOggi()
 
-    // Promise.allSettled: ogni risultato è { status, value } oppure { status, reason }
     const [rSedi, rAule, rPren, rUtenti, rConflitti] = await Promise.allSettled([
       getSedi(),
       getAule(),
@@ -187,7 +214,6 @@ onMounted(async () => {
       getConflitti({ solo_attivi: true }),
     ])
 
-    // Estrai .value solo se fulfilled, altrimenti array vuoto
     function val(r) {
       if (r.status !== 'fulfilled') return []
       const v = r.value
@@ -202,7 +228,6 @@ onMounted(async () => {
     const utentiList = val(rUtenti)
     const conflList = val(rConflitti)
 
-    // Slot di oggi (ogni prenotazione può avere più slot — filtra per data)
     const slotOggi = []
     for (const p of prenList) {
       for (const s of (p.slots || [])) {
@@ -234,6 +259,41 @@ onMounted(async () => {
   } finally {
     loadingSedi.value = false
   }
+
+  // Inizializza Popover dopo rendering
+  await nextTick()
+
+  // Carica dinamicamente il Popover da Bootstrap Italia
+  const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]')
+
+  if (popoverElements.length > 0) {
+    // Prova a caricare dal window.bootstrap
+    if (window.bootstrap?.Popover) {
+      popoverElements.forEach(el => {
+        new window.bootstrap.Popover(el)
+      })
+    } else {
+      // Fallback: carica il modulo dinamicamente
+      import('bootstrap-italia/dist/js/bootstrap-italia.bundle.min.js').then(() => {
+        setTimeout(() => {
+          if (window.bootstrap?.Popover) {
+            popoverElements.forEach(el => {
+              new window.bootstrap.Popover(el)
+            })
+          }
+        }, 100)
+      })
+    }
+  }
+})
+
+onBeforeUnmount(() => {
+  // Cleanup popover
+  const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]')
+  popoverElements.forEach(el => {
+    const instance = window.bootstrap?.Popover?.getInstance(el)
+    if (instance) instance.dispose()
+  })
 })
 </script>
 

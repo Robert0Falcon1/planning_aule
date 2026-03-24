@@ -29,8 +29,8 @@
             <div class="d-flex align-items-center py-2">
 
               <!-- Bottone toggle sidebar DESKTOP -->
-              <button class="btn btn-sm text-white d-none d-md-flex align-items-center me-3 px-2 py-1 btn-sidebar" @click="toggleSidebar"
-                aria-label="Apri/chiudi menu laterale" title="Apri/chiudi menu">
+              <button class="btn btn-sm text-white d-none d-md-flex align-items-center me-3 px-2 py-1 btn-sidebar"
+                @click="toggleSidebar" aria-label="Apri/chiudi menu laterale" title="Apri/chiudi menu">
                 <svg class="icon icon-sm icon-light chevron-toggle" :class="{ 'chevron-flipped': !sidebarIsOpen }">
                   <use :href="sprites + '#it-arrow-left'"></use>
                 </svg>
@@ -40,15 +40,20 @@
               <div class="d-flex">
 
                 <!-- Cambio password sul nome utente -->
-                <span
-                  class="text-white d-flex justify-content-center align-items-center hover-link no-decoration"
-                  style="cursor:pointer"
-                  @click="modalPasswordAperta = true"
-                >
+                <span class="text-white d-flex justify-content-center align-items-center hover-link no-decoration"
+                  style="cursor:pointer" @click="modalPasswordAperta = true">
                   <svg class="icon icon-sm icon-light me-1">
                     <use :href="sprites + '#it-user'"></use>
                   </svg>
-                  {{ authStore.nomeUtente }}
+                  <span>
+                    {{ authStore.nomeUtente }}
+                    <span class="info-popover">
+                      <i class="bi bi-info-circle" style="font-size: 0.8rem;"></i>
+                      <span class="popover-content">
+                        Clicca sul tuo nome per cambiare la password
+                      </span>
+                    </span>
+                  </span>
                 </span>
 
               </div>

@@ -3,7 +3,15 @@
 
     <!-- Header -->
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
-      <h2 class="page-title mb-0">Calendario</h2>
+      <h2 class="page-title mb-0">
+        Calendario
+        <span class="info-popover">
+          <i class="bi bi-info-circle" style="font-size: .8rem;"></i>
+          <span class="popover-content">
+            Il calendario globale delle prenotazioni nelle varie sedi con vista: 4 giorni - settimanale - mensile
+          </span>
+        </span>
+      </h2>
       <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
 
         <div class="btn-group btn-group-sm">
