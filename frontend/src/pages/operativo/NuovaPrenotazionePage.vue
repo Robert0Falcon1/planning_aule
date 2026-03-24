@@ -124,7 +124,7 @@
     <div v-else>
       <div class="card border-0 shadow-sm">
         <div class="card-body">
-          <p class="text-muted mb-4">
+          <p class="text-muted mb-4 small">
             Prenota la stessa aula in modo ricorrente (es. ogni lunedì e mercoledì per un mese).
           </p>
           <form @submit.prevent="submitMassiva" novalidate>
