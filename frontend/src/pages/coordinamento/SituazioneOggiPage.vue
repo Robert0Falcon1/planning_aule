@@ -136,7 +136,9 @@ const slotDelGiorno = computed(() => {
   for (const p of prenotazioni.value) {
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
-      if (slot?.data !== dataSelezionata.value) continue
+      // ← AGGIUNGI CONTROLLO ANNULLATO
+      if (!slot?.data || slot.data !== dataSelezionata.value || slot.annullato) continue
+      
       list.push({
         prenId: p.id,
         slotIdx: si,
