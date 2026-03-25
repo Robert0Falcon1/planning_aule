@@ -93,7 +93,7 @@
                     :class="{ collapsed: !(accordionAperto === sede.nome || (si === 0 && accordionAperto === null)) }"
                     type="button" @click="toggleAccordion(sede.nome)">
                     <p class="mb-0">{{ sede.nome }}</p>
-                    <span class="badge bg-secondary ms-3 me-2">{{ sede.totSlot }} Prenotazioni</span>
+                    <span class="badge bg-success ms-3 me-2">{{ sede.totSlot }} Prenotazioni</span>
                   </button>
                 </h2>
                 <div :class="{ show: accordionAperto === sede.nome || (si === 0 && accordionAperto === null) }"
