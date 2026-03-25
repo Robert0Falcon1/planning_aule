@@ -3,6 +3,12 @@
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Sedi &amp; Aule</h2>
       <div class="ms-auto d-flex gap-2 align-items-center">
+        <!-- FILTRO SEDE -->
+        <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto">
+          <option value="">Tutte le sedi</option>
+          <option v-for="s in sediConAuleAttive" :key="s.id" :value="s.id">{{ s.nome }}</option>
+        </select>
+
         <input v-model="dataConsulta" type="date" class="form-control form-control-sm" style="width:auto" :min="oggiISO"
           @change="caricaDisponibilita" />
         <span class="text-muted small">Disponibilità per data</span>
@@ -14,7 +20,7 @@
     </div>
 
     <div v-else>
-      <div v-for="sede in sedi" :key="sede.id" class="mb-4">
+      <div v-for="sede in sediFiltrate" :key="sede.id" class="mb-4">
         <div class="sede-header d-flex align-items-center gap-2 mb-3">
           <div class="d-flex justify-content-space-between align-items-flex-end w-100">
             <div class="d-flex">
@@ -41,7 +47,7 @@
                   <h6 class="fw-bold mb-0 d-flex align-items-center">
                     <span :style="getAulaBadgeStyle(aula.nome)"></span>
                     {{ aula.nome }}
-                    <span v-if="!aula.attiva" class="badge bg-secondary ms-1" style="font-size:.65rem">Inattiva</span>
+
                   </h6>
                   <small class="text-muted">Capienza: {{ aula.capienza }} posti</small>
                 </div>
@@ -114,7 +120,9 @@
         </div>
       </div>
 
-      <div v-if="!sedi.length" class="text-center text-muted py-5">Nessuna sede trovata.</div>
+      <div v-if="!sediFiltrate.length" class="text-center text-muted py-5">
+        {{ filtroSede ? 'Nessuna aula disponibile per questa sede.' : 'Nessuna sede trovata.' }}
+      </div>
     </div>
   </div>
 </template>
@@ -125,6 +133,7 @@ import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getPrenotazioni } from '@/api/prenotazioni'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
@@ -134,9 +143,24 @@ const aule = ref([])
 const prenotazioni = ref([])
 const oggiISO = oggi()
 const dataConsulta = ref(oggiISO)
+const filtroSede = ref('')
 const { getAulaBadgeStyle } = useAulaColor()
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const oreGiornata = Array.from({ length: 11 }, (_, i) => i + 8) // 08–18
+
+
+const sediFiltrate = computed(() => {
+  if (!filtroSede.value) return sedi.value
+  return sedi.value.filter(s => Number(s.id) === Number(filtroSede.value))
+})
+
+const sediConAuleAttive = computed(() => {
+  const auleAttive = aule.value.filter(a => a.attiva !== false)
+  return sedi.value.filter(sede =>
+    auleAttive.some(aula => aula.sede_id === sede.id)
+  )
+})
 
 const dataFormattata = computed(() => {
   if (!dataConsulta.value) return ''
@@ -209,6 +233,12 @@ onMounted(async () => {
     sedi.value = Array.isArray(dataSedi) ? dataSedi : []
     aule.value = Array.isArray(dataAule) ? dataAule : []
     await caricaDisponibilita()
+
+    const sedeDefault = sedeDefaultFiltro.value
+    if (sedeDefault) {
+      const sedeHaAuleAttive = sediConAuleAttive.value.some(s => s.id === Number(sedeDefault))
+      filtroSede.value = sedeHaAuleAttive ? sedeDefault : ''
+    }
   } catch (e) {
     console.warn('SediAule:', e.message)
   } finally {

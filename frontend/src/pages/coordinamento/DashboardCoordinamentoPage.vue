@@ -1,16 +1,35 @@
 <template>
   <div class="page-dashboard-coord">
     <div class="page-header mb-4">
+      <div class="row g-3 align-items-center">
+        <!-- Colonna sinistra: Saluto e info -->
+        <div class="col-12 col-xl-9">
+          <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
 
-      <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
+          <!-- Citazione del giorno -->
+          <p class="mb-2">
+            <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span>
+            <span class="text-muted">({{ citazione.author }})</span>
+          </p>
 
-      <!-- Citazione del giorno -->
-      <p>
-        <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span> <span class="text-muted">({{
-          citazione.author }})</span>
-      </p>
+          <p class="text-muted mb-0">Panoramica generale · {{ oggiLabel }}</p>
+        </div>
 
-      <p class="text-muted mb-0">Panoramica generale · {{ oggiLabel }}</p>
+        <!-- Colonna destra: Filtro sede impattante -->
+        <div class="col-12 col-xl-3 pt-4 pt-xl-0">
+          <div class="filtro-sede-card">
+            <div class="">
+              <span class="text-muted">Visualizzazione dati</span>
+            </div>
+            <select v-model="filtroSede" class="form-select form-select-lg sede-select custom-select">
+              <option value="">Tutte le sedi</option>
+              <option v-for="s in sediDisponibili" :key="s.id" :value="s.id">
+                {{ s.nome }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- KPI row -->
@@ -170,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
@@ -179,9 +198,11 @@ import { oggi as isoOggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useAuthStore } from '@/stores/auth'
 import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const API_CITAZIONI_URL = null
 const auth = useAuthStore()
+const { sedeDefaultFiltro } = useSedePerFiltro()  // ← ESTRAI DAL COMPOSABLE
 const { citazione, loading: loadingCitazione, errore: erroreCitazione } = useCitazioneDelGiorno(
   API_CITAZIONI_URL,
   auth.utente?.id
@@ -199,9 +220,11 @@ const oggiLabel = new Date().toLocaleDateString('it-IT', {
 const loadingSedi = ref(false)
 const kpi = ref({ prenotazioniOggi: '—', auleOccupateOggi: '—', conflittiAperti: '—', utentiAttivi: '—' })
 const saturazioneSedi = ref([])
-let popoverInstance = null
+const sediDisponibili = ref([])
+const filtroSede = ref('')
+const tuttiIDatiCaricati = ref({})  // Cache dati per evitare ricaricamenti
 
-onMounted(async () => {
+async function caricaDati() {
   loadingSedi.value = true
   try {
     const dataOggi = isoOggi()
@@ -228,6 +251,18 @@ onMounted(async () => {
     const utentiList = val(rUtenti)
     const conflList = val(rConflitti)
 
+    // Salva dati in cache
+    tuttiIDatiCaricati.value = {
+      sediList,
+      auleList,
+      prenList,
+      utentiList,
+      conflList,
+      dataOggi
+    }
+
+    sediDisponibili.value = sediList
+
     const slotOggi = []
     for (const p of prenList) {
       for (const s of (p.slots || [])) {
@@ -242,38 +277,88 @@ onMounted(async () => {
       utentiAttivi: utentiList.filter(u => u.attivo).length,
     }
 
-    saturazioneSedi.value = sediList.map(sede => {
-      const auleS = auleList.filter(a => a.sede_id === sede.id)
-      const aulaIds = new Set(auleS.map(a => a.id))
-      const occupate = new Set(slotOggi.filter(s => aulaIds.has(s.aula_id)).map(s => s.aula_id)).size
-      return {
-        id: sede.id,
-        nome: sede.nome,
-        totale: auleS.length,
-        occupate,
-        pct: percentuale(occupate, auleS.length),
-      }
-    })
+    applicaFiltroSede()
   } catch (e) {
     console.warn('DashboardCoord:', e.message)
   } finally {
     loadingSedi.value = false
   }
+}
 
-  // Inizializza Popover dopo rendering
+function applicaFiltroSede() {
+  const { sediList, auleList, prenList, utentiList, conflList, dataOggi } = tuttiIDatiCaricati.value
+  if (!sediList) return
+
+  // Filtra aule in base alla sede selezionata
+  const auleFiltrate = filtroSede.value
+    ? auleList.filter(a => a.sede_id === Number(filtroSede.value))
+    : auleList
+
+  const aulaIdsFiltrate = new Set(auleFiltrate.map(a => a.id))
+
+  // Filtra slot per aule della sede selezionata
+  const slotOggi = []
+  const slotIdsFiltratiSet = new Set()
+
+  for (const p of prenList) {
+    for (const s of (p.slots || [])) {
+      if (s.data === dataOggi && !s.annullato && aulaIdsFiltrate.has(s.aula_id)) {
+        slotOggi.push({ ...s })
+        slotIdsFiltratiSet.add(s.id)
+      }
+    }
+  }
+
+  // Filtra conflitti per slot della sede selezionata
+  const conflittiFiltrati = conflList.filter(cf =>
+    slotIdsFiltratiSet.has(cf.slot_id_1) || slotIdsFiltratiSet.has(cf.slot_id_2)
+  )
+
+  // ← AGGIORNA KPI FILTRATI
+  kpi.value = {
+    prenotazioniOggi: slotOggi.length,
+    auleOccupateOggi: new Set(slotOggi.map(s => s.aula_id)).size,
+    conflittiAperti: conflittiFiltrati.length,
+    utentiAttivi: utentiList.filter(u => u.attivo).length,  // Rimane globale
+  }
+
+  // Tabella saturazione sedi
+  const sediDaMostrare = filtroSede.value
+    ? sediList.filter(s => s.id === Number(filtroSede.value))
+    : sediList
+
+  saturazioneSedi.value = sediDaMostrare.map(sede => {
+    const auleS = auleList.filter(a => a.sede_id === sede.id)
+    const aulaIds = new Set(auleS.map(a => a.id))
+    const occupate = new Set(slotOggi.filter(s => aulaIds.has(s.aula_id)).map(s => s.aula_id)).size
+    return {
+      id: sede.id,
+      nome: sede.nome,
+      totale: auleS.length,
+      occupate,
+      pct: percentuale(occupate, auleS.length),
+    }
+  })
+}
+
+watch(filtroSede, () => {
+  applicaFiltroSede()
+})
+
+onMounted(async () => {
+  // Inizializza filtro con sede utente
+  filtroSede.value = sedeDefaultFiltro.value
+
+  await caricaDati()
+
   await nextTick()
-
-  // Carica dinamicamente il Popover da Bootstrap Italia
   const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]')
-
   if (popoverElements.length > 0) {
-    // Prova a caricare dal window.bootstrap
     if (window.bootstrap?.Popover) {
       popoverElements.forEach(el => {
         new window.bootstrap.Popover(el)
       })
     } else {
-      // Fallback: carica il modulo dinamicamente
       import('bootstrap-italia/dist/js/bootstrap-italia.bundle.min.js').then(() => {
         setTimeout(() => {
           if (window.bootstrap?.Popover) {
@@ -288,7 +373,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  // Cleanup popover
   const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]')
   popoverElements.forEach(el => {
     const instance = window.bootstrap?.Popover?.getInstance(el)
@@ -296,6 +380,7 @@ onBeforeUnmount(() => {
   })
 })
 </script>
+
 
 <style scoped>
 .page-title {

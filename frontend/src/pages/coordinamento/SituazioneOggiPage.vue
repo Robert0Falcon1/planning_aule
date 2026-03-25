@@ -107,6 +107,7 @@ import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const loading = ref(false)
 const sedi = ref([])
@@ -115,6 +116,7 @@ const conflittiAttivi = ref([])
 const oggiISO = oggi()
 const dataSelezionata = ref(oggiISO)
 const filtroSede = ref('')
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const { nomeAula: nomeAulaFn, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
@@ -214,6 +216,7 @@ async function carica() {
 
 onMounted(async () => {
   await caricaAule()
+  filtroSede.value = sedeDefaultFiltro.value
   const data = await getSedi()
   sedi.value = Array.isArray(data) ? data : []
   carica()

@@ -24,10 +24,10 @@
               <!-- Sede -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
-                <select v-model="form.sede_id" class="form-select"
-                  :class="{ 'is-invalid': err.sede_id }" @change="onSedeChange">
+                <select v-model="form.sede_id" class="form-select" :class="{ 'is-invalid': err.sede_id }"
+                  @change="onSedeChange">
                   <option value="">— seleziona —</option>
-                  <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
+                  <option v-for="s in sediMostrate" :key="s.id" :value="s.id">{{ s.nome }}</option>
                 </select>
                 <div class="invalid-feedback">{{ err.sede_id }}</div>
               </div>
@@ -35,12 +35,11 @@
               <!-- Aula -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
-                <select v-model="form.aula_id" class="form-select"
-                  :class="{ 'is-invalid': err.aula_id }"
+                <select v-model="form.aula_id" class="form-select" :class="{ 'is-invalid': err.aula_id }"
                   :disabled="!form.sede_id || caricandoAule">
                   <option value="">{{ caricandoAule ? 'Caricamento…' : '— seleziona sede prima —' }}</option>
                   <option v-for="a in aule" :key="a.id" :value="a.id">
-                    {{ a.nome }} (cap. {{ a.capienza }})
+                    {{ a.nome }} (cap. {{ a.capienza }}){{ a.attiva === false ? ' - INATTIVA' : '' }}
                   </option>
                 </select>
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
@@ -49,24 +48,22 @@
               <!-- Corso ID -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
-                <input v-model.number="form.corso_id" type="number" min="1"
-                  class="form-control" :class="{ 'is-invalid': err.corso_id }" />
+                <input v-model.number="form.corso_id" type="number" min="1" class="form-control"
+                  :class="{ 'is-invalid': err.corso_id }" />
                 <div class="invalid-feedback">{{ err.corso_id }}</div>
               </div>
 
               <!-- Data -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Data *</label>
-                <input v-model="form.data" type="date" class="form-control"
-                  :class="{ 'is-invalid': err.data }" />
+                <input v-model="form.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }" />
                 <div class="invalid-feedback">{{ err.data }}</div>
               </div>
 
               <!-- Ora inizio -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora inizio *</label>
-                <select v-model="form.ora_inizio" class="form-select"
-                  :class="{ 'is-invalid': err.ora_inizio }">
+                <select v-model="form.ora_inizio" class="form-select" :class="{ 'is-invalid': err.ora_inizio }">
                   <option value="">—</option>
                   <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
                 </select>
@@ -76,8 +73,7 @@
               <!-- Ora fine -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora fine *</label>
-                <select v-model="form.ora_fine" class="form-select"
-                  :class="{ 'is-invalid': err.ora_fine }">
+                <select v-model="form.ora_fine" class="form-select" :class="{ 'is-invalid': err.ora_fine }">
                   <option value="">—</option>
                   <option v-for="h in oreSlot" :key="h" :value="h">{{ h }}</option>
                 </select>
@@ -108,23 +104,34 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
-import { getAuleBySede } from '@/api/aule'
+import { ref, reactive, watch, computed, onMounted } from 'vue'
+import { getAuleBySede, getAule } from '@/api/aule'
+import { getSedi } from '@/api/sedi'
 import { modificaSlot } from '@/api/prenotazioni'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 
 const props = defineProps({
-  aperta:  Boolean,
-  slot:    Object,  // riga dalla tabella MiePrenotazioni
-  sedi:    Array,
+  aperta: Boolean,
+  slot: Object,  // riga dalla tabella MiePrenotazioni
+  sedi: Array,
   aulaMap: Object,  // { aulaId: { sede_id, ... } }
 })
 const emit = defineEmits(['update:aperta', 'salvato'])
 
-const loading       = ref(false)
+const loading = ref(false)
 const caricandoAule = ref(false)
-const aule          = ref([])
-const esito         = ref(null)
+const aule = ref([])
+const tutteLeAule = ref([])
+const tutteLeSedi = ref([])
+const sediMostrate = ref([])
+const esito = ref(null)
+
+const sediConAuleAttive = computed(() => {
+  const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
+  return (props.sedi || []).filter(sede =>
+    auleAttive.some(aula => aula.sede_id === sede.id)
+  )
+})
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
@@ -146,21 +153,65 @@ watch(() => props.aperta, async (val) => {
   Object.keys(err).forEach(k => err[k] = '')
 
   const s = props.slot
-  const sedeId = props.aulaMap?.[s.aulaId]?.sede_id || ''
+  const sedeId = props.aulaMap?.[s.aulaId]?.sede_id
+  console.log('🔍 DOPO FIX:')
+  console.log('  sedeId:', sedeId, typeof sedeId)
+  console.log('  aulaMap[21]:', props.aulaMap?.[21])
+
+  // ← DEBUG
+  console.log('🔍 DEBUG MODAL:')
+  console.log('  slot.aulaId:', s.aulaId)
+  console.log('  aulaMap:', props.aulaMap)
+  console.log('  sedeId ricavato:', sedeId, typeof sedeId)
+  console.log('  props.sedi:', props.sedi)
+
+  // ← CALCOLA SEDI DA MOSTRARE
+  const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
+  const sediConAuleAttive = (props.sedi || []).filter(sede =>
+    auleAttive.some(aula => aula.sede_id === sede.id)
+  )
+
+  console.log('  sediConAuleAttive:', sediConAuleAttive)
+
+  // Aggiungi la sede corrente anche se non ha aule attive
+  // ← USA tutteLeSedi invece di props.sedi per trovare QUALSIASI sede
+  const sedeCorrente = tutteLeSedi.value.find(sede => Number(sede.id) === Number(sedeId))
+  console.log('  sedeCorrente trovata:', sedeCorrente)
+
+  if (sedeCorrente && !sediConAuleAttive.find(s => s.id === sedeCorrente.id)) {
+    sediMostrate.value = [sedeCorrente, ...sediConAuleAttive]
+  } else {
+    sediMostrate.value = sediConAuleAttive
+  }
+
+  console.log('  sediMostrate finale:', sediMostrate.value)
 
   Object.assign(form, {
-    sede_id:    sedeId,
-    aula_id:    s.aulaId,
-    corso_id:   s.corsoId,
-    data:       s.data,
+    sede_id: sedeId,
+    aula_id: s.aulaId,
+    corso_id: s.corsoId,
+    data: s.data,
     ora_inizio: s.oraInizio.slice(0, 5),
-    ora_fine:   s.oraFine.slice(0, 5),
-    note:       s.note || '',
+    ora_fine: s.oraFine.slice(0, 5),
+    note: s.note || '',
   })
+
+  console.log('  form.sede_id assegnato:', form.sede_id, typeof form.sede_id)
+  // ← FINE DEBUG
 
   if (sedeId) {
     caricandoAule.value = true
-    try { aule.value = await getAuleBySede(sedeId) || [] }
+    try {
+      const data = await getAuleBySede(sedeId) || []
+      const auleAttive = data.filter(a => a.attiva !== false)
+
+      const aulaCorrente = props.aulaMap?.[s.aulaId]
+      if (aulaCorrente && aulaCorrente.attiva === false) {
+        aule.value = [aulaCorrente, ...auleAttive]
+      } else {
+        aule.value = auleAttive
+      }
+    }
     finally { caricandoAule.value = false }
   }
 })
@@ -170,17 +221,20 @@ async function onSedeChange() {
   aule.value = []
   if (!form.sede_id) return
   caricandoAule.value = true
-  try { aule.value = await getAuleBySede(form.sede_id) || [] }
+  try {
+    const data = await getAuleBySede(form.sede_id) || []
+    // ← FILTRA SOLO AULE ATTIVE
+    aule.value = data.filter(a => a.attiva !== false)
+  }
   finally { caricandoAule.value = false }
 }
-
 function valida() {
-  err.sede_id    = form.sede_id    ? '' : 'Obbligatorio'
-  err.aula_id    = form.aula_id    ? '' : 'Obbligatorio'
-  err.corso_id   = form.corso_id   ? '' : 'Obbligatorio'
-  err.data       = form.data       ? '' : 'Obbligatorio'
+  err.sede_id = form.sede_id ? '' : 'Obbligatorio'
+  err.aula_id = form.aula_id ? '' : 'Obbligatorio'
+  err.corso_id = form.corso_id ? '' : 'Obbligatorio'
+  err.data = form.data ? '' : 'Obbligatorio'
   err.ora_inizio = form.ora_inizio ? '' : 'Obbligatorio'
-  err.ora_fine   = form.ora_fine   ? '' : 'Obbligatorio'
+  err.ora_fine = form.ora_fine ? '' : 'Obbligatorio'
   if (form.ora_inizio && form.ora_fine && form.ora_inizio >= form.ora_fine)
     err.ora_fine = "Deve essere dopo l'ora di inizio"
   return !Object.values(err).some(Boolean)
@@ -192,12 +246,12 @@ async function submit() {
   esito.value = null
   try {
     await modificaSlot(props.slot.prenId, props.slot.slotId, {
-      aula_id:    form.aula_id,
-      corso_id:   form.corso_id,
-      data:       form.data,
+      aula_id: form.aula_id,
+      corso_id: form.corso_id,
+      data: form.data,
       ora_inizio: form.ora_inizio,
-      ora_fine:   form.ora_fine,
-      note:       form.note || null,
+      ora_fine: form.ora_fine,
+      note: form.note || null,
     })
     esito.value = { tipo: 'ok', msg: '✓ Slot aggiornato con successo.' }
     emit('salvato')
@@ -210,4 +264,10 @@ async function submit() {
 }
 
 function chiudi() { emit('update:aperta', false) }
+
+onMounted(async () => {
+  const [dataAule, dataSedi] = await Promise.all([getAule(), getSedi()])
+  tutteLeAule.value = dataAule?.items || dataAule || []
+  tutteLeSedi.value = Array.isArray(dataSedi) ? dataSedi : []
+})
 </script>

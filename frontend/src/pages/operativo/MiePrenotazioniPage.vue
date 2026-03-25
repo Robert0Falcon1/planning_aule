@@ -231,6 +231,7 @@ import { useAulaColor } from '@/composables/useAulaColor'
 import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 
 const router = useRouter()
@@ -257,6 +258,7 @@ const modalCancella = ref(null)
 const conflittiAttivi = ref([])
 const modalModifica = ref(false)
 const slotInModifica = ref(null)
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const titoloPageina = computed(() =>
   authStore.isCoordinamento ? 'Prenotazioni' : 'Mie Prenotazioni'
@@ -419,8 +421,19 @@ async function caricaTutto() {
     const results = await Promise.all(calls)
     const [dataSedi, dataAule, dataPren, dataConflitti] = results
     const dataUtenti = results[4]
-    sedi.value = Array.isArray(dataSedi) ? dataSedi : []
-    aule.value = Array.isArray(dataAule) ? dataAule : []
+
+    // Carica TUTTE le aule (anche inattive per aulaMap)
+    const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
+    const auleAttive = tutteLeAule.filter(a => a.attiva !== false)
+
+    // Filtra solo sedi con almeno un'aula attiva
+    const tutteLeSedi = Array.isArray(dataSedi) ? dataSedi : []
+    sedi.value = tutteLeSedi.filter(sede =>
+      auleAttive.some(aula => aula.sede_id === sede.id)
+    )
+
+    // ← IMPORTANTE: aule.value contiene TUTTE le aule (anche inattive) per aulaMap
+    aule.value = tutteLeAule
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
 
@@ -440,6 +453,13 @@ function vaiACalendario(data) {
 onMounted(async () => {
   await caricaAule()
   await caricaTutto()
+
+  // Imposta filtro sede di default solo se ha aule attive
+  const sedeDefault = sedeDefaultFiltro.value
+  if (sedeDefault) {
+    const sedeHaAuleAttive = sedi.value.some(s => s.id === Number(sedeDefault))
+    filtroSede.value = sedeHaAuleAttive ? sedeDefault : ''
+  }
 })
 
 // Ricarica ogni volta che si torna sulla pagina (es. dopo aver risolto un conflitto)

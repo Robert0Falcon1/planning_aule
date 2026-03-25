@@ -198,6 +198,7 @@ import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const ORA_INIZIO = 7
 const ORA_FINE = 21
@@ -215,7 +216,7 @@ const prenotazioni = ref([])
 const conflittiAttivi = ref([])
 const dataRef = ref(oggi())
 const nowTop = ref(-1)
-
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 
 // ── FIX TIMEZONE ─────────────────────────────────────────────────────────────
@@ -473,7 +474,8 @@ async function caricaDati() {
 watch([dataRef, filtroSede, vista], caricaDati)
 
 onMounted(async () => {
-  // Leggi data da query param se presente
+  filtroSede.value = sedeDefaultFiltro.value
+  
   if (route.query.data) {
     dataRef.value = route.query.data
   }
@@ -481,8 +483,13 @@ onMounted(async () => {
   aggiornaNow()
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
+  
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
-  aule.value = Array.isArray(dataAule) ? dataAule : []
+  
+  // ← FILTRA SOLO AULE ATTIVE
+  const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
+  aule.value = tutteLeAule.filter(a => a.attiva !== false)
+  
   caricaDati()
 })
 </script>

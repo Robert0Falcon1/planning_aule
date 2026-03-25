@@ -253,6 +253,7 @@ import { useAulaColor } from '@/composables/useAulaColor'
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { getUtenti } from '@/api/utenti'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
@@ -266,6 +267,7 @@ const filtroSede = ref('')
 const filtroUtenti = ref([])
 const soloAttivi = ref(true)
 const risolvendo = ref(null)
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 // ── Lookup prenotazione per id ────────────────────────────────────────────────
 const mappaPrenotazioni = computed(() =>
@@ -397,6 +399,7 @@ async function risolvi(id, azione) {
 
 onMounted(async () => {
   await caricaAule()
+  filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataUtenti] = await Promise.all([
     getSedi(),
     getUtenti()

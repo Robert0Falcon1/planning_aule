@@ -189,6 +189,7 @@ import { useAulaColor } from '@/composables/useAulaColor'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle, getAulaColor } = useAulaColor()
@@ -203,6 +204,7 @@ const filtroSede = ref('')
 const topN = ref(10)
 const accordionAperto = ref(null)
 const utenti = ref([])
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 function toggleAccordion(nome) {
   accordionAperto.value = accordionAperto.value === nome ? '__chiudi__' : nome
@@ -405,6 +407,7 @@ function esportaCsv() {
 
 onMounted(async () => {
   await caricaAule()
+  filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
   aule.value = Array.isArray(dataAule) ? dataAule : []
