@@ -256,7 +256,7 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getSedi } from '@/api/sedi'
-import { getAuleBySede } from '@/api/aule'
+import { getAuleBySede, getAule } from '@/api/aule'
 import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -354,7 +354,8 @@ async function onSedeChange() {
   caricandoAule.value = true
   try {
     const data = await getAuleBySede(singola.sede_id)
-    aule.value = data || []
+    // ← FILTRA SOLO AULE ATTIVE
+    aule.value = (data || []).filter(a => a.attiva !== false)
   } finally {
     caricandoAule.value = false
   }
@@ -364,7 +365,8 @@ async function onSedeChangeMassiva() {
   massiva.aula_id = ''; auleMassiva.value = []
   if (!massiva.sede_id) return
   const data = await getAuleBySede(massiva.sede_id)
-  auleMassiva.value = data || []
+  // ← FILTRA SOLO AULE ATTIVE
+  auleMassiva.value = (data || []).filter(a => a.attiva !== false)
 }
 
 function validaSingola() {
@@ -473,8 +475,18 @@ function resetMassiva() {
 }
 
 onMounted(async () => {
-  const data = await getSedi()
-  sedi.value = data || []
+  // Carica sedi E aule per filtrare
+  const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
+  
+  const tutteLeSedi = dataSedi || []
+  const tutteLeAule = (dataAule?.items || dataAule || []).filter(a => a.attiva !== false)
+  
+  // Filtra solo sedi con almeno un'aula attiva
+  sedi.value = tutteLeSedi.filter(sede => 
+    tutteLeAule.some(aula => aula.sede_id === sede.id)
+  )
+  
+  // Pre-selezione da query params
   if (route.query.sede_id) {
     singola.sede_id = Number(route.query.sede_id)
     await onSedeChange()
