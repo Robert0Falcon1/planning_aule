@@ -114,14 +114,19 @@ button.btn.btn-sm.btn-outline-light:hover .icon {
     fill: #ffffff !important;
 }
 
-.accordion-header .accordion-button {
-    color: var(--bs-primary);
-}
+
 .accordion-header .accordion-button:after {
     filter: grayscale(1) brightness(0);
 }
 .accordion-button:not(.collapsed) > p {
     color: var(--bs-primary-accent);
+}
+.accordion-header .accordion-button{
+    color: var(--bs-secondary) !important;
+    border-top: none !important;
+}
+.accordion-flush .accordion-item:last-child {
+    border-bottom: 0 !important;
 }
 
 /* Tabs */

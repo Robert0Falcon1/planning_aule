@@ -53,7 +53,7 @@
         </div>
       </div>
       <!-- Grafico 1: Prenotazioni per periodo -->
-      <div class="col-12 col-xl-8">
+      <div class="col-12 col-xl-7">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0">
             <h5 class="card-title mb-0">Prenotazioni per {{ granularity === 'settimana' ? 'settimana' : 'mese' }}</h5>
@@ -79,9 +79,9 @@
       </div>
 
       <!-- Grafico 2: Distribuzione per aula (accordion per sede) -->
-      <div class="col-12 col-xl-4">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0">
+      <div class="col-12 col-xl-5 pe-4">
+        <div class="card border-0 shadow-sm h-100 px-3">
+          <div class="card-header bg-white border-0 ps-0">
             <h5 class="card-title mb-0">Distribuzione per aula</h5>
           </div>
           <div class="card-body p-0">
@@ -89,7 +89,7 @@
             <div v-else class="accordion accordion-flush" id="accordionSedi">
               <div v-for="(sede, si) in datiPerSede" :key="sede.nome" class="accordion-item border-0 border-bottom">
                 <h2 class="accordion-header">
-                  <button class="accordion-button py-2 px-3 small fw-semibold"
+                  <button class="accordion-button py-2 px-0 small fw-semibold"
                     :class="{ collapsed: !(accordionAperto === sede.nome || (si === 0 && accordionAperto === null)) }"
                     type="button" @click="toggleAccordion(sede.nome)">
                     <p class="mb-0">{{ sede.nome }}</p>
@@ -98,7 +98,7 @@
                 </h2>
                 <div :class="{ show: accordionAperto === sede.nome || (si === 0 && accordionAperto === null) }"
                   class="accordion-collapse collapse">
-                  <div class="accordion-body py-2 px-3">
+                  <div class="accordion-body py-2 px-0">
                     <div v-for="(aula, ai) in sede.aule" :key="aula.aulaId" class="mb-2">
                       <div class="d-flex justify-content-between mb-1">
                         <small class="fw-semibold text-truncate d-flex align-items-center gap-1"
@@ -127,7 +127,7 @@
       <!-- Grafico 3: Top corsi (per corso_id) -->
       <div class="col-12 col-xl-7">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center px-3 pt-4 pt-xl-2">
             <h5 class="card-title mb-0">Top corsi per prenotazioni</h5>
             <select v-model="topN" class="form-select form-select-sm" style="width:auto">
               <option :value="5">Top 5</option>
@@ -155,10 +155,10 @@
       <!-- Grafico 4: Saturazione per aula -->
       <div class="col-12 col-xl-5">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0">
+          <div class="card-header bg-white border-0 px-3">
             <h5 class="card-title mb-0">Prenotazioni per aula</h5>
           </div>
-          <div class="card-body">
+          <div class="card-body ps-3">
             <div v-for="(a, i) in datiAule" :key="i" class="mb-3">
               <div class="d-flex justify-content-between mb-1">
                 <small class="fw-semibold d-flex align-items-center gap-1">
