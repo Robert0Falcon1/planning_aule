@@ -20,10 +20,3 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --log-con
 cd frontend
 npm run dev
 (http://localhost:5173)
-
-
-
-
-**Altra modifica sul filtro in base all'utente:**
-
-**Vorrei aggiungerlo anche nella pagina Nuova Prenotazione**
