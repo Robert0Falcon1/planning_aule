@@ -114,6 +114,14 @@
               {{ esito.msg }}
             </div>
 
+            <!-- Alert conflitti -->
+            <div v-if="alertConflitti" class="alert alert-warning mt-3">
+              <svg class="icon icon-sm me-1">
+                <use :href="sprites + '#it-error'"></use>
+              </svg>
+              {{ alertConflitti.msg }}
+            </div>
+
             <div class="mt-4 d-flex gap-2">
               <button type="submit" class="btn btn-primary" :disabled="loading">
                 <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
@@ -226,6 +234,14 @@
               {{ esitoMassiva.msg }}
             </div>
 
+            <!-- Alert conflitti -->
+            <div v-if="alertConflitti" class="alert alert-warning mt-3">
+              <svg class="icon icon-sm me-1">
+                <use :href="sprites + '#it-error'"></use>
+              </svg>
+              {{ alertConflitti.msg }}
+            </div>
+
             <div class="mt-4 d-flex gap-2">
               <button type="submit" class="btn btn-primary" :disabled="loadingMassiva">
                 <span v-if="loadingMassiva" class="spinner-border spinner-border-sm me-1"></span>
@@ -261,6 +277,7 @@ import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
+import { useConflittiAlert } from '@/composables/useConflittiAlert'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -277,6 +294,7 @@ const esitoMassiva = ref(null)
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 const mostraPrimaPrenotazione = ref(false)
 const { sedeDefaultFiltro } = useSedePerFiltro()
+const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useConflittiAlert()
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
@@ -310,23 +328,23 @@ const massiva = reactive({
 async function checkPrimaPrenotazione() {
   const key = `prima_prenotazione_${auth.utente?.id}`
   const giaMostrato = localStorage.getItem(key)
-  
+
   if (giaMostrato) return
-  
+
   try {
     const { getPrenotazioni } = await import('@/api/prenotazioni')
     const response = await getPrenotazioni()
     const prenotazioniUtente = response?.items || response || []
-    
+
     // Conta solo le prenotazioni ATTIVE di questo utente
-    const miePrenotazioni = prenotazioniUtente.filter(p => 
-      p.richiedente_id === auth.utente?.id && 
+    const miePrenotazioni = prenotazioniUtente.filter(p =>
+      p.richiedente_id === auth.utente?.id &&
       p.stato === 'confermata' && // ← AGGIUNGI QUESTO
       p.slots?.some(s => !s.annullato) // ← E QUESTO (almeno 1 slot non annullato)
     )
-    
+
     console.log('Mie prenotazioni ATTIVE:', miePrenotazioni.length)
-    
+
     if (miePrenotazioni.length === 1) {
       mostraPrimaPrenotazione.value = true
       localStorage.setItem(key, 'true')
@@ -385,9 +403,12 @@ function validaSingola() {
 
 async function submitSingola() {
   if (!validaSingola()) return
-  loading.value = true; esito.value = null
+  loading.value = true
+  esito.value = null
+  resetAlert()  // ← Reset alert conflitti precedente
+
   try {
-    await creaPrenotazione({
+    const risposta = await creaPrenotazione({
       aula_id: singola.aula_id,
       corso_id: singola.corso_id,
       slot: {
@@ -397,11 +418,18 @@ async function submitSingola() {
       },
       note: singola.note || undefined,
     })
+
     esito.value = { tipo: 'ok', msg: '✓ Prenotazione confermata con successo.' }
 
-    await checkPrimaPrenotazione()
+    // ← VERIFICA CONFLITTI
+    const prenotazioneId = risposta?.id
+    if (prenotazioneId) {
+      await verificaConflittiNuovaPrenotazione(prenotazioneId, 'singola')
+    }
 
+    await checkPrimaPrenotazione()
     resetSingola()
+
   } catch (e) {
     esito.value = { tipo: 'err', msg: e.message }
   } finally {
@@ -428,7 +456,10 @@ function validaMassiva() {
 
 async function submitMassiva() {
   if (!validaMassiva()) return
-  loadingMassiva.value = true; esitoMassiva.value = null
+  loadingMassiva.value = true
+  esitoMassiva.value = null
+  resetAlert()  // ← Reset alert conflitti precedente
+
   try {
     const payload = {
       aula_id: massiva.aula_id,
@@ -442,8 +473,15 @@ async function submitMassiva() {
       note: massiva.note || undefined,
     }
 
-    await creaPrenotazioneMassiva(payload)
+    const risposta = await creaPrenotazioneMassiva(payload)
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
+
+    // ← VERIFICA CONFLITTI
+    const prenotazioneId = risposta?.id
+    if (prenotazioneId) {
+      await verificaConflittiNuovaPrenotazione(prenotazioneId, 'massiva')
+    }
+
     massiva.giorni_settimana = []
   } catch (e) {
     esitoMassiva.value = { tipo: 'err', msg: e.message }
@@ -479,15 +517,15 @@ function resetMassiva() {
 onMounted(async () => {
   // Carica sedi E aule per filtrare
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
-  
+
   const tutteLeSedi = dataSedi || []
   const tutteLeAule = (dataAule?.items || dataAule || []).filter(a => a.attiva !== false)
-  
+
   // Filtra solo sedi con almeno un'aula attiva
-  sedi.value = tutteLeSedi.filter(sede => 
+  sedi.value = tutteLeSedi.filter(sede =>
     tutteLeAule.some(aula => aula.sede_id === sede.id)
   )
-  
+
   // Pre-selezione da query params
   if (route.query.sede_id) {
     singola.sede_id = Number(route.query.sede_id)
@@ -505,7 +543,7 @@ onMounted(async () => {
       }
     }
   }
-  
+
   if (route.query.aula_id) singola.aula_id = Number(route.query.aula_id)
   if (route.query.data) singola.data = route.query.data
 })

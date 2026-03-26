@@ -20,6 +20,14 @@
               {{ esito.msg }}
             </div>
 
+            <!-- Alert conflitti -->
+            <div v-if="alertConflitti" class="alert alert-warning">
+              <svg class="icon icon-sm me-1">
+                <use :href="sprites + '#it-error'"></use>
+              </svg>
+              {{ alertConflitti.msg }}
+            </div>
+
             <div class="row g-3">
               <!-- Sede -->
               <div class="col-md-6">
@@ -109,6 +117,7 @@ import { getAuleBySede, getAule } from '@/api/aule'
 import { getSedi } from '@/api/sedi'
 import { modificaSlot } from '@/api/prenotazioni'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useConflittiAlert } from '@/composables/useConflittiAlert'
 
 const props = defineProps({
   aperta: Boolean,
@@ -125,6 +134,7 @@ const tutteLeAule = ref([])
 const tutteLeSedi = ref([])
 const sediMostrate = ref([])
 const esito = ref(null)
+const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useConflittiAlert()
 
 const sediConAuleAttive = computed(() => {
   const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
@@ -163,7 +173,7 @@ watch(() => props.aperta, async (val) => {
 
   // Aggiungi la sede corrente anche se non ha aule attive
   const sedeCorrente = tutteLeSedi.value.find(sede => Number(sede.id) === Number(sedeId))
-  
+
   if (sedeCorrente && !sediConAuleAttive.find(s => s.id === sedeCorrente.id)) {
     sediMostrate.value = [sedeCorrente, ...sediConAuleAttive]
   } else {
@@ -223,22 +233,11 @@ function valida() {
 
 async function submit() {
   if (!valida()) return
-  
-  // ← DEBUG CHIAMATA API
-  console.log('🔍 SUBMIT DEBUG:')
-  console.log('  prenId:', props.slot.prenId)
-  console.log('  slotId:', props.slot.slotId)
-  console.log('  payload:', {
-    aula_id: form.aula_id,
-    corso_id: form.corso_id,
-    data: form.data,
-    ora_inizio: form.ora_inizio,
-    ora_fine: form.ora_fine,
-    note: form.note || null,
-  })
-  
+
   loading.value = true
   esito.value = null
+  resetAlert()  // ← Reset alert conflitti precedente
+
   try {
     await modificaSlot(props.slot.prenId, props.slot.slotId, {
       aula_id: form.aula_id,
@@ -248,11 +247,18 @@ async function submit() {
       ora_fine: form.ora_fine,
       note: form.note || null,
     })
+
     esito.value = { tipo: 'ok', msg: '✓ Slot aggiornato con successo.' }
+
+    // ← VERIFICA CONFLITTI dopo la modifica
+    const { hasConflitti } = await verificaConflittiNuovaPrenotazione(props.slot.prenId, 'singola')
+
     emit('salvato')
-    setTimeout(chiudi, 1200)
+
+    // Se ci sono conflitti, attendi un po' di più prima di chiudere per far leggere l'alert
+    setTimeout(chiudi, hasConflitti ? 2500 : 1200)
+
   } catch (e) {
-    console.error('❌ ERRORE MODIFICA SLOT:', e)
     esito.value = { tipo: 'err', msg: e.message }
   } finally {
     loading.value = false

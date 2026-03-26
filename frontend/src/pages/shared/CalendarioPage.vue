@@ -15,11 +15,16 @@
       <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
 
         <div class="btn-group btn-group-sm">
-          <button class="btn simplebtn" :class="vista === 'giorno' ? 'btn-primary' : 'btn-outline-primary btn-no-border-e'"
-            @click="vista = 'giorno'">Giorno</button>
           <button class="btn simplebtn"
-            :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
-            @click="vista = '4giorni'">4 giorni</button>
+            :class="vista === 'giorno' ? 'btn-primary' : 'btn-outline-primary btn-no-border-e'"
+            @click="vista = 'giorno'"><svg class="icon icon-sm me-1">
+              <use :href="sprites + '#it-note'"></use>
+            </svg>Giorno</button>
+          <button class="btn simplebtn" :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
+            @click="vista = '4giorni'">
+            <svg class="icon icon-sm me-1">
+              <use :href="sprites + '#it-calendar'"></use>
+            </svg>4 giorni</button>
           <button class="btn simplebtn"
             :class="vista === 'settimana' ? 'btn-primary' : 'btn-no-border-x btn-outline-primary'"
             @click="vista = 'settimana'">
@@ -348,7 +353,7 @@ function sposta(n) {
   }
 }
 
-function vaiOggi() { 
+function vaiOggi() {
   dataRef.value = oggi()
   vista.value = 'giorno'  // ← Passa automaticamente alla vista giorno
 }
