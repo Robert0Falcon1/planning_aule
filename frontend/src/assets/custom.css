@@ -103,6 +103,9 @@
 .btn-no-border-x {
     box-shadow: inset 0 2px 0 0 var(--bs-primary-accent), inset 0 -2px 0 0 var(--bs-primary-accent) !important;
 }
+.btn-no-border-e {
+    box-shadow: inset 2px 2px 0 0 var(--bs-primary-accent), inset 0 -2px 0 0 var(--bs-primary-accent) !important;
+}
 button.btn.btn-sm.btn-outline-light {
     box-shadow: none !important;
 }

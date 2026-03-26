@@ -331,12 +331,18 @@ const tuttiGliSlot = computed(() => {
       })
     }
   }
-  return list.sort((a, b) => {
+return list.sort((a, b) => {
   // Prima ordina per data
   if (a.data !== b.data) {
     return a.data > b.data ? 1 : -1
   }
-  // Poi ordina per ora inizio (mattina → pomeriggio)
+  // Poi ordina per nome aula (alfabetico)
+  const nomeA = nomeAulaFn(a.aulaId)
+  const nomeB = nomeAulaFn(b.aulaId)
+  if (nomeA !== nomeB) {
+    return nomeA.localeCompare(nomeB)
+  }
+  // Infine ordina per ora inizio (mattina → pomeriggio)
   return a.oraInizio > b.oraInizio ? 1 : a.oraInizio < b.oraInizio ? -1 : 0
 })
 })

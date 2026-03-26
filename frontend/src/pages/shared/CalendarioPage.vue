@@ -15,7 +15,10 @@
       <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
 
         <div class="btn-group btn-group-sm">
-          <button class="btn simplebtn" :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
+          <button class="btn simplebtn" :class="vista === 'giorno' ? 'btn-primary' : 'btn-outline-primary btn-no-border-e'"
+            @click="vista = 'giorno'">Giorno</button>
+          <button class="btn simplebtn"
+            :class="vista === '4giorni' ? 'btn-primary' : 'btn-outline-primary'"
             @click="vista = '4giorni'">4 giorni</button>
           <button class="btn simplebtn"
             :class="vista === 'settimana' ? 'btn-primary' : 'btn-no-border-x btn-outline-primary'"
@@ -281,7 +284,11 @@ const auleFiltrate = computed(() =>
 function onSedeChange() { filtroAula.value = '' }
 
 // ── Giorni visibili per vista ─────────────────────────────────────────────────
-const nGiorni = computed(() => vista.value === '4giorni' ? 4 : 7)
+const nGiorni = computed(() => {
+  if (vista.value === 'giorno') return 1
+  if (vista.value === '4giorni') return 4
+  return 7  // settimana
+})
 
 const giorniVista = computed(() => {
   const start = vista.value === 'settimana'
@@ -340,7 +347,11 @@ function sposta(n) {
     dataRef.value = aggiungiGiorni(dataRef.value, n * nGiorni.value)
   }
 }
-function vaiOggi() { dataRef.value = oggi() }
+
+function vaiOggi() { 
+  dataRef.value = oggi()
+  vista.value = 'giorno'  // ← Passa automaticamente alla vista giorno
+}
 
 // ── Orari decimali ────────────────────────────────────────────────────────────
 function oraDec(hhmm) {
@@ -478,20 +489,20 @@ onMounted(async () => {
   if (!route.query.data) {
     filtroSede.value = sedeDefaultFiltro.value
   }
-  
+
   if (route.query.data) {
     dataRef.value = route.query.data
   }
-  
+
   aggiornaNow()
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
-  
+
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
-  
+
   const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
   aule.value = tutteLeAule.filter(a => a.attiva !== false)
-  
+
   caricaDati()
 })
 </script>
