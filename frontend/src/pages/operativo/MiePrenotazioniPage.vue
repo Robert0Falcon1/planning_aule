@@ -331,7 +331,14 @@ const tuttiGliSlot = computed(() => {
       })
     }
   }
-  return list.sort((a, b) => a.data > b.data ? 1 : a.data < b.data ? -1 : 0)
+  return list.sort((a, b) => {
+  // Prima ordina per data
+  if (a.data !== b.data) {
+    return a.data > b.data ? 1 : -1
+  }
+  // Poi ordina per ora inizio (mattina → pomeriggio)
+  return a.oraInizio > b.oraInizio ? 1 : a.oraInizio < b.oraInizio ? -1 : 0
+})
 })
 
 // ── Slot filtrati ─────────────────────────────────────────────────────────────
@@ -382,9 +389,16 @@ const conteggioSlot = computed(() => tuttiGliSlot.value.length)
 // Conta gli slot con conflitti — coerente con "Slot totali" e la tabella.
 // tuttiGliSlot è già filtrato per utente (OPERATIVO) o globale (COORDINAMENTO)
 // e ha haConflitti corretto (slot-level per COORD, richiesta.ha_conflitti per OPERATIVO).
-const conteggioConflitti = computed(() =>
-  tuttiGliSlot.value.filter(s => s.haConflitti).length
-)
+const conteggioConflitti = computed(() => {
+  // COORDINAMENTO: conta slot con conflitti (globale, utenti diversi)
+  // OPERATIVO: conta conflitti distinti (le mie prenotazioni che confliggono tra loro)
+  if (authStore.isCoordinamento) {
+    return tuttiGliSlot.value.filter(s => s.haConflitti).length
+  } else {
+    // Per OPERATIVO: conflittiAttivi è già filtrato dal backend per i miei conflitti
+    return conflittiAttivi.value.length
+  }
+})
 
 function resetFiltri() {
   filtroSede.value = ''; filtroAula.value = ''; filtroUtente.value = ''

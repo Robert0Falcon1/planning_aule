@@ -260,6 +260,7 @@ import { getAuleBySede, getAule } from '@/api/aule'
 import { creaPrenotazione, creaPrenotazioneMassiva } from '@/api/prenotazioni'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -275,6 +276,7 @@ const esito = ref(null)
 const esitoMassiva = ref(null)
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 const mostraPrimaPrenotazione = ref(false)
+const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
@@ -490,7 +492,20 @@ onMounted(async () => {
   if (route.query.sede_id) {
     singola.sede_id = Number(route.query.sede_id)
     await onSedeChange()
+  } else {
+    // ← AGGIUNGI: Imposta sede di default per ENTRAMBI i form
+    const sedeDefault = sedeDefaultFiltro.value
+    if (sedeDefault) {
+      const sedeHaAuleAttive = sedi.value.some(s => s.id === Number(sedeDefault))
+      if (sedeHaAuleAttive) {
+        singola.sede_id = sedeDefault
+        massiva.sede_id = sedeDefault
+        await onSedeChange()
+        await onSedeChangeMassiva()
+      }
+    }
   }
+  
   if (route.query.aula_id) singola.aula_id = Number(route.query.aula_id)
   if (route.query.data) singola.data = route.query.data
 })
