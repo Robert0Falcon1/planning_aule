@@ -438,6 +438,10 @@ async function caricaTutto() {
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
 
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
+
+    await caricaAule()
+
+    if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
     console.warn('MiePrenotazioni:', e.message)
   } finally {
@@ -461,6 +465,7 @@ onMounted(async () => {
     filtroSede.value = sedeHaAuleAttive ? sedeDefault : ''
   }
 })
+
 
 // Ricarica ogni volta che si torna sulla pagina (es. dopo aver risolto un conflitto)
 onActivated(caricaTutto)

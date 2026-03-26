@@ -474,19 +474,21 @@ async function caricaDati() {
 watch([dataRef, filtroSede, vista], caricaDati)
 
 onMounted(async () => {
-  filtroSede.value = sedeDefaultFiltro.value
+  // ← FIX: Applica filtro sede di default SOLO se NON arrivi da click su prenotazione
+  if (!route.query.data) {
+    filtroSede.value = sedeDefaultFiltro.value
+  }
   
   if (route.query.data) {
     dataRef.value = route.query.data
   }
-
+  
   aggiornaNow()
   await caricaAule()
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
   
-  // ← FILTRA SOLO AULE ATTIVE
   const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
   aule.value = tutteLeAule.filter(a => a.attiva !== false)
   
