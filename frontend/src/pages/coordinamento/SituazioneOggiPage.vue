@@ -92,7 +92,7 @@
 
       <div v-if="!sediConSlot.length" class="card border-0 shadow-sm">
         <div class="card-body text-center text-muted py-5">
-          Nessuna prenotazione per {{ dataSelezionata }}{{ filtroSede ? ' in questa sede' : '' }}.
+          Nessuna prenotazione per {{ formatData(dataSelezionata) }}{{ filtroSede ? ' in questa sede' : '' }}.
         </div>
       </div>
     </div>
@@ -183,6 +183,12 @@ function badgeStato(slot) {
     rifiutata: 'bg-danger',
     annullata: 'bg-secondary',
   }[slot.stato] || 'bg-secondary'
+}
+
+function formatData(dataISO) {
+  if (!dataISO) return ''
+  const [y, m, d] = dataISO.split('-')
+  return `${d}/${m}/${y}`
 }
 
 function statoLabel(slot) {

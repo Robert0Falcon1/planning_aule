@@ -378,6 +378,7 @@ def annulla_slot(
     slot.annullato = True
     db.flush()
 
+    # ← RACCOGLI CONFLITTI UNICI e altre prenotazioni coinvolte
     conflitti_slot = db.query(ConflittoPrenotazione).filter(
         or_(
             ConflittoPrenotazione.slot_id_1 == slot_id,
@@ -386,15 +387,39 @@ def annulla_slot(
         ConflittoPrenotazione.stato_risoluzione == None
     ).all()
 
+    # ← TRACCIA QUALI CONFLITTI HAI GIÀ PROCESSATO (per evitare duplicati)
+    conflitti_processati = set()
+    altre_pren_ids = set()
+
     for cf in conflitti_slot:
+        # ← SALTA SE GIÀ PROCESSATO (prevenzione StaleDataError)
+        if cf.id in conflitti_processati:
+            continue
+        
+        conflitti_processati.add(cf.id)
+        
+        # Determina l'altra prenotazione coinvolta
+        altra_id = (
+            cf.prenotazione_id_2
+            if cf.prenotazione_id_1 == prenotazione_id
+            else cf.prenotazione_id_1
+        )
+        altre_pren_ids.add(altra_id)
+        
+        # Risolvi il conflitto
         cf.stato_risoluzione = (
             StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_2
             if cf.slot_id_1 == slot_id
-            else StatoRisoluzioneConflitto.RISOLTO_MANUALE
+            else StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
         )
         cf.risolto_il = datetime.now(timezone.utc)
 
+    # ← FLUSH UNA SOLA VOLTA dopo aver processato tutti i conflitti
     db.flush()
+
+    # ← AGGIORNA FLAG CONFLITTI PER LE ALTRE PRENOTAZIONI
+    for altra_pren_id in altre_pren_ids:
+        ConflittoService._aggiorna_flag_conflitti(db, altra_pren_id)
 
     slot_attivi = [s for s in prenotazione.slots if not s.annullato]
 

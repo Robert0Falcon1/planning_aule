@@ -96,7 +96,8 @@ class ConflittoPrenotazione(Base):
     @property
     def is_risolto(self) -> bool:
         """Controlla se il conflitto è risolto"""
-        return self.stato_risoluzione is not None and self.stato_risoluzione != ''
+        # ← FIX: basta controllare se stato_risoluzione è None
+        return self.stato_risoluzione is not None
 
     
     def risolvi(

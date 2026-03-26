@@ -4,8 +4,7 @@
       <h2 class="page-title mb-0">Conflitti</h2>
 
       <!-- Conflitti + numero -->
-      <span v-if="conflittiOrdinati.length" class="badge bg-danger fs-6 ms-1">{{ conflittiOrdinati.length }}</span>
-
+      <span v-if="numeroConflitti" class="badge bg-danger fs-6 ms-1">{{ numeroConflitti }}</span>
 
 
       <div class="ms-auto d-flex gap-2 align-items-center">
@@ -74,166 +73,98 @@
     </div>
 
     <div v-else>
-
       <div class="d-flex flex-column gap-3">
-        <div v-for="c in conflittiOrdinati" :key="c.id" class="card border-0 shadow-sm">
+        <div v-for="gruppo in conflittiRaggruppati" :key="gruppo.chiave" class="card border-0 shadow-sm">
 
-          <!-- Header -->
-          <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
-            <span class="badge bg-danger">Conflitto tra {{
-              nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }} e {{
-                nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
-            <span v-if="c.stato_risoluzione" class="badge bg-success ms-1">
-              {{ messaggioRisoluzione(c) }}
-            </span>
-            <small class="ms-auto text-muted">{{ formatData(c.rilevato_il) }}</small>
-          </div>
-
-          <!-- Corpo: slot in conflitto -->
-          <!-- Corpo: dati comuni + slot in conflitto -->
-          <div class="card-body pb-2">
-            <!-- DATI COMUNI -->
-            <div class="mb-3 p-2 bg-lighter rounded d-flex gap-3 align-items-center flex-wrap">
+          <!-- Header: Dati comuni -->
+          <div class="card-header bg-white">
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+              <span class="badge bg-danger">
+                {{ gruppo.slots.length }} prenotazion{{ gruppo.slots.length > 1 ? 'i' : 'e' }} in conflitto
+              </span>
               <div class="d-flex align-items-center gap-1">
                 <svg class="icon icon-sm text-primary">
                   <use :href="sprites + '#it-map-marker'"></use>
                 </svg>
                 <strong class="small">Sede:</strong>
-                <span class="small">{{ sedeDiAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+                <span class="small">{{ sedeDiAulaFn(gruppo.aula) }}</span>
               </div>
               <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-door-open"></i>
                 <strong class="small pe-1">Aula:</strong>
-                <span :style="getAulaBadgeStyle(nomeAulaFn(infoSlot(c, 1)?.aula_id))"></span>
-                <span class="small">{{ nomeAulaFn(infoSlot(c, 1)?.aula_id) }}</span>
+                <span :style="getAulaBadgeStyle(nomeAulaFn(gruppo.aula))"></span>
+                <span class="small">{{ nomeAulaFn(gruppo.aula) }}</span>
               </div>
               <div class="d-flex align-items-center gap-1">
                 <svg class="icon icon-sm text-primary">
                   <use :href="sprites + '#it-calendar'"></use>
                 </svg>
                 <strong class="small">Data:</strong>
-                <span class="small">{{ formatData(infoSlot(c, 1)?.data) }}</span>
+                <span class="small">{{ formatData(gruppo.data) }}</span>
               </div>
-            </div>
-
-            <!-- PRENOTAZIONI A vs B -->
-            <div class="row g-3 align-items-stretch">
-
-              <!-- Prenotazione A -->
-              <div class="col-md-5">
-                <div class="conflitto-pill pill-a h-100">
-                  <div class="fw-bold mb-2">Prenotazione A</div>
-                  <template v-for="s in [infoSlot(c, 1)]">
-                    <template v-if="s">
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-user'"></use>
-                        </svg>
-                        <span class="small">{{ nomeUtente(prenById(c.prenotazione_id_1)?.richiedente_id) }}</span>
-                      </div>
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-card'"></use>
-                        </svg>
-                        <span class="small">Corso {{ s.corso_id }}</span>
-                      </div>
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-clock'"></use>
-                        </svg>
-                        <span class="small fw-semibold">{{ s.ora_inizio?.slice(0, 5) }} – {{ s.ora_fine?.slice(0, 5)
-                          }}</span>
-                      </div>
-                      <div v-if="s.note" class="mt-2 pt-2 border-top">
-                        <div class="text-muted small fst-italic d-flex align-items-start">
-                          <svg class="icon icon-xs me-1 mt-1 flex-shrink-0">
-                            <use :href="sprites + '#it-note'"></use>
-                          </svg>
-                          <span>{{ s.note }}</span>
-                        </div>
-                      </div>
-                    </template>
-                    <div v-else class="text-muted small">Caricamento...</div>
-                  </template>
-                </div>
-              </div>
-
-              <!-- VS -->
-              <div class="col-md-2 d-flex flex-column align-items-center justify-content-center text-center">
-                <svg class="icon text-danger mb-1">
-                  <use :href="sprites + '#it-error'"></use>
-                </svg>
-                <small class="text-muted fw-semibold">vs</small>
-              </div>
-
-              <!-- Prenotazione B -->
-              <div class="col-md-5">
-                <div class="conflitto-pill pill-b h-100">
-                  <div class="fw-bold mb-2">Prenotazione B</div>
-                  <template v-for="s in [infoSlot(c, 2)]">
-                    <template v-if="s">
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-user'"></use>
-                        </svg>
-                        <span class="small">{{ nomeUtente(prenById(c.prenotazione_id_2)?.richiedente_id) }}</span>
-                      </div>
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-card'"></use>
-                        </svg>
-                        <span class="small">Corso {{ s.corso_id }}</span>
-                      </div>
-                      <div class="mb-1">
-                        <svg class="icon icon-xs me-1">
-                          <use :href="sprites + '#it-clock'"></use>
-                        </svg>
-                        <span class="small fw-semibold">{{ s.ora_inizio?.slice(0, 5) }} – {{ s.ora_fine?.slice(0, 5)
-                          }}</span>
-                      </div>
-                      <div v-if="s.note" class="mt-2 pt-2 border-top">
-                        <div class="text-muted small fst-italic d-flex align-items-start">
-                          <svg class="icon icon-xs me-1 mt-1 flex-shrink-0">
-                            <use :href="sprites + '#it-note'"></use>
-                          </svg>
-                          <span>{{ s.note }}</span>
-                        </div>
-                      </div>
-                    </template>
-                    <div v-else class="text-muted small">Caricamento...</div>
-                  </template>
-                </div>
-              </div>
+              <small class="ms-auto text-muted">{{ formatData(gruppo.rilevato_il) }}</small>
             </div>
           </div>
 
-          <!-- Azioni risoluzione -->
-          <div v-if="!c.stato_risoluzione" class="card-footer bg-white">
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-              <small class="text-muted me-1">Risolvi:</small>
-
-              <button class="btn btn-sm btn-outline-warning" @click="risolvi(c.id, 'mantieni_1')"
-                :disabled="risolvendo === c.id" title="Mantieni A, annulla B">
-                Mantieni A, annulla B
-              </button>
-              <button class="btn btn-sm btn-outline-warning" @click="risolvi(c.id, 'mantieni_2')"
-                :disabled="risolvendo === c.id" title="Mantieni B, annulla A">
-                Mantieni B, annulla A
-              </button>
-              <button class="btn btn-sm btn-outline-danger" @click="risolvi(c.id, 'elimina_entrambe')"
-                :disabled="risolvendo === c.id" title="Annulla entrambe le prenotazioni in conflitto">
-                Annulla entrambe le prenotazioni
-              </button>
-              <span v-if="risolvendo === c.id" class="spinner-border spinner-border-sm align-self-center ms-2"></span>
+          <!-- Corpo: Lista slot in conflitto -->
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 40px;"></th>
+                    <th>Utente</th>
+                    <th>Corso ID</th>
+                    <th>Orario</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="slot in gruppo.slots" :key="slot.slotId"
+                    :class="{ 'table-success': slotSelezionati[gruppo.chiave] === slot.slotId }">
+                    <td class="text-center">
+                      <input type="radio" :name="`gruppo-${gruppo.chiave}`" :value="slot.slotId"
+                        v-model="slotSelezionati[gruppo.chiave]" class="form-check-input" />
+                    </td>
+                    <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-user'"></use>
+                      </svg>
+                      <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
+                    </td>
+                    <td>
+                      <code class="small">{{ slot.corsoId }}</code>
+                    </td>
+                    <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-clock'"></use>
+                      </svg>
+                      <span class="small fw-semibold">{{ slot.oraInizio }} – {{ slot.oraFine }}</span>
+                    </td>
+                    <td>
+                      <span v-if="slot.note" class="small text-muted fst-italic">{{ slot.note }}</span>
+                      <span v-else class="text-muted small">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="mt-2">
+          </div>
+
+          <!-- Footer: Azioni -->
+          <div class="card-footer bg-white">
+            <div class="d-flex align-items-center gap-2">
               <small class="text-muted">
                 <svg class="icon icon-xs me-1">
                   <use :href="sprites + '#it-info-circle'"></use>
                 </svg>
-                Le azioni annullano solo lo slot in conflitto.
-                Per le prenotazioni ricorrenti, gli altri slot rimangono attivi.
+                Seleziona quale prenotazione mantenere. Le altre verranno annullate.
               </small>
+              <button class="btn btn-sm btn-success ms-auto" @click="risolviGruppo(gruppo)"
+                :disabled="!slotSelezionati[gruppo.chiave] || risolvendo === gruppo.chiave">
+                <span v-if="risolvendo === gruppo.chiave" class="spinner-border spinner-border-sm me-1"></span>
+                Risolvi conflitto
+              </button>
             </div>
           </div>
 
@@ -246,7 +177,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/stores/ui'
-import { getConflitti, risolviConflitto, getMiePrenotazioni, getPrenotazione } from '@/api/prenotazioni'
+import { getConflitti, getPrenotazione, annullaSlot } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
@@ -261,7 +192,7 @@ const uiStore = useUiStore()
 const utenti = ref([])
 const loading = ref(false)
 const conflitti = ref([])
-const prenotazioni = ref([])   // cache prenotazioni per lookup
+const prenotazioni = ref([])
 const sedi = ref([])
 const filtroSede = ref('')
 const filtroUtenti = ref([])
@@ -269,7 +200,9 @@ const soloAttivi = ref(true)
 const risolvendo = ref(null)
 const { sedeDefaultFiltro } = useSedePerFiltro()
 
-// ── Lookup prenotazione per id ────────────────────────────────────────────────
+// Per ogni gruppo, memorizza lo slot selezionato
+const slotSelezionati = ref({})
+
 const mappaPrenotazioni = computed(() =>
   Object.fromEntries(prenotazioni.value.map(p => [p.id, p]))
 )
@@ -279,7 +212,6 @@ const mappaUtenti = computed(() =>
   Object.fromEntries(utenti.value.map(u => [u.id, u]))
 )
 
-// ── Opzioni utenti ordinate alfabeticamente ──────────────────────────────────
 const opzioniUtenti = computed(() =>
   utenti.value
     .map(u => ({
@@ -289,55 +221,97 @@ const opzioniUtenti = computed(() =>
     .sort((a, b) => a.label.localeCompare(b.label))
 )
 
-// ── Conflitti ordinati cronologicamente e filtrati per utenti ────────────────
-const conflittiOrdinati = computed(() => {
+// Raggruppa conflitti per aula + data (indipendentemente dagli utenti)
+const conflittiRaggruppati = computed(() => {
   let lista = conflitti.value
 
-  // Filtra per utenti selezionati (esattamente quei due)
-  if (filtroUtenti.value.length === 2) {
-    const [id1, id2] = filtroUtenti.value
+  // Filtra per utenti selezionati
+  if (filtroUtenti.value.length >= 1) {
     lista = lista.filter(c => {
       const richA = prenById(c.prenotazione_id_1)?.richiedente_id
       const richB = prenById(c.prenotazione_id_2)?.richiedente_id
-      // Mostra solo conflitti tra esattamente questi due utenti
-      return (richA === id1 && richB === id2) || (richA === id2 && richB === id1)
-    })
-  } else if (filtroUtenti.value.length === 1) {
-    // Se solo 1 utente: mostra tutti i suoi conflitti con chiunque
-    const idUtente = filtroUtenti.value[0]
-    lista = lista.filter(c => {
-      const richA = prenById(c.prenotazione_id_1)?.richiedente_id
-      const richB = prenById(c.prenotazione_id_2)?.richiedente_id
-      return richA === idUtente || richB === idUtente
+      return filtroUtenti.value.includes(richA) || filtroUtenti.value.includes(richB)
     })
   }
 
-  // Ordina cronologicamente
-  return [...lista].sort((a, b) => {
-    const dataA = infoSlot(a, 1)?.data || infoSlot(a, 2)?.data || '9999-12-31'
-    const dataB = infoSlot(b, 1)?.data || infoSlot(b, 2)?.data || '9999-12-31'
-    return dataA.localeCompare(dataB)
-  })
+  // Raggruppa per: aula + data
+  const gruppi = new Map()
+
+  for (const c of lista) {
+    const slot1 = infoSlot(c, 1)
+    const slot2 = infoSlot(c, 2)
+    const aula = slot1?.aula_id || slot2?.aula_id
+    const data = slot1?.data || slot2?.data
+
+    if (!aula || !data) continue
+
+    const chiave = `${aula}_${data}`
+
+    if (!gruppi.has(chiave)) {
+      gruppi.set(chiave, {
+        chiave,
+        aula,
+        data,
+        slotsInConflitto: new Map(), // Map<slotId, slotInfo>
+        conflittiIds: [],
+        rilevato_il: c.rilevato_il,
+      })
+    }
+
+    const gruppo = gruppi.get(chiave)
+    gruppo.conflittiIds.push(c.id)
+
+    // Aggiungi entrambi gli slot al gruppo (se non già presenti)
+    if (slot1 && !gruppo.slotsInConflitto.has(slot1.id)) {
+      gruppo.slotsInConflitto.set(slot1.id, {
+        slotId: slot1.id,
+        prenId: c.prenotazione_id_1,
+        richiedenteId: prenById(c.prenotazione_id_1)?.richiedente_id,
+        corsoId: slot1.corso_id,
+        oraInizio: slot1.ora_inizio?.slice(0, 5),
+        oraFine: slot1.ora_fine?.slice(0, 5),
+        note: slot1.note || '',
+      })
+    }
+
+    if (slot2 && !gruppo.slotsInConflitto.has(slot2.id)) {
+      gruppo.slotsInConflitto.set(slot2.id, {
+        slotId: slot2.id,
+        prenId: c.prenotazione_id_2,
+        richiedenteId: prenById(c.prenotazione_id_2)?.richiedente_id,
+        corsoId: slot2.corso_id,
+        oraInizio: slot2.ora_inizio?.slice(0, 5),
+        oraFine: slot2.ora_fine?.slice(0, 5),
+        note: slot2.note || '',
+      })
+    }
+  }
+
+  // Converti Map in array e ordina cronologicamente
+  return Array.from(gruppi.values())
+    .map(g => ({
+      ...g,
+      slots: Array.from(g.slotsInConflitto.values())
+        .sort((a, b) => a.oraInizio.localeCompare(b.oraInizio))
+    }))
+    .sort((a, b) => a.data.localeCompare(b.data))
 })
 
-// ── Info slot specifico dal conflitto ─────────────────────────────────────────
-// c.slot_id_1 / c.slot_id_2 → cerca nello slot array della prenotazione
+const numeroConflitti = computed(() => conflittiRaggruppati.value.length)
+
 function infoSlot(c, quale) {
   const prenId = quale === 1 ? c.prenotazione_id_1 : c.prenotazione_id_2
   const slotId = quale === 1 ? c.slot_id_1 : c.slot_id_2
   const pren = prenById(prenId)
   if (!pren) return null
 
-  // Se abbiamo lo slot_id specifico, usalo
   if (slotId) {
     const slot = pren.slots?.find(s => s.id === slotId)
     if (slot) return slot
   }
-  // Fallback: primo slot non annullato
   return pren.slots?.find(s => !s.annullato) || pren.slots?.[0] || null
 }
 
-// ── Caricamento ───────────────────────────────────────────────────────────────
 async function carica() {
   loading.value = true
   try {
@@ -349,11 +323,7 @@ async function carica() {
     if (Array.isArray(dataConflitti)) conflitti.value = dataConflitti
     else if (dataConflitti?.items) conflitti.value = dataConflitti.items
     else conflitti.value = []
-    console.log('CONFLITTI:', JSON.stringify(conflitti.value.map(c => ({
-      id: c.id,
-      stato_risoluzione: c.stato_risoluzione,
-      tipo: typeof c.stato_risoluzione
-    })), null, 2))
+
     const prenIds = [...new Set(
       conflitti.value.flatMap(c => [c.prenotazione_id_1, c.prenotazione_id_2])
     )]
@@ -368,6 +338,9 @@ async function carica() {
       prenotazioni.value = []
     }
 
+    // Reset selezioni
+    slotSelezionati.value = {}
+
   } catch (e) {
     console.warn('Conflitti:', e.message)
     conflitti.value = []
@@ -376,23 +349,52 @@ async function carica() {
   }
 }
 
-async function risolvi(id, azione) {
-  if (!id) return
-  risolvendo.value = id
+async function risolviGruppo(gruppo) {
+  const slotDaMantenere = slotSelezionati.value[gruppo.chiave]
+
+  if (!slotDaMantenere) {
+    uiStore.errore('Seleziona quale slot mantenere')
+    return
+  }
+
+  risolvendo.value = gruppo.chiave
+
   try {
-    await risolviConflitto(id, azione)
+    // Annulla tutti gli altri slot
+    const slotsAnnullare = gruppo.slots.filter(s => s.slotId !== slotDaMantenere)
 
-    // Messaggio di successo
-    let msg = 'Conflitto risolto con successo'
-    if (azione === 'mantieni_1') msg = '✓ Conflitto risolto: mantenuta prenotazione A'
-    else if (azione === 'mantieni_2') msg = '✓ Conflitto risolto: mantenuta prenotazione B'
-    else if (azione === 'elimina_entrambe') msg = '✓ Conflitto risolto: entrambe le prenotazioni annullate'
+    // Annulla gli slot uno alla volta e gestisci errori
+    for (const slot of slotsAnnullare) {
+      try {
+        await annullaSlot(slot.prenId, slot.slotId)
+      } catch (e) {
+        console.warn(`Slot ${slot.slotId} già annullato o errore:`, e.message)
+        // Continua comunque con gli altri slot
+      }
+    }
 
-    uiStore.successo(msg)
+    // ← NON chiamare risolviConflitto - il backend gestisce automaticamente
+    //   la risoluzione quando annulli gli slot (vedi prenotazioni.py annulla_slot)
+
+    const slotMantenuto = gruppo.slots.find(s => s.slotId === slotDaMantenere)
+    const utente = mappaUtenti.value[slotMantenuto?.richiedenteId]
+    const nomeCompleto = utente ? `${utente.nome} ${utente.cognome}` : 'utente'
+    
+    uiStore.successo(`✓ Conflitto risolto: mantenuto slot di ${nomeCompleto}`)
+
+    // ← REFRESH COMPLETO IMMEDIATO
+    risolvendo.value = null
+    
+    // Svuota completamente i dati
+    conflitti.value = []
+    prenotazioni.value = []
+    slotSelezionati.value = {}
+    
+    // Ricarica tutto da zero
     await carica()
+    
   } catch (e) {
     uiStore.errore(e.message)
-  } finally {
     risolvendo.value = null
   }
 }
@@ -412,23 +414,6 @@ onMounted(async () => {
 function nomeUtente(id) {
   const u = mappaUtenti.value[id]
   return u ? `${u.nome} ${u.cognome}` : `#${id}`
-}
-
-// ── Messaggio risoluzione conflitto ──────────────────────────────────────────
-function messaggioRisoluzione(c) {
-  if (!c.stato_risoluzione) return null
-
-  const stato = c.stato_risoluzione.toUpperCase()
-
-  if (stato.includes('MANTENUTA_1')) {
-    return '✓ Mantenuta A'
-  } else if (stato.includes('MANTENUTA_2')) {
-    return '✓ Mantenuta B'
-  } else if (stato.includes('ELIMINATE_ENTRAMBE')) {
-    return '✗ Entrambe annullate'
-  }
-
-  return 'Risolto'
 }
 </script>
 
