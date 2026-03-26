@@ -5,13 +5,13 @@
         <!-- Colonna sinistra: Saluto e info -->
         <div class="col-12 col-lg-7">
           <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
-          
+
           <!-- Citazione del giorno -->
           <p class="mb-2">
             <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span>
             <span class="text-muted">({{ citazione.author }})</span>
           </p>
-          
+
           <p class="text-muted mb-0">Riepilogo di oggi — <span class="fw-600 text-primary">{{ oggiLabel }}</span>:</p>
         </div>
 
@@ -33,18 +33,51 @@
     </div>
 
     <!-- KPI -->
+    <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.totali)" label="Prenotazioni totali" icon="it-calendar" color="primary" />
+        <StatCard :value="String(kpi.totali)" color="primary">
+          <template #label>
+            Prenotazioni totali
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Tutte le mie prenotazioni</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.oggi)" label="Prenotazioni oggi" icon="it-check-circle" color="success" />
+        <StatCard :value="String(kpi.oggi)" color="success">
+          <template #label>
+            Prenotazioni oggi
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Mie prenotazioni del giorno</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.conflitti)" label="Conflitti" icon="it-error" color="danger" />
+        <StatCard :value="String(kpi.conflitti)" color="danger">
+          <template #label>
+            Conflitti
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Prenotazioni sovrapposte</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.prossimi7)" label="Prenotazioni prossimi 7 gg" icon="it-calendar" color="info" />
+        <StatCard :value="String(kpi.prossimi7)" color="info">
+          <template #label>
+            Prenotazioni prossimi 7 gg
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Mie prenotazioni<br>prossima settimana</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
     </div>
 
@@ -393,5 +426,26 @@ onMounted(async () => {
   font-size: .6rem;
   font-weight: 600;
   opacity: .85;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.kpi-card {
+  border-radius: 12px;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.kpi-label {
+  font-size: .8rem;
+  color: #666;
+  margin-top: .25rem;
 }
 </style>

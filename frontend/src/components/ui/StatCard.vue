@@ -1,32 +1,37 @@
 <template>
-  <div class="card border-0 shadow-sm h-100">
-    <div class="card-body d-flex align-items-center gap-3">
-      <div class="stat-icon rounded-3 p-3" :class="`bg-${color}-subtle`">
-        <svg class="icon" :class="`icon-${color}`">
-          <use :href="sprites + '#${icon}'"></use>
-        </svg>
+  <div class="card border-0 shadow-sm kpi-card">
+    <div class="card-body">
+      <div class="kpi-value" :class="`text-${color}`">{{ value }}</div>
+      <div class="kpi-label">
+        <slot name="label">{{ label }}</slot>
       </div>
-      <div>
-        <div class="stat-value">{{ value }}</div>
-        <div class="stat-label text-muted">{{ label }}</div>
-        <slot name="extra" />
-      </div>
+      <slot name="extra" />
     </div>
   </div>
 </template>
 
 <script setup>
-import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 defineProps({
   value: { type: [String, Number], required: true },
-  label: { type: String, required: true },
+  label: { type: String, default: '' },
   icon:  { type: String, default: 'it-info-circle' },
   color: { type: String, default: 'primary' },
 })
 </script>
 
 <style scoped>
-.stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
-.stat-label { font-size: .8rem; }
-.stat-icon  { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpi-card {
+  border-radius: 12px;
+}
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.kpi-label {
+  font-size: .8rem;
+  color: #666;
+  margin-top: .25rem;
+  font-weight: 400;
+}
 </style>

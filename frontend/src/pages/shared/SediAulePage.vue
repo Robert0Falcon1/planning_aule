@@ -55,7 +55,7 @@
                   :class="aulaLibera(aula.id) ? 'bg-success' : 'bg-warning text-dark'">
                   {{ aulaLibera(aula.id) ? 'Libera' : 'Prenotata' }}
                 </span>
-                <span v-else class="badge rounded-pill bg-secondary">Non disponibile</span>
+                <span v-else class="badge rounded-pill bg-secondary">Inattiva</span>
               </div>
 
               <div class="card-body pt-2 mx-2">

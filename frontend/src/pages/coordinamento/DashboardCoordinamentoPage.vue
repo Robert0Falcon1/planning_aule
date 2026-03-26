@@ -32,71 +32,52 @@
       </div>
     </div>
 
+    <!-- KPI -->
     <!-- KPI row -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm kpi-card">
-          <div class="card-body">
-            <div class="kpi-value text-primary">{{ kpi.prenotazioniOggi }}</div>
-            <div class="kpi-label">
-              Prenotazioni oggi
-              <span class="info-popover">
-                <i class="bi bi-info-circle"></i>
-                <span class="popover-content">
-                  Questo numero specifica le prenotazioni del giorno
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
+        <StatCard :value="String(kpi.prenotazioniOggi)" color="primary">
+          <template #label>
+            Prenotazioni oggi
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Prenotazioni del giorno</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm kpi-card">
-          <div class="card-body">
-            <div class="kpi-value text-success">{{ kpi.auleOccupateOggi }}</div>
-            <div class="kpi-label">
-              Aule occupate oggi
-              <span class="info-popover">
-                <i class="bi bi-info-circle"></i>
-                <span class="popover-content">
-                  Indica il numero di aule con almeno una prenotazione nella giornata di oggi
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
+        <StatCard :value="String(kpi.auleOccupateOggi)" color="success">
+          <template #label>
+            Aule occupate oggi
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Aule con almeno una prenotazione oggi</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm kpi-card">
-          <div class="card-body">
-            <div class="kpi-value text-warning">{{ kpi.conflittiAperti }}</div>
-            <div class="kpi-label">
-              Conflitti aperti
-              <span class="info-popover">
-                <i class="bi bi-info-circle"></i>
-                <span class="popover-content">
-                  Le prenotazioni sovrapposte da risolvere
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
+        <StatCard :value="String(kpi.conflittiAperti)" color="danger">
+          <template #label>
+            Conflitti aperti
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Prenotazioni sovrapposte</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <div class="card border-0 shadow-sm kpi-card">
-          <div class="card-body">
-            <div class="kpi-value text-info">{{ kpi.utentiAttivi }}</div>
-            <div class="kpi-label">
-              Utenti attivi
-              <span class="info-popover">
-                <i class="bi bi-info-circle"></i>
-                <span class="popover-content">
-                  Numero totale di utenti abilitati ad accedere al sistema
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
+        <StatCard :value="String(kpi.utentiAttivi)" color="info">
+          <template #label>
+            Utenti attivi
+            <span class="info-popover">
+              <i class="bi bi-info-circle"></i>
+              <span class="popover-content">Utenti abilitati ad accedere al sistema</span>
+            </span>
+          </template>
+        </StatCard>
       </div>
     </div>
 
@@ -105,14 +86,20 @@
       <div class="col-12">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <h5 class="card-title mb-3">Accesso rapido</h5>
+            <h5 class="card-title mb-3">Azioni rapide</h5>
 
             <div class="d-flex flex-wrap gap-2">
-              <RouterLink :to="{ name: 'SituazioneOggi' }" class="btn btn-outline-primary">
+              <RouterLink :to="{ name: 'SituazioneOggi' }" class="btn btn-primary">
                 <svg class="icon icon-sm me-1">
                   <use :href="sprites + '#it-calendar'"></use>
                 </svg>
                 Situazione Oggi
+              </RouterLink>
+              <RouterLink :to="{ name: 'Calendario' }" class="btn btn-outline-secondary">
+                <svg class="icon icon-sm me-1">
+                  <use :href="sprites + '#it-calendar'"></use>
+                </svg>
+                Calendario
               </RouterLink>
               <RouterLink :to="{ name: 'Conflitti' }" class="btn btn-outline-danger">
                 <svg class="icon icon-sm me-1">
@@ -131,12 +118,6 @@
                   <use :href="sprites + '#it-settings'"></use>
                 </svg>
                 Sedi/Aule
-              </RouterLink>
-              <RouterLink :to="{ name: 'GestioneUtenti' }" class="btn btn-outline-secondary">
-                <svg class="icon icon-sm me-1">
-                  <use :href="sprites + '#it-user'"></use>
-                </svg>
-                Gestione Utenti
               </RouterLink>
             </div>
           </div>
@@ -189,6 +170,7 @@
 </template>
 
 <script setup>
+import StatCard from '@/components/ui/StatCard.vue'
 import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
