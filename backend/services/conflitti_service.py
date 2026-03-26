@@ -32,6 +32,12 @@ class ConflittoService:
         ora_fine: time,
         exclude_booking_id: Optional[int] = None
     ) -> List[tuple[Prenotazione, SlotOrario]]:
+        
+        print(f"🔍 FIND_CONFLICTING_SLOTS:")
+        print(f"  aula_id={aula_id}, data={data}")
+        print(f"  ora_inizio={ora_inizio}, ora_fine={ora_fine}")
+        print(f"  exclude_booking_id={exclude_booking_id}")
+        
         query = (
             db.query(Prenotazione, SlotOrario)
             .join(SlotOrario, SlotOrario.prenotazione_id == Prenotazione.id)
@@ -48,13 +54,23 @@ class ConflittoService:
         if exclude_booking_id:
             query = query.filter(Prenotazione.id != exclude_booking_id)
 
+        all_results = query.all()
+        print(f"  Trovati {len(all_results)} slot candidati:")
+        for pren, slot in all_results:
+            print(f"    - Pren {pren.id}, Slot {slot.id}: {slot.ora_inizio}-{slot.ora_fine}")
+
         results = []
-        for pren, slot in query.all():
+        for pren, slot in all_results:
             if ConflittoService.check_time_overlap(
                 ora_inizio, ora_fine,
                 slot.ora_inizio, slot.ora_fine
             ):
                 results.append((pren, slot))
+                print(f"  ✓ OVERLAP con Pren {pren.id}, Slot {slot.id}")
+            else:
+                print(f"  ✗ NO overlap con Pren {pren.id}, Slot {slot.id}")
+        
+        print(f"  Totale conflitti trovati: {len(results)}")
         return results
 
 
@@ -85,8 +101,13 @@ class ConflittoService:
                 exclude_booking_id=prenotazione.id
             )
 
+            print(f"📍 DETECT_AND_RECORD per slot {slot.id} (pren {prenotazione.id}):")
+            print(f"   Trovate {len(coppie_in_conflitto)} coppie in conflitto")
+
             # Raccogli tutti gli slot in conflitto (incluso quello nuovo)
             tutti_slot_in_conflitto = [slot] + [conflicting_slot for _, conflicting_slot in coppie_in_conflitto]
+            
+            print(f"   tutti_slot_in_conflitto: {[s.id for s in tutti_slot_in_conflitto]}")
             
             # Genera TUTTE le coppie possibili
             for i in range(len(tutti_slot_in_conflitto)):
@@ -98,11 +119,16 @@ class ConflittoService:
                     s1 = min(slot_a.id, slot_b.id)
                     s2 = max(slot_a.id, slot_b.id)
 
-                    # Verifica se esiste già
+                    print(f"   Coppia slot {s1} <-> {s2}")
+
+                    # Verifica se esiste già UN CONFLITTO ATTIVO (non risolto)
                     existing = db.query(ConflittoPrenotazione).filter(
                         ConflittoPrenotazione.slot_id_1 == s1,
                         ConflittoPrenotazione.slot_id_2 == s2,
+                        ConflittoPrenotazione.stato_risoluzione == None  # ← AGGIUNGI QUESTO
                     ).first()
+
+                    print(f"     Existing? {existing.id if existing else 'NO'}")
 
                     if not existing:
                         # Ordina per ID prenotazione
@@ -112,6 +138,8 @@ class ConflittoService:
                         else:
                             id1, id2 = slot_b.prenotazione_id, slot_a.prenotazione_id
                             sid1, sid2 = slot_b.id, slot_a.id
+
+                        print(f"     CREANDO conflitto: pren {id1}<->{id2}, slot {sid1}<->{sid2}")
 
                         conflitto = ConflittoPrenotazione(
                             prenotazione_id_1=id1,
@@ -144,8 +172,9 @@ class ConflittoService:
                 existing = db.query(ConflittoPrenotazione).filter(
                     ConflittoPrenotazione.slot_id_1 == s1,
                     ConflittoPrenotazione.slot_id_2 == s2,
+                    ConflittoPrenotazione.stato_risoluzione == None  # ← AGGIUNGI QUESTO
                 ).first()
-
+                
                 if not existing:
                     conflitto = ConflittoPrenotazione(
                         prenotazione_id_1=prenotazione.id,
@@ -162,6 +191,7 @@ class ConflittoService:
             if prenotazione.richiesta:
                 prenotazione.richiesta.ha_conflitti = True
 
+        print(f"✅ TOTALE CONFLITTI CREATI: {len(conflitti_creati)}")
         db.flush()
         return conflitti_creati
 

@@ -154,37 +154,21 @@ watch(() => props.aperta, async (val) => {
 
   const s = props.slot
   const sedeId = props.aulaMap?.[s.aulaId]?.sede_id
-  console.log('🔍 DOPO FIX:')
-  console.log('  sedeId:', sedeId, typeof sedeId)
-  console.log('  aulaMap[21]:', props.aulaMap?.[21])
 
-  // ← DEBUG
-  console.log('🔍 DEBUG MODAL:')
-  console.log('  slot.aulaId:', s.aulaId)
-  console.log('  aulaMap:', props.aulaMap)
-  console.log('  sedeId ricavato:', sedeId, typeof sedeId)
-  console.log('  props.sedi:', props.sedi)
-
-  // ← CALCOLA SEDI DA MOSTRARE
+  // Calcola sedi da mostrare
   const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
   const sediConAuleAttive = (props.sedi || []).filter(sede =>
     auleAttive.some(aula => aula.sede_id === sede.id)
   )
 
-  console.log('  sediConAuleAttive:', sediConAuleAttive)
-
   // Aggiungi la sede corrente anche se non ha aule attive
-  // ← USA tutteLeSedi invece di props.sedi per trovare QUALSIASI sede
   const sedeCorrente = tutteLeSedi.value.find(sede => Number(sede.id) === Number(sedeId))
-  console.log('  sedeCorrente trovata:', sedeCorrente)
-
+  
   if (sedeCorrente && !sediConAuleAttive.find(s => s.id === sedeCorrente.id)) {
     sediMostrate.value = [sedeCorrente, ...sediConAuleAttive]
   } else {
     sediMostrate.value = sediConAuleAttive
   }
-
-  console.log('  sediMostrate finale:', sediMostrate.value)
 
   Object.assign(form, {
     sede_id: sedeId,
@@ -195,9 +179,6 @@ watch(() => props.aperta, async (val) => {
     ora_fine: s.oraFine.slice(0, 5),
     note: s.note || '',
   })
-
-  console.log('  form.sede_id assegnato:', form.sede_id, typeof form.sede_id)
-  // ← FINE DEBUG
 
   if (sedeId) {
     caricandoAule.value = true
@@ -242,6 +223,20 @@ function valida() {
 
 async function submit() {
   if (!valida()) return
+  
+  // ← DEBUG CHIAMATA API
+  console.log('🔍 SUBMIT DEBUG:')
+  console.log('  prenId:', props.slot.prenId)
+  console.log('  slotId:', props.slot.slotId)
+  console.log('  payload:', {
+    aula_id: form.aula_id,
+    corso_id: form.corso_id,
+    data: form.data,
+    ora_inizio: form.ora_inizio,
+    ora_fine: form.ora_fine,
+    note: form.note || null,
+  })
+  
   loading.value = true
   esito.value = null
   try {
@@ -257,6 +252,7 @@ async function submit() {
     emit('salvato')
     setTimeout(chiudi, 1200)
   } catch (e) {
+    console.error('❌ ERRORE MODIFICA SLOT:', e)
     esito.value = { tipo: 'err', msg: e.message }
   } finally {
     loading.value = false

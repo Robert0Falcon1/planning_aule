@@ -168,23 +168,31 @@
               Nessuna tua prenotazione nei prossimi 7 giorni.
             </div>
             <ul v-else class="list-unstyled mb-0">
-              <li v-for="s in prossimi" :key="s.key" class="d-flex align-items-start gap-2 py-2 border-bottom"
-                :class="{ 'bg-danger bg-opacity-10 px-3 py-4': s.haConflitti }">
-                <div class="cal-badge text-center flex-shrink-0" :style="s.haConflitti ? 'background:#dc3545' : ''">
-                  <span class="cal-badge-day pt-2">{{ new Date(s.data + 'T00:00:00').getDate() }}</span>
-                  <span class="cal-badge-month">{{ meseBreve(s.data) }}</span>
+              <li v-for="s in prossimi" :key="s.key" class="d-flex align-items-start gap-2 px-3 py-3 border-bottom"
+                :class="{ 'bg-danger bg-opacity-10': s.haConflitti }">
+
+                <div class="d-flex flex-column justify-content-center">
+                  <div class="d-flex justify-content-center">
+                    <div class="cal-badge text-center flex-shrink-0 mb-2"
+                      :style="s.haConflitti ? 'background:#dc3545' : ''">
+                      <span class="cal-badge-day pt-2">{{ new Date(s.data + 'T00:00:00').getDate() }}</span>
+                      <span class="cal-badge-month">{{ meseBreve(s.data) }}</span>
+                    </div>
+                  </div>
+                  <span v-if="s.haConflitti"
+                    class="badge bg-danger align-self-center flex-shrink-0 d-flex justify-content-center align-items-center">
+                    <svg class="icon icon-xs icon-white mx-1">
+                      <use :href="sprites + '#it-error'"></use>
+                    </svg>
+                  </span>
                 </div>
+
                 <div class="small overflow-hidden flex-grow-1">
                   <div class="fw-semibold text-truncate">{{ nomeAulaFn(s.aulaId) }}</div>
                   <div class="text-muted">{{ s.oraInizio }} – {{ s.oraFine }}</div>
                   <div class="text-muted">Corso {{ s.corsoId }}</div>
                 </div>
-                <span v-if="s.haConflitti"
-                  class="badge bg-danger align-self-center flex-shrink-0 d-flex justify-content-center align-items-center">
-                  <svg class="icon icon-xs icon-white me-2">
-                    <use :href="sprites + '#it-error'"></use>
-                  </svg> Conflitto
-                </span>
+
               </li>
             </ul>
             <RouterLink :to="{ name: 'Calendario' }" class="btn btn-outline-primary btn-sm mt-3 w-100">

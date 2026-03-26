@@ -313,7 +313,7 @@ def modifica_slot(
             else cf.prenotazione_id_1
         )
         altre_pren_ids.add(altra_id)
-        cf.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANUALE
+        cf.stato_risoluzione = StatoRisoluzioneConflitto.RISOLTO_MANTENUTA_1
         cf.risolto_il = datetime.now(timezone.utc)
         cf.note_risoluzione = "Chiuso automaticamente per modifica slot"
 
