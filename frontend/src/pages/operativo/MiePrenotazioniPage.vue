@@ -106,7 +106,7 @@
                 <th>Aula</th>
                 <th>Corso</th>
                 <th>Note</th>
-                <th v-if="authStore.isCoordinamento">Prenotato&nbsp;da</th>
+                <!-- <th v-if="authStore.isCoordinamento">Prenotato&nbsp;da</th> -->
                 <th>Conflitti</th>
                 <th class="text-end">Azioni</th>
               </tr>
@@ -156,12 +156,12 @@
                 </td>
 
                 <!-- Colonna richiedente (solo COORDINAMENTO) -->
-                <td v-if="authStore.isCoordinamento">
+                <!-- <td v-if="authStore.isCoordinamento">
                   <svg class="icon icon-xs me-1">
                     <use :href="sprites + '#it-user'"></use>
                   </svg>
                   <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
-                </td>
+                </td> -->
 
                 <td>
                   <span v-if="slot.haConflitti" class="badge bg-danger d-flex justify-content-center width-fit-content">

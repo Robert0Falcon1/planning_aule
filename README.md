@@ -21,6 +21,9 @@ cd frontend
 npm run dev
 (http://localhost:5173)
 
+
+clear(localStorage)
+
 <!--
 simone.dardanello_lav@IPA
 RamCosa-4926 
