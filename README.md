@@ -20,3 +20,9 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --log-con
 cd frontend
 npm run dev
 (http://localhost:5173)
+
+
+<!--
+simone.dardanello_lav@IPA
+RamCosa-4926 
+-->

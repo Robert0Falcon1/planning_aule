@@ -58,6 +58,20 @@
 }
 */
 
+.filter-invert{
+    filter: invert(1);
+}
+
+.card-header {
+    border-top: none;
+    border-bottom: none;
+}
+
+.card-footer{
+    border-top: none;
+    padding-bottom: 2rem ;
+    border-bottom: var(--bs-card-border-width) solid var(--bs-card-border-color);
+}
 
 .text-primary {
     color: var(--bs-primary) !important;
