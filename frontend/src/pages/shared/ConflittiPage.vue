@@ -487,7 +487,8 @@ async function risolviGruppo(gruppo) {
     const utente = mappaUtenti.value[slotMantenuto?.richiedenteId]
     const nomeCompleto = utente ? `${utente.nome} ${utente.cognome}` : 'utente'
 
-    uiStore.successo(`✓ Conflitto risolto: mantenuto slot di ${nomeCompleto}`)
+    // uiStore.successo(`✓ Conflitto risolto: mantenuto slot di ${nomeCompleto}`)
+    uiStore.successo(`✓ Conflitto risolto`)
 
     // ← REFRESH COMPLETO IMMEDIATO
     risolvendo.value = null

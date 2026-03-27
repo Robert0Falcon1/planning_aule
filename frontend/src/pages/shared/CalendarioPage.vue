@@ -96,8 +96,11 @@
                 <span class="cal-ora-label">{{ String(ora).padStart(2, '0') }}:00</span>
               </div>
             </div>
-            <div v-for="(g, gi) in giorniVista" :key="gi" class="cal-day-col" :class="{ 'is-today': isToday(g) }"
-              :style="{ height: altezzaTotale + 'px' }">
+            <div v-for="(g, gi) in giorniVista" :key="gi" 
+                 class="cal-day-col cal-day-col--clickable" 
+                 :class="{ 'is-today': isToday(g) }"
+                 :style="{ height: altezzaTotale + 'px' }"
+                 @click="vaiNuovaPrenotazione(g)">
               <div v-for="ora in oreGiornata" :key="ora" class="cal-bg-line"
                 :style="{ top: (ora - ORA_INIZIO) * SLOT_H + 'px' }"></div>
               <div class="cal-bg-line cal-bg-line--end" :style="{ top: oreGiornata.length * SLOT_H + 'px' }"></div>
@@ -105,7 +108,9 @@
                 <span class="cal-now-dot"></span>
               </div>
               <div v-for="ev in eventiLayoutGiorno(g)" :key="ev.prenId + '-' + ev.slotIdx" class="cal-ev"
-                :class="coloreEvento(ev)" :style="evStyle(ev)" @mouseenter="e => mostraPopover(e, ev)"
+                :class="coloreEvento(ev)" :style="evStyle(ev)" 
+                @click.stop
+                @mouseenter="e => mostraPopover(e, ev)"
                 @mouseleave="chiudiPopover">
                 <span class="cal-ev-time">{{ ev.oraInizio }}–{{ ev.oraFine }}</span>
                 <span class="cal-ev-title d-flex align-items-center">
@@ -127,15 +132,18 @@
             <div v-for="n in nomiGiorni" :key="n" class="mes-dow">{{ n }}</div>
           </div>
           <div class="mes-body">
-            <div v-for="(cella, ci) in celleMese" :key="ci" class="mes-cell" :class="{
-              'mes-cell--other': !cella.corrente,
-              'mes-cell--today': cella.oggi,
-              'mes-cell--weekend': cella.weekend,
-            }">
+            <div v-for="(cella, ci) in celleMese" :key="ci" 
+                 class="mes-cell mes-cell--clickable" 
+                 :class="{
+                   'mes-cell--other': !cella.corrente,
+                   'mes-cell--today': cella.oggi,
+                   'mes-cell--weekend': cella.weekend,
+                 }"
+                 @click="vaiNuovaPrenotazione(cella.d)">
               <span class="mes-cell-num" :class="cella.oggi ? 'badge bg-primary rounded-circle' : ''">
                 {{ cella.d.getDate() }}
               </span>
-              <div class="mes-events">
+              <div class="mes-events" @click.stop>
                 <div v-for="(ev, ei) in eventiGiornoMese(cella.d).slice(0, 3)" :key="ei" class="mes-event"
                   :class="coloreEvento(ev)" @mouseenter="e => mostraPopover(e, ev)" @mouseleave="chiudiPopover">
                   <span class="text-truncate d-flex align-items-center">
@@ -198,7 +206,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getCalendario, getConflitti } from '@/api/prenotazioni'
@@ -214,6 +222,7 @@ const SLOT_H = 56
 const GAP = 2
 const altezzaTotale = (ORA_FINE - ORA_INIZIO) * SLOT_H
 const route = useRoute()
+const router = useRouter()
 const loading = ref(false)
 const filtroSede = ref('')
 const filtroAula = ref('')
@@ -237,6 +246,15 @@ function dateToISO(d) {
     String(d.getMonth() + 1).padStart(2, '0'),
     String(d.getDate()).padStart(2, '0'),
   ].join('-')
+}
+
+// ← FUNZIONE per andare a Nuova Prenotazione con data preselezionata
+function vaiNuovaPrenotazione(data) {
+  const dataISO = dateToISO(data)
+  router.push({ 
+    name: 'NuovaPrenotazione', 
+    query: { data: dataISO } 
+  })
 }
 
 // Set di slot_id con conflitti NON_RISOLTO.
@@ -600,6 +618,20 @@ onMounted(async () => {
   background: #f8fbff;
 }
 
+/* ← Stile per giorni cliccabili */
+.cal-day-col--clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cal-day-col--clickable:hover {
+  background-color: #f0f7ff !important;
+}
+
+.cal-day-col--clickable.is-today:hover {
+  background-color: #e6f2ff !important;
+}
+
 .cal-bg-line {
   position: absolute;
   left: 0;
@@ -756,6 +788,16 @@ onMounted(async () => {
   overflow: hidden;
 }
 
+/* ← Stile per celle mensili cliccabili */
+.mes-cell--clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mes-cell--clickable:hover {
+  background-color: #f0f7ff !important;
+}
+
 .mes-cell--other {
   background: #f8f9fa;
 }
@@ -766,6 +808,10 @@ onMounted(async () => {
 
 .mes-cell--today {
   background: #f0f5ff;
+}
+
+.mes-cell--today.mes-cell--clickable:hover {
+  background-color: #e6f2ff !important;
 }
 
 .mes-cell--weekend {
