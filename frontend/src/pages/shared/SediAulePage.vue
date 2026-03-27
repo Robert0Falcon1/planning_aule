@@ -88,10 +88,20 @@
                     class="prenotazione-chip">
                     <div class="d-flex flex-column">
                       <div>
-                        <span class="fw-semibold">{{ item.oraInizio }}–{{ item.oraFine }}</span>
+                        <span class="fw-semibold">
+                          <svg class="icon icon-xs me-1">
+                            <use :href="sprites + '#it-clock'"></use>
+                          </svg>
+                          {{ item.oraInizio }}–{{ item.oraFine }}
+                        </span>
                         <span class="ms-2 text-muted small">Corso {{ item.corsoId }}</span>
                       </div>
-                      <div v-if="item.note" class="fst-italic text-muted small mt-1">{{ item.note }}</div>
+                      <div v-if="item.note" class="fst-italic text-muted small mt-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-note'"></use>
+                        </svg>
+                        {{ item.note }}
+                      </div>
                     </div>
                   </div>
 

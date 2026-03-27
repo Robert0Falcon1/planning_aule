@@ -147,6 +147,9 @@
                       <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
                     </td>
                     <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-bookmark'"></use>
+                      </svg>
                       <code class="small">{{ slot.corsoId }}</code>
                     </td>
                     <td>
@@ -156,9 +159,15 @@
                       <span class="small fw-semibold">{{ slot.oraInizio }} – {{ slot.oraFine }}</span>
                     </td>
                     <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-calendar'"></use>
+                      </svg>
                       <span class="small text-muted">{{ formatData(slot.dataCreazione) }}</span>
                     </td>
                     <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-comment'"></use>
+                      </svg>
                       <span v-if="slot.note" class="small text-muted fst-italic">{{ slot.note }}</span>
                       <span v-else class="text-muted small">—</span>
                     </td>

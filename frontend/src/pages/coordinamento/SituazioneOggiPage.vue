@@ -56,7 +56,7 @@
             <use :href="sprites + '#it-map-marker'"></use>
           </svg>
           {{ gruppo.sedeNome }}
-          <span class="badge bg-primary-subtle text-primary ms-2 fw-normal">{{ gruppo.slots.length }}
+          <span class="badge bg-primary-subtle text-primary fw-normal ps-0">- {{ gruppo.slots.length }}
             Prenotazioni</span>
         </h5>
         <div class="card border-0 shadow-sm">
@@ -65,7 +65,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Aula</th>
-                  <th>Corso&nbsp;ID</th>
+                  <th>Corso</th>
                   <th>Orario</th>
                   <th>Stato</th>
                 </tr>
@@ -78,8 +78,18 @@
                       {{ nomeAulaFn(slot.aulaId) }}
                     </div>
                   </td>
-                  <td><code class="small">{{ slot.corsoId }}</code></td>
-                  <td class="text-nowrap">{{ slot.oraInizio }} – {{ slot.oraFine }}</td>
+                  <td>
+                    <svg class="icon icon-xs me-1">
+                      <use :href="sprites + '#it-bookmark'"></use>
+                    </svg>
+                    <code class="small">{{ slot.corsoId }}</code>
+                  </td>
+                  <td class="text-nowrap">
+                    <svg class="icon icon-xs me-1">
+                      <use :href="sprites + '#it-clock'"></use>
+                    </svg>
+                    {{ slot.oraInizio }} – {{ slot.oraFine }}
+                  </td>
                   <td>
                     <span class="badge" :class="badgeStato(slot)">{{ statoLabel(slot) }}</span>
                   </td>
@@ -140,7 +150,7 @@ const slotDelGiorno = computed(() => {
       const slot = p.slots[si]
       // ← AGGIUNGI CONTROLLO ANNULLATO
       if (!slot?.data || slot.data !== dataSelezionata.value || slot.annullato) continue
-      
+
       list.push({
         prenId: p.id,
         slotIdx: si,
@@ -176,7 +186,7 @@ const sediConSlot = computed(() => {
 
 function badgeStato(slot) {
   if (slot.haConflitti) return 'bg-danger'
-  
+
   return {
     confermata: 'bg-success',
     in_attesa: 'bg-warning text-dark',

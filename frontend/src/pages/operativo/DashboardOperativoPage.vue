@@ -36,7 +36,7 @@
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.totali)" color="primary">
+        <StatCard :value="String(kpi.totali)" color="primary" icon="it-calendar">
           <template #label>
             Prenotazioni totali
             <span class="info-popover">
@@ -47,7 +47,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.oggi)" color="success">
+        <StatCard :value="String(kpi.oggi)" color="success" icon="it-check-circle">
           <template #label>
             Prenotazioni oggi
             <span class="info-popover">
@@ -58,7 +58,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.conflitti)" color="danger">
+        <StatCard :value="String(kpi.conflitti)" color="danger" icon="it-warning-circle">
           <template #label>
             Conflitti
             <span class="info-popover">
@@ -69,7 +69,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.prossimi7)" color="info">
+        <StatCard :value="String(kpi.prossimi7)" color="info" icon="it-user">
           <template #label>
             Prenotazioni prossimi 7 gg
             <span class="info-popover">
@@ -130,19 +130,37 @@
                     <th>Data</th>
                     <th>Orario</th>
                     <th>Aula</th>
-                    <th>Corso&nbsp;ID</th>
+                    <th>Corso</th>
                     <th>Conflitto</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="s in ultimi" :key="s.key" :class="{ 'table-danger': s.haConflitti }">
-                    <td class="fw-semibold">{{ formatData(s.data) }}</td>
-                    <td class="text-nowrap">{{ s.oraInizio }} – {{ s.oraFine }}</td>
-                    <td>
-                      <span class="fw-semibold">{{ nomeAulaFn(s.aulaId) }}</span>
-                      <small class="text-muted d-block">{{ sedeDiAulaFn(s.aulaId) }}</small>
+                    <td class="fw-semibold">
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-calendar'"></use>
+                      </svg>
+                      {{ formatData(s.data) }}
                     </td>
-                    <td><code class="small">{{ s.corsoId }}</code></td>
+                    <td class="text-nowrap">
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-clock'"></use>
+                      </svg>
+                      {{ s.oraInizio }} – {{ s.oraFine }}
+                    </td>
+
+                    <td>
+                      <span class="aula-dot" :style="getAulaBadgeStyle(nomeAulaFn(s.aulaId))"></span>
+                      <span class="small fw-semibold">{{ nomeAulaFn(s.aulaId) }}</span><br>
+                      <small class="text-muted">{{ sedeDiAulaFn(s.aulaId) }}</small>
+                    </td>
+
+                    <td><code class="small">
+                    <svg class="icon icon-xs">
+                      <use :href="sprites + '#it-bookmark'"></use>
+                    </svg>
+                    {{ s.corsoId }}</code>
+                    </td>
                     <td>
                       <span v-if="s.haConflitti" class="badge bg-danger">Sì</span>
                       <span v-else class="text-muted small">—</span>
@@ -188,7 +206,11 @@
                 </div>
 
                 <div class="small overflow-hidden flex-grow-1">
-                  <div class="fw-semibold text-truncate">{{ nomeAulaFn(s.aulaId) }}</div>
+                  <div class="fw-semibold text-truncate">
+                    <span class="aula-dot" :style="getAulaBadgeStyle(nomeAulaFn(s.aulaId))"></span>
+                    {{ nomeAulaFn(s.aulaId) }}<br>
+                    <span class="text-muted">{{ sedeDiAulaFn(s.aulaId) }}</span>
+                  </div>
                   <div class="text-muted">{{ s.oraInizio }} – {{ s.oraFine }}</div>
                   <div class="text-muted">Corso {{ s.corsoId }}</div>
                 </div>
@@ -220,6 +242,7 @@ import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { formatData, oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
+import { useAulaColor } from '@/composables/useAulaColor'
 
 const auth = useAuthStore()
 const { sedeDefaultFiltro } = useSedePerFiltro()
@@ -229,6 +252,7 @@ const conflittiAttivi = ref([])
 const sediDisponibili = ref([])
 const filtroSede = ref('')
 const tuttiIDatiCaricati = ref({})
+const { getAulaBadgeStyle } = useAulaColor()
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 

@@ -55,19 +55,34 @@
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-3 fw-bold text-primary">{{ conteggioSlot }}</div>
+          <div class="fs-3 fw-bold text-primary">
+            <svg class="icon icon-sm me-1">
+              <use :href="sprites + '#it-calendar'"></use>
+            </svg>
+            {{ conteggioSlot }}
+          </div>
           <div class="small text-muted">Prenotazioni totali</div>
         </div>
       </div>
       <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-3 fw-bold text-danger">{{ conteggioConflitti }}</div>
+          <div class="fs-3 fw-bold text-danger">
+            <svg class="icon icon-sm me-1">
+              <use :href="sprites + '#it-warning-circle'"></use>
+            </svg>
+            {{ conteggioConflitti }}
+          </div>
           <div class="small text-muted">Con conflitti</div>
         </div>
       </div>
       <div class="col-6 col-md-4">
         <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-3 fw-bold text-secondary">{{ slotFiltrati.length }}</div>
+          <div class="fs-3 fw-bold text-secondary">
+            <svg class="icon icon-sm me-1">
+              <use :href="sprites + '#it-funnel'"></use>
+            </svg>
+            {{ slotFiltrati.length }}
+          </div>
           <div class="small text-muted">Risultati filtrati</div>
         </div>
       </div>
@@ -89,7 +104,7 @@
                 <th>Data</th>
                 <th>Orario</th>
                 <th>Aula</th>
-                <th>Corso&nbsp;ID</th>
+                <th>Corso</th>
                 <th>Note</th>
                 <th v-if="authStore.isCoordinamento">Prenotato&nbsp;da</th>
                 <th>Conflitti</th>
@@ -101,10 +116,16 @@
                 @click="vaiACalendario(slot.data)" style="cursor: pointer;">
 
                 <td>
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-calendar'"></use>
+                  </svg>
                   <span class="fw-semibold">{{ formatData(slot.data) }}</span>
                 </td>
 
                 <td class="text-nowrap">
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-clock'"></use>
+                  </svg>
                   {{ slot.oraInizio }} – {{ slot.oraFine }}
                 </td>
 
@@ -119,15 +140,26 @@
                   </div>
                 </td>
 
-                <td><code class="small">{{ slot.corsoId }}</code></td>
+                <td>
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-bookmark'"></use>
+                  </svg>
+                  <code class="small">{{ slot.corsoId }}</code>
+                </td>
 
                 <td>
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-comment'"></use>
+                  </svg>
                   <span v-if="slot.note" class="small text-muted fst-italic">{{ slot.note }}</span>
                   <span v-else class="text-muted small">—</span>
                 </td>
 
                 <!-- Colonna richiedente (solo COORDINAMENTO) -->
                 <td v-if="authStore.isCoordinamento">
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-user'"></use>
+                  </svg>
                   <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
                 </td>
 
@@ -331,20 +363,20 @@ const tuttiGliSlot = computed(() => {
       })
     }
   }
-return list.sort((a, b) => {
-  // Prima ordina per data
-  if (a.data !== b.data) {
-    return a.data > b.data ? 1 : -1
-  }
-  // Poi ordina per nome aula (alfabetico)
-  const nomeA = nomeAulaFn(a.aulaId)
-  const nomeB = nomeAulaFn(b.aulaId)
-  if (nomeA !== nomeB) {
-    return nomeA.localeCompare(nomeB)
-  }
-  // Infine ordina per ora inizio (mattina → pomeriggio)
-  return a.oraInizio > b.oraInizio ? 1 : a.oraInizio < b.oraInizio ? -1 : 0
-})
+  return list.sort((a, b) => {
+    // Prima ordina per data
+    if (a.data !== b.data) {
+      return a.data > b.data ? 1 : -1
+    }
+    // Poi ordina per nome aula (alfabetico)
+    const nomeA = nomeAulaFn(a.aulaId)
+    const nomeB = nomeAulaFn(b.aulaId)
+    if (nomeA !== nomeB) {
+      return nomeA.localeCompare(nomeB)
+    }
+    // Infine ordina per ora inizio (mattina → pomeriggio)
+    return a.oraInizio > b.oraInizio ? 1 : a.oraInizio < b.oraInizio ? -1 : 0
+  })
 })
 
 // ── Slot filtrati ─────────────────────────────────────────────────────────────

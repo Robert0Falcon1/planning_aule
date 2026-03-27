@@ -36,7 +36,7 @@
     <!-- KPI row -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.prenotazioniOggi)" color="primary">
+        <StatCard :value="String(kpi.prenotazioniOggi)" color="primary" icon="it-calendar">
           <template #label>
             Prenotazioni oggi
             <span class="info-popover">
@@ -47,7 +47,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.auleOccupateOggi)" color="success">
+        <StatCard :value="String(kpi.auleOccupateOggi)" color="success" icon="it-check-circle">
           <template #label>
             Aule occupate oggi
             <span class="info-popover">
@@ -58,7 +58,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.conflittiAperti)" color="danger">
+        <StatCard :value="String(kpi.conflittiAperti)" color="danger" icon="it-warning-circle">
           <template #label>
             Conflitti aperti
             <span class="info-popover">
@@ -69,7 +69,7 @@
         </StatCard>
       </div>
       <div class="col-6 col-lg-3">
-        <StatCard :value="String(kpi.utentiAttivi)" color="info">
+        <StatCard :value="String(kpi.utentiAttivi)" color="info" icon="it-user">
           <template #label>
             Utenti attivi
             <span class="info-popover">
@@ -147,8 +147,15 @@
             </thead>
             <tbody>
               <tr v-for="s in saturazioneSedi" :key="s.id">
-                <td class="fw-semibold">{{ s.nome }}</td>
-                <td>{{ s.totale }}</td>
+                <td class="fw-semibold">
+                  <svg class="icon icon-primary small">
+                    <use :href="sprites + '#it-map-marker'"></use>
+                  </svg>
+                  {{ s.nome }}
+                </td>
+                <td>
+                  {{ s.totale }}
+                </td>
                 <td>{{ s.occupate }}</td>
                 <td style="min-width:160px">
                   <div class="d-flex align-items-center gap-2">

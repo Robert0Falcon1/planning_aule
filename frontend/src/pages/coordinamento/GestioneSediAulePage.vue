@@ -60,8 +60,19 @@
                       {{ aula.nome }}
                     </div>
                   </td>
-                  <td><span class="badge bg-info-subtle text-info">{{ aula.capienza }} posti</span></td>
-                  <td><small class="text-muted">{{ aula.note || '—' }}</small></td>
+                  <td>
+                    <span class="badge bg-info-subtle text-info">
+                      <svg class="icon icon-sm me-1">
+                        <use :href="sprites + '#it-user'"></use>
+                      </svg>
+                      {{ aula.capienza }} posti</span>
+                  </td>
+                  <td><small class="text-muted">
+                      <svg class="icon icon-sm me-1">
+                        <use :href="sprites + '#it-note'"></use>
+                      </svg>
+                      {{ aula.note || '—' }}
+                    </small></td>
                   <td>
                     <span class="badge" :class="aula.attiva !== false ? 'bg-success' : 'bg-secondary'">
                       {{ aula.attiva !== false ? 'Attiva' : 'Inattiva' }}

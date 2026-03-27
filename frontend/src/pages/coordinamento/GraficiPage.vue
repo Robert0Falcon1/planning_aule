@@ -37,15 +37,31 @@
           <div class="card-body py-3">
             <div class="row text-center g-3">
               <div class="col-4">
-                <div class="fs-2 fw-bold text-primary">{{ totPrenotazioni }}</div>
+
+                <div class="fs-2 fw-bold text-primary">
+                  <svg class="icon icon-sm me-1">
+                    <use :href="sprites + '#it-calendar'"></use>
+                  </svg>
+                  {{ totPrenotazioni }}
+                </div>
                 <div class="small text-muted">Prenotazioni totali</div>
               </div>
               <div class="col-4">
-                <div class="fs-2 fw-bold text-success">{{ totConfermate }}</div>
+                <div class="fs-2 fw-bold text-success">
+                  <svg class="icon icon-sm me-1">
+                    <use :href="sprites + '#it-check-circle'"></use>
+                  </svg>
+                  {{ totConfermate }}
+                </div>
                 <div class="small text-muted">Confermate</div>
               </div>
               <div class="col-4">
-                <div class="fs-2 fw-bold text-danger">{{ totConflitti }}</div>
+                <div class="fs-2 fw-bold text-danger">
+                  <svg class="icon icon-sm me-1">
+                    <use :href="sprites + '#it-warning-circle'"></use>
+                  </svg>
+                  {{ totConflitti }}
+                </div>
                 <div class="small text-muted">Con conflitti</div>
               </div>
             </div>
@@ -127,7 +143,8 @@
       <!-- Grafico 3: Top corsi (per corso_id) -->
       <div class="col-12 col-xl-7">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center px-3 pt-4 pt-xl-2">
+          <div
+            class="card-header bg-white border-0 d-flex justify-content-between align-items-center px-3 pt-4 pt-xl-2">
             <h5 class="card-title mb-0">Top corsi per prenotazioni</h5>
             <select v-model="topN" class="form-select form-select-sm" style="width:auto">
               <option :value="5">Top 5</option>

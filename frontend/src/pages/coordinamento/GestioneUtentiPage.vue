@@ -60,13 +60,23 @@
                     {{ labelRuolo(u.ruolo) }}
                   </span>
                 </td>
-                <td>{{ nomeSede(u.sede_id) }}</td>
+                <td>
+                  <svg class="icon icon-sm me-1">
+                    <use :href="sprites + '#it-bookmark'"></use>
+                  </svg>
+                  {{ nomeSede(u.sede_id) }}
+                </td>
                 <td>
                   <span class="badge" :class="u.attivo ? 'bg-success' : 'bg-secondary'">
                     {{ u.attivo ? 'Attivo' : 'Disattivato' }}
                   </span>
                 </td>
-                <td><small class="text-muted">{{ formatData(u.data_creazione) }}</small></td>
+                <td><small class="text-muted">
+                    <svg class="icon icon-sm me-1">
+                      <use :href="sprites + '#it-calendar'"></use>
+                    </svg>
+                    {{ formatData(u.data_creazione) }}
+                  </small></td>
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
                     <button class="btn btn-sm btn-outline-success" @click="apriModale(u)">
