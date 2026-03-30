@@ -35,19 +35,22 @@ app = FastAPI(
 )
 
 # ── Middleware CORS ───────────────────────────────────────────────────────────
-# FIX: rimosso placeholder '192.168.1.YY' non valido.
-# Aggiungere qui l'IP LAN reale del frontend (es. http://192.168.1.42:5173)
-# oppure caricarlo da variabile d'ambiente in settings.
+# Carica origini dalla variabile d'ambiente CORS_ORIGINS
+cors_origins = []
+if hasattr(settings, 'cors_origins') and settings.cors_origins:
+    cors_origins = [o.strip() for o in settings.cors_origins.split(',') if o.strip()]
+
+# Fallback per sviluppo locale
+if not cors_origins:
+    cors_origins = [
+        "http://localhost:5173",
+        "http://localhost",
+        "http://127.0.0.1:5173",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://192\.168\.1\.\d+:(5173|8501)",  # tutta la LAN
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://10.0.220.184:5173", # Indirizzo IP della rete WiFi da aggiungere
-        "http://10.0.5.206:5173",
-        *([settings.frontend_origin] if getattr(settings, "frontend_origin", None) else []),
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
