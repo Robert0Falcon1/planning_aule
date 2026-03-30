@@ -113,7 +113,7 @@
                 <thead class="table-light">
                   <tr>
                     <th style="width: 40px;"></th>
-                    <!-- <th>Utente</th> -->
+                    <th>Utente</th>
                     <th>Corso</th>
                     <th>Orario</th>
                     <th>Data Prenotazione</th>
@@ -140,12 +140,12 @@
                         <use :href="sprites + '#it-close-circle'"></use>
                       </svg>
                     </td>
-                    <!-- <td>
+                    <td>
                       <svg class="icon icon-xs me-1">
                         <use :href="sprites + '#it-user'"></use>
                       </svg>
                       <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
-                    </td> -->
+                    </td>
                     <td>
                       <svg class="icon icon-xs me-1">
                         <use :href="sprites + '#it-bookmark'"></use>
