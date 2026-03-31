@@ -11,7 +11,6 @@
             <div v-if="esito" class="alert" :class="esito.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
               {{ esito.msg }}
             </div>
-            <!-- Alert conflitti -->
             <div v-if="alertConflitti" class="alert alert-warning">
               <svg class="icon icon-sm me-1">
                 <use :href="sprites + '#it-error'"></use>
@@ -19,7 +18,6 @@
               {{ alertConflitti.msg }}
             </div>
             <div class="row g-3">
-              <!-- Sede -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Sede *</label>
                 <select v-model="form.sede_id" class="form-select" :class="{ 'is-invalid': err.sede_id }"
@@ -29,7 +27,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.sede_id }}</div>
               </div>
-              <!-- Aula -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
                 <select v-model="form.aula_id" class="form-select" :class="{ 'is-invalid': err.aula_id }"
@@ -41,25 +38,25 @@
                 </select>
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
-              <!-- Corso -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Corso *</label>
                 <select v-model="form.corso_id" class="form-select" :class="{ 'is-invalid': err.corso_id }"
-                  :disabled="caricandoCorsi">
-                  <option value="">{{ caricandoCorsi ? 'Caricamento…' : '— seleziona —' }}</option>
+                  :disabled="caricandoCorsi || !form.sede_id">
+                  <option value="">
+                    {{ caricandoCorsi ? 'Caricamento…' : (!form.sede_id ? '— seleziona sede prima —' : '— seleziona —')
+                    }}
+                  </option>
                   <option v-for="c in corsiPerSelect" :key="c.id" :value="c.id">
                     {{ c.codice }} — {{ c.titolo }}
                   </option>
                 </select>
                 <div class="invalid-feedback">{{ err.corso_id }}</div>
               </div>
-              <!-- Data -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Data *</label>
                 <input v-model="form.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }" />
                 <div class="invalid-feedback">{{ err.data }}</div>
               </div>
-              <!-- Ora inizio -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora inizio *</label>
                 <select v-model="form.ora_inizio" class="form-select" :class="{ 'is-invalid': err.ora_inizio }">
@@ -68,7 +65,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.ora_inizio }}</div>
               </div>
-              <!-- Ora fine -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora fine *</label>
                 <select v-model="form.ora_fine" class="form-select" :class="{ 'is-invalid': err.ora_fine }">
@@ -77,7 +73,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.ora_fine }}</div>
               </div>
-              <!-- Note -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
                 <textarea v-model="form.note" class="form-control" rows="2"
@@ -106,6 +101,7 @@ import { modificaSlot } from '@/api/prenotazioni'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useConflittiAlert } from '@/composables/useConflittiAlert'
 import { useCorsi } from '@/composables/useCorsi'
+import { useCorsiPerSede } from '@/composables/useCorsiPerSede'
 
 const props = defineProps({
   aperta: Boolean,
@@ -128,13 +124,28 @@ const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useCo
 // ── Composable corsi ─────────────────────────────────────────────────────────
 const { corsi, corsiAttivi, caricandoCorsi, caricaCorsi, getCorsoById } = useCorsi()
 
-// Computed: mostra corsi attivi + il corso corrente (anche se inattivo)
+const form = reactive({
+  sede_id: '', aula_id: '', corso_id: '',
+  data: '', ora_inizio: '', ora_fine: '', note: '',
+})
+
+// Filtraggio corsi per sede
+const sedeRef = computed(() => form.sede_id)
+const { corsiFiltrati } = useCorsiPerSede(corsiAttivi, sediMostrate, sedeRef)
+
+// Computed: Corsi filtrati per sede + il corso corrente (anche se inattivo o fuori sede)
 const corsiPerSelect = computed(() => {
+  let lista = [...corsiFiltrati.value]
+
+  // Recupero il corso attualmente selezionato nello slot (originale o da form)
   const corsoCorrente = getCorsoById(form.corso_id)
-  if (corsoCorrente && !corsoCorrente.attivo) {
-    return [corsoCorrente, ...corsiAttivi.value]
+
+  // Se il corso corrente non è nella lista filtrata (perché inattivo o di un'altra sede), lo aggiungo
+  if (corsoCorrente && !lista.some(c => c.id === corsoCorrente.id)) {
+    lista.push(corsoCorrente)
   }
-  return corsiAttivi.value
+
+  return lista.sort((a, b) => (a.codice || '').localeCompare(b.codice || ''))
 })
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
@@ -142,31 +153,36 @@ const oreSlot = Array.from({ length: 29 }, (_, i) => {
   return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
 })
 
-const form = reactive({
-  sede_id: '', aula_id: '', corso_id: '',
-  data: '', ora_inizio: '', ora_fine: '', note: '',
-})
-
 const err = reactive({
   sede_id: '', aula_id: '', corso_id: '',
   data: '', ora_inizio: '', ora_fine: '',
 })
 
+// Reset corso se cambio sede e quello attuale non è più compatibile
+// (Nota: in modifica siamo più permissivi per evitare reset accidentali)
+watch(corsiFiltrati, (nuovaLista) => {
+  if (form.corso_id && !nuovaLista.some(c => c.id === form.corso_id)) {
+    // Se il corso non è più tra quelli attivi della sede, 
+    // potremmo volerlo resettare, ma in "modifica" spesso è meglio lasciarlo
+    // se è il valore originale dello slot.
+  }
+})
+
 watch(() => props.aperta, async (val) => {
   if (!val || !props.slot) return
   esito.value = null
+  resetAlert()
   Object.keys(err).forEach(k => err[k] = '')
 
   const s = props.slot
   const sedeId = props.aulaMap?.[s.aulaId]?.sede_id
 
-  // Calcola sedi da mostrare
+  // 1. Calcola sedi da mostrare
   const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
   const sediConAuleAttive = (props.sedi || []).filter(sede =>
     auleAttive.some(aula => aula.sede_id === sede.id)
   )
 
-  // Aggiungi la sede corrente anche se non ha aule attive
   const sedeCorrente = tutteLeSedi.value.find(sede => Number(sede.id) === Number(sedeId))
   if (sedeCorrente && !sediConAuleAttive.find(s => s.id === sedeCorrente.id)) {
     sediMostrate.value = [sedeCorrente, ...sediConAuleAttive]
@@ -174,6 +190,7 @@ watch(() => props.aperta, async (val) => {
     sediMostrate.value = sediConAuleAttive
   }
 
+  // 2. Popola form
   Object.assign(form, {
     sede_id: sedeId,
     aula_id: s.aulaId,
@@ -184,17 +201,13 @@ watch(() => props.aperta, async (val) => {
     note: s.note || '',
   })
 
+  // 3. Carica aule della sede
   if (sedeId) {
     caricandoAule.value = true
     try {
       const data = await getAuleBySede(sedeId) || []
-      const auleAttive = data.filter(a => a.attiva !== false)
-      const aulaCorrente = props.aulaMap?.[s.aulaId]
-      if (aulaCorrente && aulaCorrente.attiva === false) {
-        aule.value = [aulaCorrente, ...auleAttive]
-      } else {
-        aule.value = auleAttive
-      }
+      // Mostriamo tutte le aule della sede, includendo quella corrente anche se inattiva
+      aule.value = data.filter(a => a.attiva !== false || a.id === s.aulaId)
     } finally {
       caricandoAule.value = false
     }
@@ -203,15 +216,21 @@ watch(() => props.aperta, async (val) => {
 
 async function onSedeChange() {
   form.aula_id = ''
+  // Non resettiamo forzatamente il corso qui per permettere il ricalcolo dei computed
   aule.value = []
   if (!form.sede_id) return
+
   caricandoAule.value = true
   try {
-    const data = await getAuleBySede(form.sede_id) || []
-    aule.value = data.filter(a => a.attiva !== false)
+    const data = await getAuleBySede(form.sede_id)
+    aule.value = (data || []).filter(a => a.attiva !== false)
   } finally {
     caricandoAule.value = false
   }
+}
+
+function chiudi() {
+  emit('update:aperta', false)
 }
 
 function valida() {
@@ -221,51 +240,66 @@ function valida() {
   err.data = form.data ? '' : 'Obbligatorio'
   err.ora_inizio = form.ora_inizio ? '' : 'Obbligatorio'
   err.ora_fine = form.ora_fine ? '' : 'Obbligatorio'
-  if (form.ora_inizio && form.ora_fine && form.ora_inizio >= form.ora_fine)
+
+  if (form.ora_inizio && form.ora_fine && form.ora_inizio >= form.ora_fine) {
     err.ora_fine = "Deve essere dopo l'ora di inizio"
+  }
   return !Object.values(err).some(Boolean)
 }
 
 async function submit() {
-  if (!valida()) return
-  loading.value = true
-  esito.value = null
-  resetAlert()
+  if (!valida()) return;
+  loading.value = true;
+  esito.value = null;
+  resetAlert();
+
+  // DEBUG: Vediamo esattamente cosa stiamo per inviare
+  console.log("Tentativo di modifica per lo slot:", props.slot);
 
   try {
-    await modificaSlot(props.slot.prenId, props.slot.slotId, {
+    // 1. Estraiamo i dati usando i nomi esatti visti nel tuo log (prenId e slotId)
+    const pId = props.slot?.prenId;
+    const sId = props.slot?.slotId;
+
+    // 2. Controllo di sicurezza prima di chiamare l'API
+    if (pId === undefined || sId === undefined) {
+      throw new Error(`Dati identificativi mancanti! (prenId: ${pId}, slotId: ${sId})`);
+    }
+
+    // 3. Chiamata API con i 3 argomenti richiesti dal file api/prenotazioni.js
+    // Argomenti: prenotazioneId, slotId, payload
+    await modificaSlot(pId, sId, {
       aula_id: form.aula_id,
       corso_id: form.corso_id,
       data: form.data,
       ora_inizio: form.ora_inizio,
       ora_fine: form.ora_fine,
-      note: form.note || null,
-    })
+      note: form.note,
+    });
 
-    esito.value = { tipo: 'ok', msg: '✓ Slot aggiornato con successo.' }
+    esito.value = { tipo: 'ok', msg: 'Modifica salvata con successo.' };
 
-    const { hasConflitti } = await verificaConflittiNuovaPrenotazione(props.slot.prenId, 'singola')
+    // Verifica conflitti (usa pId che è l'id della prenotazione)
+    if (typeof verificaConflittiNuovaPrenotazione === 'function') {
+      await verificaConflittiNuovaPrenotazione(pId, 'singola');
+    }
 
-    emit('salvato')
-    setTimeout(chiudi, hasConflitti ? 2500 : 1200)
+    setTimeout(() => {
+      emit('salvato');
+      chiudi();
+    }, 1000);
+
   } catch (e) {
-    esito.value = { tipo: 'err', msg: e.message }
+    console.error("Errore durante il submit:", e);
+    esito.value = { tipo: 'err', msg: e.message || 'Errore nel salvataggio' };
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
-function chiudi() {
-  emit('update:aperta', false)
-}
-
 onMounted(async () => {
-  const [dataAule, dataSedi] = await Promise.all([
-    getAule(),
-    getSedi(),
-    caricaCorsi()  // ← carica corsi
-  ])
-  tutteLeAule.value = dataAule?.items || dataAule || []
-  tutteLeSedi.value = Array.isArray(dataSedi) ? dataSedi : []
+  const [s, a] = await Promise.all([getSedi(), getAule(), caricaCorsi()])
+  tutteLeSedi.value = s || []
+  tutteLeAule.value = a?.items || a || []
 })
 </script>
