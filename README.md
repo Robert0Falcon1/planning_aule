@@ -23,7 +23,12 @@ npm run dev
 
 clear(localStorage)
 
+### Docker
+
+docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+
 <!--
 simone.dardanello_lav@IPA
 RamCosa-4926 
 -->
+

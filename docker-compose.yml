@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  # Database MySQL
+  # Database MySQL - Ottimizzato per basso consumo RAM
+  # Database MySQL - Ottimizzato per basso consumo RAM
   db:
     image: mysql:8.0
     container_name: planning_aule_db
@@ -19,29 +20,45 @@ services:
     networks:
       - planning_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-    command: --default-authentication-plugin=mysql_native_password --sql-mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+    # SPOSTATO QUI (Allo stesso livello di healthcheck, non dentro)
+    command: 
+      - mysqld
+      - --default-authentication-plugin=mysql_native_password
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
+      - --performance-schema=OFF
+      - --max-connections=50
+    deploy:
+      resources:
+        limits:
+          memory: 300M
 
   phpmyadmin:
-      image: phpmyadmin
-      container_name: planning_aule_phpmyadmin
-      restart: unless-stopped
-      ports:
-        - "8080:80"
-      environment:
-        PMA_HOST: db
-        PMA_USER: ${DB_USER}
-        PMA_PASSWORD: ${DB_PASSWORD}
-      networks:
-        - planning_network
-      depends_on:
-        - db
+    image: phpmyadmin
+    container_name: planning_aule_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - planning_network
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
-  # Backend FastAPI
+  # Backend FastAPI - Pulito e limitato
   backend:
     build:
       context: ./backend
@@ -64,6 +81,10 @@ services:
       - "8000:8000"
     networks:
       - planning_network
+    deploy:
+      resources:
+        limits:
+          memory: 150M
       
   # Frontend Vue + Nginx
   frontend:
@@ -81,10 +102,14 @@ services:
     networks:
       - planning_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s
       timeout: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
 networks:
   planning_network:
