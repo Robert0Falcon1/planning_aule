@@ -57,7 +57,7 @@
               <td class="fw-semibold">#{{ p.id }}</td>
               <td>{{ p.tipo }}</td>
               <td>{{ p.slots?.[0]?.aula_id }}</td>
-              <td>{{ p.slots?.[0]?.corso_id }}</td>
+              <td>{{ getTitoloCorso(p.slots?.[0]?.corso_id) }}</td>
               <td><BadgeStato :stato="p.stato" /></td>
               <td>{{ p.slots?.length ?? 0 }}</td>
               <td class="text-muted small">
@@ -83,7 +83,10 @@ const loading      = ref(false)
 const prenotazioni = ref([])
 const filtri       = reactive({ stato: '', data_dal: '', data_al: '' })
 
-onMounted(carica)
+onMounted(async () => {
+     await caricaCorsi()
+     await carica()
+   })
 
 async function carica() {
   loading.value = true

@@ -3,19 +3,16 @@
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">{{ titoloPageina }}</h2>
       <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
-
         <!-- Filtro sede -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="onSedeChange">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-
         <!-- Filtro aula -->
         <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto" :disabled="!filtroSede">
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
         </select>
-
         <!-- Filtro utente (solo COORDINAMENTO) -->
         <select v-if="authStore.isCoordinamento" v-model="filtroUtente" class="form-select form-select-sm"
           style="width:auto">
@@ -24,24 +21,25 @@
             {{ u.nome }} {{ u.cognome }}
           </option>
         </select>
-
         <!-- Filtro stato/conflitti -->
         <select v-model="filtroStato" class="form-select form-select-sm" style="width:auto">
           <option value="">Tutti</option>
           <option value="confermata">Confermate</option>
           <option value="conflitto">Con conflitti</option>
         </select>
-
-        <!-- Filtro ID Corso -->
-        <input v-model.number="filtroCorso" type="number" class="form-control form-control-sm" style="width:180px"
-          placeholder="Titolo Corso (ID)" />
-
+        <!-- Filtro Corso -->
+        <select v-model="filtroCorso" class="form-select form-select-sm" style="width:200px"
+          :disabled="caricandoCorsi">
+          <option value="">{{ caricandoCorsi ? 'Caricamento…' : 'Tutti i corsi' }}</option>
+          <option v-for="c in corsiAttivi" :key="c.id" :value="c.id">
+            {{ c.codice }} — {{ c.titolo }}
+          </option>
+        </select>
         <!-- Filtro date -->
         <input v-model="filtroDa" type="date" class="form-control form-control-sm" style="width:auto" />
         <span class="text-muted small">→</span>
         <input v-model="filtroA" type="date" class="form-control form-control-sm" style="width:auto" />
         <button class="btn btn-sm btn-outline-secondary" @click="resetFiltri">Reset</button>
-
         <RouterLink :to="{ name: 'NuovaPrenotazione' }" class="btn btn-sm btn-primary">
           <svg class="icon icon-white icon-sm me-1">
             <use :href="sprites + '#it-plus-circle'"></use>
@@ -50,7 +48,6 @@
         </RouterLink>
       </div>
     </div>
-
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-4">
@@ -87,7 +84,6 @@
         </div>
       </div>
     </div>
-
     <!-- Tabella -->
     <div class="card border-0 shadow-sm">
       <div class="card-body p-0">
@@ -114,21 +110,18 @@
             <tbody>
               <tr v-for="slot in paginaCorrente" :key="slot.key" :class="{ 'row-conflitto': slot.haConflitti }"
                 @click="vaiACalendario(slot.data)" style="cursor: pointer;">
-
                 <td>
                   <svg class="icon icon-xs me-1">
                     <use :href="sprites + '#it-calendar'"></use>
                   </svg>
                   <span class="fw-semibold">{{ formatData(slot.data) }}</span>
                 </td>
-
                 <td class="text-nowrap">
                   <svg class="icon icon-xs me-1">
                     <use :href="sprites + '#it-clock'"></use>
                   </svg>
                   {{ slot.oraInizio }} – {{ slot.oraFine }}
                 </td>
-
                 <td>
                   <div class="d-flex align-items-center gap-1">
                     <div>
@@ -139,14 +132,12 @@
                     </div>
                   </div>
                 </td>
-
                 <td>
                   <svg class="icon icon-xs me-1">
                     <use :href="sprites + '#it-bookmark'"></use>
                   </svg>
-                  <code class="small">{{ slot.corsoId }}</code>
+                  <span class="small">{{ formatCorso(slot.corsoId) }}</span>
                 </td>
-
                 <td>
                   <svg class="icon icon-xs me-1">
                     <use :href="sprites + '#it-comment'"></use>
@@ -154,7 +145,6 @@
                   <span v-if="slot.note" class="small text-muted fst-italic">{{ slot.note }}</span>
                   <span v-else class="text-muted small">—</span>
                 </td>
-
                 <!-- Colonna richiedente (solo COORDINAMENTO) -->
                 <td v-if="authStore.isCoordinamento">
                   <svg class="icon icon-xs me-1">
@@ -162,7 +152,6 @@
                   </svg>
                   <span class="small">{{ nomeUtente(slot.richiedenteId) }}</span>
                 </td>
-
                 <td>
                   <span v-if="slot.haConflitti" class="badge bg-danger d-flex justify-content-center width-fit-content">
                     <svg class="icon icon-xs icon-white me-1">
@@ -172,7 +161,6 @@
                   </span>
                   <span v-else class="text-muted small">—</span>
                 </td>
-
                 <td class="text-end">
                   <div class="d-flex gap-1 justify-content-end">
                     <button class="btn btn-sm btn-outline-primary" @click.stop="apriModifica(slot)"
@@ -190,14 +178,11 @@
                     </button>
                   </div>
                 </td>
-
-
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
       <!-- Paginazione -->
       <div v-if="totalePagine > 1" class="card-footer bg-white d-flex justify-content-between align-items-center">
         <small class="text-muted">{{ slotFiltrati.length }} slot</small>
@@ -216,7 +201,6 @@
         </nav>
       </div>
     </div>
-
     <!-- Modal conferma cancellazione -->
     <div v-if="modalCancella" class="modal-backdrop-custom" @click.self="modalCancella = null">
       <div class="modal-dialog-custom card border-0 shadow-lg p-4">
@@ -227,15 +211,6 @@
           ore {{ modalCancella.oraInizio }}–{{ modalCancella.oraFine }}
           in <strong>{{ nomeAulaFn(modalCancella.aulaId) }}</strong>.
         </p>
-
-        <!-- Prenotazione massiva: offre scelta -->
-        <!-- <div v-if="modalCancella.isMassiva" class="alert alert-info py-2 small mb-3">
-          <svg class="icon icon-sm me-1"><use :href="sprites + '#it-info-circle'"></use></svg>
-          Questo slot fa parte di una prenotazione ricorrente con
-          <strong>{{ modalCancella.totaleSlot }} slot</strong> totali.
-          Puoi eliminare solo questo slot oppure tutti.
-        </div> -->
-
         <div class="d-flex gap-2 justify-content-end flex-wrap">
           <button class="btn btn-secondary" @click="modalCancella = null">Annulla</button>
           <button class="btn btn-danger" @click="confermaCancellazione(false)" :disabled="!!cancellando">
@@ -260,16 +235,17 @@ import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
-
 const router = useRouter()
 const authStore = useAuthStore()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
+const { corsiAttivi, caricandoCorsi, caricaCorsi, formatCorso } = useCorsi()
 
 const loading = ref(false)
 const prenotazioni = ref([])
@@ -301,11 +277,10 @@ const auleFiltrate = computed(() =>
     ? aule.value.filter(a => String(a.sede_id) === String(filtroSede.value))
     : aule.value
 )
+
 function onSedeChange() { filtroAula.value = '' }
 
 // ── Set slot ID con conflitti attivi ─────────────────────────────────────────
-// Check preciso slot-level: usa solo slot_id_1/slot_id_2 dai conflitti NON_RISOLTO.
-// I conflitti senza slot_id (dati vecchi) vanno rigenerati con rigenera_conflitti.py.
 const slotIdConConflitti = computed(() => {
   const s = new Set()
   for (const cf of conflittiAttivi.value) {
@@ -350,9 +325,9 @@ const tuttiGliSlot = computed(() => {
         prenId: p.id,
         slotId: slot.id,
         slotIdx: si,
-        aulaId: slot.aula_id,    // ← da slot
-        corsoId: slot.corso_id,   // ← da slot
-        note: slot.note || '', // ← da slot
+        aulaId: slot.aula_id,
+        corsoId: slot.corso_id,
+        note: slot.note || '',
         richiedenteId: p.richiedente_id,
         haConflitti: ids.has(slot.id),
         isMassiva,
@@ -364,17 +339,14 @@ const tuttiGliSlot = computed(() => {
     }
   }
   return list.sort((a, b) => {
-    // Prima ordina per data
     if (a.data !== b.data) {
       return a.data > b.data ? 1 : -1
     }
-    // Poi ordina per nome aula (alfabetico)
     const nomeA = nomeAulaFn(a.aulaId)
     const nomeB = nomeAulaFn(b.aulaId)
     if (nomeA !== nomeB) {
       return nomeA.localeCompare(nomeB)
     }
-    // Infine ordina per ora inizio (mattina → pomeriggio)
     return a.oraInizio > b.oraInizio ? 1 : a.oraInizio < b.oraInizio ? -1 : 0
   })
 })
@@ -382,7 +354,6 @@ const tuttiGliSlot = computed(() => {
 // ── Slot filtrati ─────────────────────────────────────────────────────────────
 const slotFiltrati = computed(() => {
   let list = tuttiGliSlot.value
-
   if (filtroAula.value !== '') {
     list = list.filter(s => String(s.aulaId) === String(filtroAula.value))
   } else if (filtroSede.value !== '') {
@@ -393,24 +364,19 @@ const slotFiltrati = computed(() => {
     )
     list = list.filter(s => ids.has(String(s.aulaId)))
   }
-
   if (filtroUtente.value) {
     list = list.filter(s => Number(s.richiedenteId) === Number(filtroUtente.value))
   }
-
   if (filtroStato.value === 'conflitto') {
     list = list.filter(s => s.haConflitti)
   } else if (filtroStato.value === 'confermata') {
     list = list.filter(s => !s.haConflitti)
   }
-
   if (filtroCorso.value) {
     list = list.filter(s => Number(s.corsoId) === Number(filtroCorso.value))
   }
-
   if (filtroDa.value) list = list.filter(s => s.data >= filtroDa.value)
   if (filtroA.value) list = list.filter(s => s.data <= filtroA.value)
-
   return list
 })
 
@@ -420,35 +386,33 @@ const paginaCorrente = computed(() => {
 })
 
 const totalePagine = computed(() => Math.ceil(slotFiltrati.value.length / PER_PAGINA) || 1)
-const conteggioSlot = computed(() => tuttiGliSlot.value.length)
-// Conta conflitti DISTINTI che coinvolgono le prenotazioni dell'utente corrente
-// (non gli slot, per evitare doppio conteggio: 1 conflitto = 2 slot marcati)
 
-// Conta gli slot con conflitti — coerente con "Slot totali" e la tabella.
-// tuttiGliSlot è già filtrato per utente (OPERATIVO) o globale (COORDINAMENTO)
-// e ha haConflitti corretto (slot-level per COORD, richiesta.ha_conflitti per OPERATIVO).
+const conteggioSlot = computed(() => tuttiGliSlot.value.length)
+
 const conteggioConflitti = computed(() => {
-  // COORDINAMENTO: conta slot con conflitti (globale, utenti diversi)
-  // OPERATIVO: conta conflitti distinti (le mie prenotazioni che confliggono tra loro)
   if (authStore.isCoordinamento) {
     return tuttiGliSlot.value.filter(s => s.haConflitti).length
   } else {
-    // Per OPERATIVO: conflittiAttivi è già filtrato dal backend per i miei conflitti
     return conflittiAttivi.value.length
   }
 })
 
 function resetFiltri() {
-  filtroSede.value = ''; filtroAula.value = ''; filtroUtente.value = ''
-  filtroStato.value = ''; filtroCorso.value = ''
-  filtroStato.value = ''; filtroDa.value = ''; filtroA.value = ''
+  filtroSede.value = ''
+  filtroAula.value = ''
+  filtroUtente.value = ''
+  filtroStato.value = ''
+  filtroCorso.value = ''
+  filtroDa.value = ''
+  filtroA.value = ''
   pagina.value = 1
 }
 
 function richiediCancellazione(slot) { modalCancella.value = slot }
 
 async function confermaCancellazione(eliminaTutti = true) {
-  const slot = modalCancella.value; if (!slot) return
+  const slot = modalCancella.value
+  if (!slot) return
   cancellando.value = slot.prenId
   try {
     if (!eliminaTutti && slot.isMassiva) {
@@ -457,7 +421,7 @@ async function confermaCancellazione(eliminaTutti = true) {
       await cancellaPrenotazione(slot.prenId)
     }
     modalCancella.value = null
-    await caricaTutto()  // ricarica prenotazioni + conflitti
+    await caricaTutto()
   } catch (e) {
     alert(`Errore: ${e.message}`)
   } finally {
@@ -470,21 +434,19 @@ async function caricaTutto() {
   try {
     const calls = [getSedi(), getAule(), getMiePrenotazioni(), getConflitti({ solo_attivi: true })]
     if (authStore.isCoordinamento) calls.push(getUtenti())
+
     const results = await Promise.all(calls)
     const [dataSedi, dataAule, dataPren, dataConflitti] = results
     const dataUtenti = results[4]
 
-    // Carica TUTTE le aule (anche inattive per aulaMap)
     const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
     const auleAttive = tutteLeAule.filter(a => a.attiva !== false)
 
-    // Filtra solo sedi con almeno un'aula attiva
     const tutteLeSedi = Array.isArray(dataSedi) ? dataSedi : []
     sedi.value = tutteLeSedi.filter(sede =>
       auleAttive.some(aula => aula.sede_id === sede.id)
     )
 
-    // ← IMPORTANTE: aule.value contiene TUTTE le aule (anche inattive) per aulaMap
     aule.value = tutteLeAule
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
@@ -492,7 +454,6 @@ async function caricaTutto() {
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
 
     await caricaAule()
-
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
     console.warn('MiePrenotazioni:', e.message)
@@ -501,16 +462,14 @@ async function caricaTutto() {
   }
 }
 
-// ── Naviga al calendario sulla data esatta ───────────────────────────────────
 function vaiACalendario(data) {
   router.push({ name: 'Calendario', query: { data } })
 }
 
 onMounted(async () => {
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   await caricaTutto()
 
-  // Imposta filtro sede di default solo se ha aule attive
   const sedeDefault = sedeDefaultFiltro.value
   if (sedeDefault) {
     const sedeHaAuleAttive = sedi.value.some(s => s.id === Number(sedeDefault))
@@ -518,8 +477,6 @@ onMounted(async () => {
   }
 })
 
-
-// Ricarica ogni volta che si torna sulla pagina (es. dopo aver risolto un conflitto)
 onActivated(caricaTutto)
 </script>
 

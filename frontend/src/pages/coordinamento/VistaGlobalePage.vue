@@ -1,7 +1,6 @@
 <template>
   <div>
     <h2 class="h4 fw-bold mb-4">🌐 Vista Globale Prenotazioni</h2>
-
     <!-- Filtri avanzati -->
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body">
@@ -40,7 +39,6 @@
         </div>
       </div>
     </div>
-
     <!-- Risultati -->
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -49,9 +47,7 @@
           📥 Esporta CSV
         </button>
       </div>
-
       <LoadingSpinner v-if="loading" />
-
       <div v-else class="table-responsive">
         <table class="table table-hover table-sm mb-0">
           <thead class="table-light">
@@ -68,7 +64,7 @@
               <td>#{{ p.id }}</td>
               <td>{{ p.tipo }}</td>
               <td>{{ p.slots?.[0]?.aula_id }}</td>
-              <td>{{ p.slots?.[0]?.corso_id }}</td>
+              <td>{{ getTitoloCorso(p.slots?.[0]?.corso_id) }}</td>
               <td>{{ p.richiedente_id }}</td>
               <td><BadgeStato :stato="p.stato" /></td>
               <td>{{ p.slots?.length ?? 0 }}</td>
@@ -85,20 +81,24 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getPrenotazioni }   from '@/api/prenotazioni'
-import { getSedi }           from '@/api/sedi'
-import { formatData }        from '@/utils/formatters'
-import { STATI_BADGE }       from '@/utils/constants'
-import LoadingSpinner        from '@/components/ui/LoadingSpinner.vue'
-import BadgeStato            from '@/components/ui/BadgeStato.vue'
+import { getPrenotazioni } from '@/api/prenotazioni'
+import { getSedi } from '@/api/sedi'
+import { formatData } from '@/utils/formatters'
+import { STATI_BADGE } from '@/utils/constants'
+import { useCorsi } from '@/composables/useCorsi'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import BadgeStato from '@/components/ui/BadgeStato.vue'
 
-const loading      = ref(false)
+const loading = ref(false)
 const prenotazioni = ref([])
-const sedi         = ref([])
-const filtri       = reactive({ sede_id: null, stato: '', data_dal: '', data_al: '' })
+const sedi = ref([])
+const filtri = reactive({ sede_id: null, stato: '', data_dal: '', data_al: '' })
+
+const { caricaCorsi, getTitoloCorso } = useCorsi()
 
 onMounted(async () => {
-  sedi.value = await getSedi()
+  const [dataSedi] = await Promise.all([getSedi(), caricaCorsi()])
+  sedi.value = dataSedi
   await carica()
 })
 
@@ -106,10 +106,10 @@ async function carica() {
   loading.value = true
   try {
     prenotazioni.value = await getPrenotazioni({
-      sede_id:  filtri.sede_id  || undefined,
-      stato:    filtri.stato    || undefined,
+      sede_id: filtri.sede_id || undefined,
+      stato: filtri.stato || undefined,
       data_dal: filtri.data_dal || undefined,
-      data_al:  filtri.data_al  || undefined,
+      data_al: filtri.data_al || undefined,
     })
   } finally {
     loading.value = false
@@ -121,16 +121,23 @@ function esportaCsv() {
   const righe = [
     ['ID', 'Tipo', 'Aula', 'Corso', 'Richiedente', 'Stato', 'Prenotazioni', 'Data primo slot'],
     ...prenotazioni.value.map(p => [
-      p.id, p.tipo, p.slots?.[0]?.aula_id, p.slots?.[0]?.corso_id, p.richiedente_id, p.stato,
+      p.id,
+      p.tipo,
+      p.slots?.[0]?.aula_id,
+      getTitoloCorso(p.slots?.[0]?.corso_id),
+      p.richiedente_id,
+      p.stato,
       p.slots?.length ?? 0,
       p.slots?.[0]?.data ?? '',
     ]),
   ]
-  const csv  = righe.map(r => r.join(',')).join('\n')
+  const csv = righe.map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href = url; a.download = 'prenotazioni_export.csv'; a.click()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'prenotazioni_export.csv'
+  a.click()
   URL.revokeObjectURL(url)
 }
 </script>

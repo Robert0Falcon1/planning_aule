@@ -22,7 +22,6 @@
         </select>
       </div>
     </div>
-
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-4">
@@ -44,7 +43,6 @@
         </div>
       </div>
     </div>
-
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
@@ -82,7 +80,7 @@
                     <svg class="icon icon-xs me-1">
                       <use :href="sprites + '#it-bookmark'"></use>
                     </svg>
-                    <code class="small">{{ slot.corsoId }}</code>
+                    {{ formatCorso(slot.corsoId) }}
                   </td>
                   <td class="text-nowrap">
                     <svg class="icon icon-xs me-1">
@@ -99,7 +97,6 @@
           </div>
         </div>
       </div>
-
       <div v-if="!sediConSlot.length" class="card border-0 shadow-sm">
         <div class="card-body text-center text-muted py-5">
           Nessuna prenotazione per {{ formatData(dataSelezionata) }}{{ filtroSede ? ' in questa sede' : '' }}.
@@ -115,6 +112,7 @@ import { getSedi } from '@/api/sedi'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
@@ -127,9 +125,9 @@ const oggiISO = oggi()
 const dataSelezionata = ref(oggiISO)
 const filtroSede = ref('')
 const { sedeDefaultFiltro } = useSedePerFiltro()
-
 const { nomeAula: nomeAulaFn, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
+const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
 
 // Set di slot_id con conflitti NON_RISOLTO
 const slotIdConConflitti = computed(() => {
@@ -148,9 +146,7 @@ const slotDelGiorno = computed(() => {
   for (const p of prenotazioni.value) {
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
-      // ← AGGIUNGI CONTROLLO ANNULLATO
       if (!slot?.data || slot.data !== dataSelezionata.value || slot.annullato) continue
-
       list.push({
         prenId: p.id,
         slotIdx: si,
@@ -186,7 +182,6 @@ const sediConSlot = computed(() => {
 
 function badgeStato(slot) {
   if (slot.haConflitti) return 'bg-danger'
-
   return {
     confermata: 'bg-success',
     in_attesa: 'bg-warning text-dark',
@@ -231,7 +226,7 @@ async function carica() {
 }
 
 onMounted(async () => {
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   filtroSede.value = sedeDefaultFiltro.value
   const data = await getSedi()
   sedi.value = Array.isArray(data) ? data : []

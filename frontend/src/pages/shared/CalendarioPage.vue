@@ -1,6 +1,5 @@
 <template>
   <div class="page-calendario">
-
     <!-- Header -->
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">
@@ -13,7 +12,6 @@
         </span>
       </h2>
       <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
-
         <div class="btn-group btn-group-sm">
           <button class="btn simplebtn"
             :class="vista === 'giorno' ? 'btn-primary' : 'btn-outline-primary btn-no-border-e'"
@@ -39,7 +37,6 @@
             </svg>Mese
           </button>
         </div>
-
         <button class="btn" @click="sposta(-1)">
           <svg class="icon icon-sm">
             <use :href="sprites + '#it-chevron-left'"></use>
@@ -52,19 +49,16 @@
           </svg>
         </button>
         <button class="btn btn-outline-primary btn-sm" @click="vaiOggi">Oggi</button>
-
         <!-- Filtro sede -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="onSedeChange">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-
         <!-- Filtro aula -->
         <select v-model="filtroAula" class="form-select form-select-sm" style="width:auto" :disabled="!filtroSede">
           <option value="">Tutte le aule</option>
           <option v-for="a in auleFiltrate" :key="a.id" :value="a.id">{{ a.nome }}</option>
         </select>
-
         <RouterLink :to="{ name: 'NuovaPrenotazione' }" class="btn btn-primary btn-sm">
           <svg class="icon icon-white icon-sm me-1">
             <use :href="sprites + '#it-plus-circle'"></use>
@@ -72,11 +66,9 @@
         </RouterLink>
       </div>
     </div>
-
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
-
     <!-- ── VISTA GRIGLIA (4 giorni + settimana) ── -->
     <div v-else-if="vista !== 'mese'" class="card border-0 shadow-sm">
       <div class="card-body p-0">
@@ -123,7 +115,6 @@
         </div>
       </div>
     </div>
-
     <!-- ── VISTA MENSILE ── -->
     <div v-else class="card border-0 shadow-sm">
       <div class="card-body p-0">
@@ -160,7 +151,6 @@
         </div>
       </div>
     </div>
-
     <!-- Legenda -->
     <div class="d-flex gap-3 mt-3 flex-wrap">
       <span v-for="(l, i) in legenda" :key="i" class="d-flex align-items-center gap-1 small">
@@ -169,7 +159,6 @@
         {{ l.label }}
       </span>
     </div>
-
     <!-- ── POPOVER EVENTO ── -->
     <Teleport to="body">
       <div v-if="popover.visible" class="cal-popover" :style="{ top: popover.y + 'px', left: popover.x + 'px' }"
@@ -190,7 +179,7 @@
             <svg class="icon icon-sm me-1 text-secondary">
               <use :href="sprites + '#it-list'"></use>
             </svg>
-            Corso&nbsp;ID: <code>{{ popover.ev?.corsoId }}</code>
+            {{ formatCorso(popover.ev?.corsoId) }}
           </div>
           <div v-if="popover.ev?.note" class="mt-1 fst-italic text-muted small">
             <svg class="icon icon-sm me-1">
@@ -212,6 +201,7 @@ import { getAule } from '@/api/aule'
 import { getCalendario, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
@@ -221,6 +211,7 @@ const ORA_FINE = 21
 const SLOT_H = 56
 const GAP = 2
 const altezzaTotale = (ORA_FINE - ORA_INIZIO) * SLOT_H
+
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
@@ -235,11 +226,11 @@ const dataRef = ref(oggi())
 const nowTop = ref(-1)
 const { sedeDefaultFiltro } = useSedePerFiltro()
 
+const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+const { getAulaBadgeStyle } = useAulaColor()
+const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
 
 // ── FIX TIMEZONE ─────────────────────────────────────────────────────────────
-// toISOString() converte in UTC: in Italia (UTC+1/+2) mezzanotte locale
-// diventa 23:00 del giorno precedente → .slice(0,10) restituisce la data sbagliata.
-// dateToISO usa sempre il fuso locale del browser.
 function dateToISO(d) {
   return [
     d.getFullYear(),
@@ -248,7 +239,6 @@ function dateToISO(d) {
   ].join('-')
 }
 
-// ← FUNZIONE per andare a Nuova Prenotazione con data preselezionata
 function vaiNuovaPrenotazione(data) {
   const dataISO = dateToISO(data)
   router.push({ 
@@ -257,9 +247,6 @@ function vaiNuovaPrenotazione(data) {
   })
 }
 
-// Set di slot_id con conflitti NON_RISOLTO.
-// /conflitti/ è ora accessibile a tutti i ruoli:
-// COORDINAMENTO → tutti i conflitti; OPERATIVO → solo i propri (filtro backend).
 const slotIdConConflitti = computed(() => {
   const s = new Set()
   for (const cf of conflittiAttivi.value) {
@@ -269,8 +256,6 @@ const slotIdConConflitti = computed(() => {
   return s
 })
 
-const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
-const { getAulaBadgeStyle } = useAulaColor()
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 const oreGiornata = Array.from({ length: ORA_FINE - ORA_INIZIO }, (_, i) => i + ORA_INIZIO)
 
@@ -286,9 +271,11 @@ function mostraPopover(e, ev) {
   const y = Math.min(rect.top + window.scrollY, window.innerHeight + window.scrollY - 180)
   popover.ev = ev; popover.x = x; popover.y = y; popover.visible = true
 }
+
 function chiudiPopover() {
   popoverTimer = setTimeout(() => { popover.visible = false }, 120)
 }
+
 function cancellaChiudiPopover() {
   if (popoverTimer) { clearTimeout(popoverTimer); popoverTimer = null }
 }
@@ -310,7 +297,7 @@ function onSedeChange() { filtroAula.value = '' }
 const nGiorni = computed(() => {
   if (vista.value === 'giorno') return 1
   if (vista.value === '4giorni') return 4
-  return 7  // settimana
+  return 7
 })
 
 const giorniVista = computed(() => {
@@ -325,6 +312,7 @@ const giorniVista = computed(() => {
 const headerGridStyle = computed(() => ({
   gridTemplateColumns: `52px repeat(${nGiorni.value}, 1fr)`
 }))
+
 const bodyGridStyle = computed(() => ({
   gridTemplateColumns: `52px repeat(${nGiorni.value}, 1fr)`
 }))
@@ -373,7 +361,7 @@ function sposta(n) {
 
 function vaiOggi() {
   dataRef.value = oggi()
-  vista.value = 'giorno'  // ← Passa automaticamente alla vista giorno
+  vista.value = 'giorno'
 }
 
 // ── Orari decimali ────────────────────────────────────────────────────────────
@@ -396,7 +384,7 @@ const eventiFiltrati = computed(() => {
       list.push({
         prenId: p.id, slotIdx: si, aulaId: slot.aula_id, corsoId: slot.corso_id,
         stato: p.stato,
-        haConflitti: ids.has(slot.id),  // slot-level preciso — funziona per tutti i ruoli
+        haConflitti: ids.has(slot.id),
         note: slot.note || '',
         data: slot.data, oraInizio, oraFine,
         _ini: oraDec(oraInizio), _fin: oraDec(oraFine),
@@ -508,24 +496,18 @@ async function caricaDati() {
 watch([dataRef, filtroSede, vista], caricaDati)
 
 onMounted(async () => {
-  // ← FIX: Applica filtro sede di default SOLO se NON arrivi da click su prenotazione
   if (!route.query.data) {
     filtroSede.value = sedeDefaultFiltro.value
   }
-
   if (route.query.data) {
     dataRef.value = route.query.data
   }
-
   aggiornaNow()
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
-
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
-
   const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
   aule.value = tutteLeAule.filter(a => a.attiva !== false)
-
   caricaDati()
 })
 </script>
@@ -542,7 +524,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
 }
-
 
 .cal-week-header {
   display: grid;
@@ -618,7 +599,6 @@ onMounted(async () => {
   background: #f8fbff;
 }
 
-/* ← Stile per giorni cliccabili */
 .cal-day-col--clickable {
   cursor: pointer;
   transition: background-color 0.2s;
@@ -726,7 +706,6 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(4px) scale(.97);
   }
-
   to {
     opacity: 1;
     transform: none;
@@ -788,7 +767,6 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-/* ← Stile per celle mensili cliccabili */
 .mes-cell--clickable {
   cursor: pointer;
   transition: background-color 0.2s;

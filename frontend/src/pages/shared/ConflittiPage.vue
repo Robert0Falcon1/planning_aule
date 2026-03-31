@@ -2,27 +2,19 @@
   <div class="page-conflitti">
     <div class="page-header d-flex flex-wrap gap-3 align-items-center mb-4">
       <h2 class="page-title mb-0">Conflitti</h2>
-
       <!-- Conflitti + numero -->
       <span v-if="numeroConflitti" class="badge bg-danger fs-6 ms-1">{{ numeroConflitti }}</span>
-
-
       <div class="ms-auto d-flex gap-2 align-items-center">
-
-
-
         <!-- Solo attivi -->
         <div class="form-check form-switch mb-0 ps-0 me-3">
           <input class="form-check-input" type="checkbox" id="soloAttivi" v-model="soloAttivi" @change="carica" />
           <label class="form-check-label small" for="soloAttivi">Solo attivi</label>
         </div>
-
         <!-- Filtro Sedi -->
         <select v-model="filtroSede" class="form-select form-select-sm" style="width:auto" @change="carica">
           <option value="">Tutte le sedi</option>
           <option v-for="s in sedi" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-
         <!-- Filtro utenti multi-selezione (max 2) -->
         <div class="dropdown">
           <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
@@ -47,7 +39,6 @@
             </div>
           </div>
         </div>
-
         <!-- Aggiorna -->
         <button class="btn btn-sm btn-outline-secondary" @click="carica">
           <svg class="icon icon-sm me-1">
@@ -57,11 +48,9 @@
         </button>
       </div>
     </div>
-
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
-
     <div v-else-if="!conflitti.length" class="card border-0 shadow-sm">
       <div class="card-body text-center py-5">
         <svg class="icon icon-xl text-success mb-3">
@@ -71,11 +60,9 @@
         <p class="text-muted mb-0">Tutte le prenotazioni sono coerenti.</p>
       </div>
     </div>
-
     <div v-else>
       <div class="d-flex flex-column gap-3">
         <div v-for="gruppo in conflittiRaggruppati" :key="gruppo.chiave" class="card border-0 shadow-sm">
-
           <!-- Header: Dati comuni -->
           <div class="card-header bg-white">
             <div class="d-flex gap-3 align-items-center flex-wrap">
@@ -105,7 +92,6 @@
               <small class="ms-auto text-muted">Rilevato il {{ formatData(gruppo.rilevato_il) }}</small>
             </div>
           </div>
-
           <!-- Corpo: Lista slot in conflitto -->
           <div class="card-body">
             <div class="table-responsive">
@@ -150,7 +136,7 @@
                       <svg class="icon icon-xs me-1">
                         <use :href="sprites + '#it-bookmark'"></use>
                       </svg>
-                      <code class="small">{{ slot.corsoId }}</code>
+                      <span class="small">{{ formatCorso(slot.corsoId) }}</span>
                     </td>
                     <td>
                       <svg class="icon icon-xs me-1">
@@ -176,7 +162,6 @@
               </table>
             </div>
           </div>
-
           <!-- Footer: Azioni -->
           <div class="card-footer bg-white">
             <!-- Se risolto: mostra badge -->
@@ -188,8 +173,8 @@
                 Conflitto risolto
               </span>
               <small class="text-muted ms-2">
-                Risolto il {{formatData(gruppo.conflittiIds.map(id => conflitti.find(c => c.id ===
-                  id)?.risolto_il).filter(Boolean)[0])}}
+                Risolto il {{ formatData(gruppo.conflittiIds.map(id => conflitti.find(c => c.id ===
+                  id)?.risolto_il).filter(Boolean)[0]) }}
               </small>
             </div>
             <!-- Altrimenti: mostra form risoluzione -->
@@ -207,7 +192,6 @@
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -221,6 +205,7 @@ import { getConflitti, getPrenotazione, annullaSlot } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { getUtenti } from '@/api/utenti'
@@ -228,6 +213,8 @@ import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
+const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
+
 const uiStore = useUiStore()
 const utenti = ref([])
 const loading = ref(false)
@@ -246,6 +233,7 @@ const slotSelezionati = ref({})
 const mappaPrenotazioni = computed(() =>
   Object.fromEntries(prenotazioni.value.map(p => [p.id, p]))
 )
+
 function prenById(id) { return mappaPrenotazioni.value[id] || null }
 
 const mappaUtenti = computed(() =>
@@ -276,23 +264,20 @@ const conflittiRaggruppati = computed(() => {
 
   // Raggruppa per: aula + data
   const gruppi = new Map()
-
   for (const c of lista) {
     const slot1 = infoSlot(c, 1)
     const slot2 = infoSlot(c, 2)
     const aula = slot1?.aula_id || slot2?.aula_id
     const data = slot1?.data || slot2?.data
-
     if (!aula || !data) continue
 
     const chiave = `${aula}_${data}`
-
     if (!gruppi.has(chiave)) {
       gruppi.set(chiave, {
         chiave,
         aula,
         data,
-        slotsInConflitto: new Map(), // Map<slotId, slotInfo>
+        slotsInConflitto: new Map(),
         conflittiIds: [],
         rilevato_il: c.rilevato_il,
       })
@@ -301,7 +286,7 @@ const conflittiRaggruppati = computed(() => {
     const gruppo = gruppi.get(chiave)
     gruppo.conflittiIds.push(c.id)
 
-    // Aggiungi entrambi gli slot al gruppo (se non già presenti) - INCLUSI quelli annullati
+    // Aggiungi entrambi gli slot al gruppo (se non già presenti)
     if (slot1 && !gruppo.slotsInConflitto.has(slot1.id)) {
       const pren1 = prenById(c.prenotazione_id_1)
       gruppo.slotsInConflitto.set(slot1.id, {
@@ -313,10 +298,9 @@ const conflittiRaggruppati = computed(() => {
         oraFine: slot1.ora_fine?.slice(0, 5),
         note: slot1.note || '',
         dataCreazione: pren1?.data_creazione,
-        annullato: slot1.annullato,  // ← AGGIUNTO per sapere se è annullato
+        annullato: slot1.annullato,
       })
     }
-
     if (slot2 && !gruppo.slotsInConflitto.has(slot2.id)) {
       const pren2 = prenById(c.prenotazione_id_2)
       gruppo.slotsInConflitto.set(slot2.id, {
@@ -328,7 +312,7 @@ const conflittiRaggruppati = computed(() => {
         oraFine: slot2.ora_fine?.slice(0, 5),
         note: slot2.note || '',
         dataCreazione: pren2?.data_creazione,
-        annullato: slot2.annullato,  // ← AGGIUNTO per sapere se è annullato
+        annullato: slot2.annullato,
       })
     }
   }
@@ -345,64 +329,39 @@ const conflittiRaggruppati = computed(() => {
 
 const numeroConflitti = computed(() => conflittiRaggruppati.value.length)
 
-// ← Verifica se un gruppo di conflitti è già risolto
 function gruppoRisolto(gruppo) {
-  // Un gruppo è risolto se TUTTI i suoi conflitti sono risolti
   return gruppo.conflittiIds.every(id => {
     const c = conflitti.value.find(cf => cf.id === id)
     return c && c.stato_risoluzione
   })
 }
 
-// ← Trova lo slot "vincitore" (quello mantenuto) in un gruppo risolto
 function slotVincitore(gruppo) {
-  console.log('🔍 Cerco vincitore per gruppo:', gruppo.chiave)
-  console.log('   Conflitti IDs:', gruppo.conflittiIds)
-
-  // STRATEGIA 1: Conta quanti slot NON sono annullati
   const slotsNonAnnullati = gruppo.slots.filter(s => !s.annullato)
-  console.log('   📊 Slot non annullati:', slotsNonAnnullati.length, 'su', gruppo.slots.length)
 
-  // Se c'è UN SOLO slot non annullato → è il vincitore (caso comune N-way)
   if (slotsNonAnnullati.length === 1) {
-    console.log('   ✅ VINCITORE UNICO (slot non annullato):', slotsNonAnnullati[0].slotId)
     return slotsNonAnnullati[0].slotId
   }
 
-  // Se TUTTI annullati → nessun vincitore (ELIMINATE_ENTRAMBE puro)
   if (slotsNonAnnullati.length === 0) {
-    console.log('   ❌ Tutti slot annullati - nessun vincitore')
     return null
   }
 
-  // STRATEGIA 2: Usa stato_risoluzione (caso 2-way classico con più slot attivi)
   for (const id of gruppo.conflittiIds) {
     const c = conflitti.value.find(cf => cf.id === id)
     if (!c || !c.stato_risoluzione) continue
 
-    console.log(`   📋 Conflitto ${id}:`, {
-      trovato: true,
-      stato_risoluzione: c.stato_risoluzione,
-      slot_id_1: c.slot_id_1,
-      slot_id_2: c.slot_id_2
-    })
-
     const stato = String(c.stato_risoluzione).toLowerCase()
 
-    // MANTENUTA_1 → slot_id_1 vince
     if (stato.includes('mantenuta_1')) {
-      console.log('   ✅ Vincitore da stato: slot_id_1 =', c.slot_id_1)
       return c.slot_id_1
     }
-    // MANTENUTA_2 → slot_id_2 vince
+
     if (stato.includes('mantenuta_2')) {
-      console.log('   ✅ Vincitore da stato: slot_id_2 =', c.slot_id_2)
       return c.slot_id_2
     }
-    // ELIMINATE_ENTRAMBE → continua a cercare (potrebbero esserci altri conflitti)
   }
 
-  console.log('   ❌ Nessun vincitore trovato')
   return null
 }
 
@@ -411,7 +370,6 @@ function infoSlot(c, quale) {
   const slotId = quale === 1 ? c.slot_id_1 : c.slot_id_2
   const pren = prenById(prenId)
   if (!pren) return null
-
   if (slotId) {
     const slot = pren.slots?.find(s => s.id === slotId)
     if (slot) return slot
@@ -426,7 +384,6 @@ async function carica() {
     if (filtroSede.value) params.sede_id = filtroSede.value
 
     const dataConflitti = await getConflitti(params)
-
     if (Array.isArray(dataConflitti)) conflitti.value = dataConflitti
     else if (dataConflitti?.items) conflitti.value = dataConflitti.items
     else conflitti.value = []
@@ -445,9 +402,7 @@ async function carica() {
       prenotazioni.value = []
     }
 
-    // Reset selezioni
     slotSelezionati.value = {}
-
   } catch (e) {
     console.warn('Conflitti:', e.message)
     conflitti.value = []
@@ -458,49 +413,31 @@ async function carica() {
 
 async function risolviGruppo(gruppo) {
   const slotDaMantenere = slotSelezionati.value[gruppo.chiave]
-
   if (!slotDaMantenere) {
     uiStore.errore('Seleziona quale slot mantenere')
     return
   }
 
   risolvendo.value = gruppo.chiave
-
   try {
-    // Annulla tutti gli altri slot
     const slotsAnnullare = gruppo.slots.filter(s => s.slotId !== slotDaMantenere)
 
-    // Annulla gli slot uno alla volta e gestisci errori
     for (const slot of slotsAnnullare) {
       try {
         await annullaSlot(slot.prenId, slot.slotId)
       } catch (e) {
         console.warn(`Slot ${slot.slotId} già annullato o errore:`, e.message)
-        // Continua comunque con gli altri slot
       }
     }
 
-    // ← NON chiamare risolviConflitto - il backend gestisce automaticamente
-    //   la risoluzione quando annulli gli slot (vedi prenotazioni.py annulla_slot)
-
-    const slotMantenuto = gruppo.slots.find(s => s.slotId === slotDaMantenere)
-    const utente = mappaUtenti.value[slotMantenuto?.richiedenteId]
-    const nomeCompleto = utente ? `${utente.nome} ${utente.cognome}` : 'utente'
-
-    // uiStore.successo(`✓ Conflitto risolto: mantenuto slot di ${nomeCompleto}`)
     uiStore.successo(`✓ Conflitto risolto`)
 
-    // ← REFRESH COMPLETO IMMEDIATO
     risolvendo.value = null
-
-    // Svuota completamente i dati
     conflitti.value = []
     prenotazioni.value = []
     slotSelezionati.value = {}
 
-    // Ricarica tutto da zero
     await carica()
-
   } catch (e) {
     uiStore.errore(e.message)
     risolvendo.value = null
@@ -508,7 +445,7 @@ async function risolviGruppo(gruppo) {
 }
 
 onMounted(async () => {
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataUtenti] = await Promise.all([
     getSedi(),

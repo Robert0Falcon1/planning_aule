@@ -8,17 +8,14 @@
           <option value="">Tutte le sedi</option>
           <option v-for="s in sediConAuleAttive" :key="s.id" :value="s.id">{{ s.nome }}</option>
         </select>
-
         <input v-model="dataConsulta" type="date" class="form-control form-control-sm" style="width:auto" :min="oggiISO"
           @change="caricaDisponibilita" />
         <span class="text-muted small">Disponibilità per data</span>
       </div>
     </div>
-
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
-
     <div v-else>
       <div v-for="sede in sediFiltrate" :key="sede.id" class="mb-4">
         <div class="sede-header d-flex align-items-center gap-2 mb-3">
@@ -37,17 +34,14 @@
             </div>
           </div>
         </div>
-
         <div class="row g-3">
           <div v-for="aula in auleDiSede(sede.id)" :key="aula.id" class="col-12 col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100 aula-card" :class="{ 'aula-inattiva': !aula.attiva }">
-
               <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between align-items-start">
                 <div>
                   <h6 class="fw-bold mb-0 d-flex align-items-center">
                     <span :style="getAulaBadgeStyle(aula.nome)"></span>
                     {{ aula.nome }}
-
                   </h6>
                   <small class="text-muted">Capienza: {{ aula.capienza }} posti</small>
                 </div>
@@ -57,7 +51,6 @@
                 </span>
                 <span v-else class="badge rounded-pill bg-secondary">Inattiva</span>
               </div>
-
               <div class="card-body pt-2 mx-2">
                 <!-- Barra occupazione -->
                 <div class="mb-3">
@@ -70,7 +63,6 @@
                       :style="{ width: pctAula(aula.id) + '%' }"></div>
                   </div>
                 </div>
-
                 <!-- Slot orari 08-18 -->
                 <div class="slot-grid mb-3">
                   <div v-for="h in oreGiornata" :key="h" class="slot"
@@ -79,11 +71,9 @@
                     <span class="slot-label">{{ h }}</span>
                   </div>
                 </div>
-
                 <!-- Prenotazioni del giorno -->
                 <div v-if="prenotazioniAula(aula.id).length">
                   <small class="text-muted d-block mb-1 fw-semibold">Prenotazioni:</small>
-
                   <div v-for="item in prenotazioniAula(aula.id)" :key="item.prenId + '-' + item.slotIdx"
                     class="prenotazione-chip">
                     <div class="d-flex flex-column">
@@ -94,7 +84,7 @@
                           </svg>
                           {{ item.oraInizio }}–{{ item.oraFine }}
                         </span>
-                        <span class="ms-2 text-muted small">Corso {{ item.corsoId }}</span>
+                        <span class="ms-2 text-muted small">{{ getTitoloCorso(item.corsoId) }}</span>
                       </div>
                       <div v-if="item.note" class="fst-italic text-muted small mt-1">
                         <svg class="icon icon-xs me-1">
@@ -104,13 +94,11 @@
                       </div>
                     </div>
                   </div>
-
                 </div>
                 <div v-else>
                   <small class="text-muted">Nessuna prenotazione per questa data.</small>
                 </div>
               </div>
-
               <!-- Footer -->
               <div class="card-footer bg-white border-0 pt-0 pb-5">
                 <RouterLink v-if="aula.attiva"
@@ -129,7 +117,6 @@
           </div>
         </div>
       </div>
-
       <div v-if="!sediFiltrate.length" class="text-center text-muted py-5">
         {{ filtroSede ? 'Nessuna aula disponibile per questa sede.' : 'Nessuna sede trovata.' }}
       </div>
@@ -143,6 +130,7 @@ import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { getPrenotazioni } from '@/api/prenotazioni'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -154,11 +142,12 @@ const prenotazioni = ref([])
 const oggiISO = oggi()
 const dataConsulta = ref(oggiISO)
 const filtroSede = ref('')
+
 const { getAulaBadgeStyle } = useAulaColor()
+const { caricaCorsi, getTitoloCorso } = useCorsi()
 const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const oreGiornata = Array.from({ length: 11 }, (_, i) => i + 8) // 08–18
-
 
 const sediFiltrate = computed(() => {
   if (!filtroSede.value) return sedi.value
@@ -203,7 +192,7 @@ const eventiPerAula = computed(() => {
         oraInizio: slot.ora_inizio?.slice(0, 5) || '',
         oraFine: slot.ora_fine?.slice(0, 5) || '',
         oraH: parseInt(slot.ora_inizio?.slice(0, 2) || '0'),
-        oraFineH: parseInt(slot.ora_fine?.slice(0, 2) || '0'),
+        oraFineH: parseInt(slot.ora_fine?.slice(0, 5) || '0'),
       })
     }
   }
@@ -214,10 +203,13 @@ const eventiPerAula = computed(() => {
 })
 
 function prenotazioniAula(aulaId) { return eventiPerAula.value[aulaId] || [] }
+
 function slotOccupato(aulaId, ora) {
   return (eventiPerAula.value[aulaId] || []).some(e => ora >= e.oraH && ora < e.oraFineH)
 }
+
 function aulaLibera(aulaId) { return (eventiPerAula.value[aulaId] || []).length === 0 }
+
 function pctAula(aulaId) {
   const oreOccupate = oreGiornata.filter(h => slotOccupato(aulaId, h)).length
   return Math.round((oreOccupate / oreGiornata.length) * 100)
@@ -239,7 +231,7 @@ async function caricaDisponibilita() {
 onMounted(async () => {
   loading.value = true
   try {
-    const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
+    const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule(), caricaCorsi()])
     sedi.value = Array.isArray(dataSedi) ? dataSedi : []
     aule.value = Array.isArray(dataAule) ? dataAule : []
     await caricaDisponibilita()

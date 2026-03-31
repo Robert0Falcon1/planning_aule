@@ -3,23 +3,14 @@
     <div v-if="aperta" class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-
           <div class="modal-header">
             <h5 class="modal-title">Modifica slot</h5>
             <button type="button" class="btn-close" @click="chiudi"></button>
           </div>
-
           <div class="modal-body">
-            <!-- <div v-if="slot?.isMassiva" class="alert alert-info py-2 small mb-3">
-              <svg class="icon icon-sm me-1"><use :href="sprites + '#it-info-circle'"></use></svg>
-              Questo slot appartiene a una prenotazione ricorrente.
-              Tutte le modifiche si applicano <strong>solo a questo slot</strong>.
-            </div> -->
-
             <div v-if="esito" class="alert" :class="esito.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
               {{ esito.msg }}
             </div>
-
             <!-- Alert conflitti -->
             <div v-if="alertConflitti" class="alert alert-warning">
               <svg class="icon icon-sm me-1">
@@ -27,7 +18,6 @@
               </svg>
               {{ alertConflitti.msg }}
             </div>
-
             <div class="row g-3">
               <!-- Sede -->
               <div class="col-md-6">
@@ -39,7 +29,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.sede_id }}</div>
               </div>
-
               <!-- Aula -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Aula *</label>
@@ -52,22 +41,24 @@
                 </select>
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
-
-              <!-- Corso ID -->
+              <!-- Corso -->
               <div class="col-12">
-                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
-                <input v-model.number="form.corso_id" type="number" min="1" class="form-control"
-                  :class="{ 'is-invalid': err.corso_id }" />
+                <label class="form-label fw-semibold">Corso *</label>
+                <select v-model="form.corso_id" class="form-select" :class="{ 'is-invalid': err.corso_id }"
+                  :disabled="caricandoCorsi">
+                  <option value="">{{ caricandoCorsi ? 'Caricamento…' : '— seleziona —' }}</option>
+                  <option v-for="c in corsiPerSelect" :key="c.id" :value="c.id">
+                    {{ c.codice }} — {{ c.titolo }}
+                  </option>
+                </select>
                 <div class="invalid-feedback">{{ err.corso_id }}</div>
               </div>
-
               <!-- Data -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Data *</label>
                 <input v-model="form.data" type="date" class="form-control" :class="{ 'is-invalid': err.data }" />
                 <div class="invalid-feedback">{{ err.data }}</div>
               </div>
-
               <!-- Ora inizio -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora inizio *</label>
@@ -77,7 +68,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.ora_inizio }}</div>
               </div>
-
               <!-- Ora fine -->
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Ora fine *</label>
@@ -87,7 +77,6 @@
                 </select>
                 <div class="invalid-feedback">{{ err.ora_fine }}</div>
               </div>
-
               <!-- Note -->
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
@@ -96,7 +85,6 @@
               </div>
             </div>
           </div>
-
           <div class="modal-footer">
             <button class="btn btn-outline-secondary" @click="chiudi" :disabled="loading">Annulla</button>
             <button class="btn btn-primary" @click="submit" :disabled="loading">
@@ -104,7 +92,6 @@
               Salva modifiche
             </button>
           </div>
-
         </div>
       </div>
     </div>
@@ -118,13 +105,15 @@ import { getSedi } from '@/api/sedi'
 import { modificaSlot } from '@/api/prenotazioni'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useConflittiAlert } from '@/composables/useConflittiAlert'
+import { useCorsi } from '@/composables/useCorsi'
 
 const props = defineProps({
   aperta: Boolean,
-  slot: Object,  // riga dalla tabella MiePrenotazioni
+  slot: Object,
   sedi: Array,
-  aulaMap: Object,  // { aulaId: { sede_id, ... } }
+  aulaMap: Object,
 })
+
 const emit = defineEmits(['update:aperta', 'salvato'])
 
 const loading = ref(false)
@@ -136,11 +125,16 @@ const sediMostrate = ref([])
 const esito = ref(null)
 const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useConflittiAlert()
 
-const sediConAuleAttive = computed(() => {
-  const auleAttive = tutteLeAule.value.filter(a => a.attiva !== false)
-  return (props.sedi || []).filter(sede =>
-    auleAttive.some(aula => aula.sede_id === sede.id)
-  )
+// ── Composable corsi ─────────────────────────────────────────────────────────
+const { corsi, corsiAttivi, caricandoCorsi, caricaCorsi, getCorsoById } = useCorsi()
+
+// Computed: mostra corsi attivi + il corso corrente (anche se inattivo)
+const corsiPerSelect = computed(() => {
+  const corsoCorrente = getCorsoById(form.corso_id)
+  if (corsoCorrente && !corsoCorrente.attivo) {
+    return [corsoCorrente, ...corsiAttivi.value]
+  }
+  return corsiAttivi.value
 })
 
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
@@ -149,9 +143,10 @@ const oreSlot = Array.from({ length: 29 }, (_, i) => {
 })
 
 const form = reactive({
-  sede_id: '', aula_id: '', corso_id: null,
+  sede_id: '', aula_id: '', corso_id: '',
   data: '', ora_inizio: '', ora_fine: '', note: '',
 })
+
 const err = reactive({
   sede_id: '', aula_id: '', corso_id: '',
   data: '', ora_inizio: '', ora_fine: '',
@@ -173,7 +168,6 @@ watch(() => props.aperta, async (val) => {
 
   // Aggiungi la sede corrente anche se non ha aule attive
   const sedeCorrente = tutteLeSedi.value.find(sede => Number(sede.id) === Number(sedeId))
-
   if (sedeCorrente && !sediConAuleAttive.find(s => s.id === sedeCorrente.id)) {
     sediMostrate.value = [sedeCorrente, ...sediConAuleAttive]
   } else {
@@ -195,15 +189,15 @@ watch(() => props.aperta, async (val) => {
     try {
       const data = await getAuleBySede(sedeId) || []
       const auleAttive = data.filter(a => a.attiva !== false)
-
       const aulaCorrente = props.aulaMap?.[s.aulaId]
       if (aulaCorrente && aulaCorrente.attiva === false) {
         aule.value = [aulaCorrente, ...auleAttive]
       } else {
         aule.value = auleAttive
       }
+    } finally {
+      caricandoAule.value = false
     }
-    finally { caricandoAule.value = false }
   }
 })
 
@@ -214,11 +208,12 @@ async function onSedeChange() {
   caricandoAule.value = true
   try {
     const data = await getAuleBySede(form.sede_id) || []
-    // ← FILTRA SOLO AULE ATTIVE
     aule.value = data.filter(a => a.attiva !== false)
+  } finally {
+    caricandoAule.value = false
   }
-  finally { caricandoAule.value = false }
 }
+
 function valida() {
   err.sede_id = form.sede_id ? '' : 'Obbligatorio'
   err.aula_id = form.aula_id ? '' : 'Obbligatorio'
@@ -233,10 +228,9 @@ function valida() {
 
 async function submit() {
   if (!valida()) return
-
   loading.value = true
   esito.value = null
-  resetAlert()  // ← Reset alert conflitti precedente
+  resetAlert()
 
   try {
     await modificaSlot(props.slot.prenId, props.slot.slotId, {
@@ -250,14 +244,10 @@ async function submit() {
 
     esito.value = { tipo: 'ok', msg: '✓ Slot aggiornato con successo.' }
 
-    // ← VERIFICA CONFLITTI dopo la modifica
     const { hasConflitti } = await verificaConflittiNuovaPrenotazione(props.slot.prenId, 'singola')
 
     emit('salvato')
-
-    // Se ci sono conflitti, attendi un po' di più prima di chiudere per far leggere l'alert
     setTimeout(chiudi, hasConflitti ? 2500 : 1200)
-
   } catch (e) {
     esito.value = { tipo: 'err', msg: e.message }
   } finally {
@@ -265,10 +255,16 @@ async function submit() {
   }
 }
 
-function chiudi() { emit('update:aperta', false) }
+function chiudi() {
+  emit('update:aperta', false)
+}
 
 onMounted(async () => {
-  const [dataAule, dataSedi] = await Promise.all([getAule(), getSedi()])
+  const [dataAule, dataSedi] = await Promise.all([
+    getAule(),
+    getSedi(),
+    caricaCorsi()  // ← carica corsi
+  ])
   tutteLeAule.value = dataAule?.items || dataAule || []
   tutteLeSedi.value = Array.isArray(dataSedi) ? dataSedi : []
 })

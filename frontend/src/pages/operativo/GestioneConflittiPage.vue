@@ -1,18 +1,14 @@
 <template>
   <div>
     <h2 class="h4 fw-bold mb-4">⚠️ Gestione Conflitti</h2>
-
     <p class="text-muted mb-4">
       Queste prenotazioni sono state inviate ma presentano sovrapposizioni.
       Valuta se approvarle (se il conflitto è gestibile) o rifiutarle con motivazione.
     </p>
-
     <LoadingSpinner v-if="loading" />
-
     <div v-else-if="conflitti.length === 0" class="alert alert-success">
       ✅ Nessun conflitto aperto. Tutto in ordine!
     </div>
-
     <div v-else class="d-flex flex-column gap-3">
       <div
         v-for="p in conflitti"
@@ -24,7 +20,7 @@
             <div class="col-md-8">
               <div class="fw-semibold mb-1">⚠️ Prenotazione #{{ p.id }}</div>
               <div class="text-muted small">
-                Aula {{ p.slots?.[0]?.aula_id }} | Corso {{ p.slots?.[0]?.corso_id }} | {{ p.tipo }} |
+                Aula {{ p.slots?.[0]?.aula_id }} | {{ getTitoloCorso(p.slots?.[0]?.corso_id) }} | {{ p.tipo }} |
                 {{ p.slots?.length ?? 0 }} Prenotazioni
               </div>
               <div v-if="p.slots?.[0]" class="small mt-1">
@@ -33,7 +29,6 @@
               </div>
               <div v-if="p.slots?.[0]?.note" class="small text-muted fst-italic mt-1">Note: {{ p.slots?.[0]?.note }}</div>
             </div>
-
             <div class="col-md-4">
               <div class="d-grid gap-2">
                 <button
@@ -50,7 +45,6 @@
                   ❌ Rifiuta
                 </button>
               </div>
-
               <div v-if="azione[p.id]?.showRifiuto" class="mt-2">
                 <textarea
                   v-model="azione[p.id].motivo"
@@ -76,22 +70,28 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useUiStore }               from '@/stores/ui'
+import { useUiStore } from '@/stores/ui'
 import { getPrenotazioni, approvaRichiesta, rifiutaRichiesta } from '@/api/prenotazioni'
-import { formatData, formatOra }    from '@/utils/formatters'
-import LoadingSpinner               from '@/components/ui/LoadingSpinner.vue'
+import { formatData, formatOra } from '@/utils/formatters'
+import { useCorsi } from '@/composables/useCorsi'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
-const uiStore  = useUiStore()
-const loading  = ref(false)
+const uiStore = useUiStore()
+const loading = ref(false)
 const conflitti = ref([])
-const azione   = reactive({})
+const azione = reactive({})
 
-onMounted(carica)
+const { caricaCorsi, getTitoloCorso } = useCorsi()
+
+onMounted(async () => {
+  await caricaCorsi()
+  await carica()
+})
 
 async function carica() {
   loading.value = true
   try {
-    const tutte    = await getPrenotazioni({ stato: 'conflitto' })
+    const tutte = await getPrenotazioni({ stato: 'conflitto' })
     conflitti.value = tutte
     tutte.forEach(p => { azione[p.id] = { loading: false, showRifiuto: false, motivo: '' } })
   } finally {
@@ -101,7 +101,7 @@ async function carica() {
 
 function toggleRifiuto(id) {
   azione[id].showRifiuto = !azione[id].showRifiuto
-  azione[id].motivo      = ''
+  azione[id].motivo = ''
 }
 
 async function approva(p) {

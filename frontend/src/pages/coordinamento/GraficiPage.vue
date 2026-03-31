@@ -25,11 +25,9 @@
         </button>
       </div>
     </div>
-
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
     </div>
-
     <div v-else class="row g-4">
       <!-- Riepilogo KPI -->
       <div class="col-12">
@@ -37,7 +35,6 @@
           <div class="card-body py-3">
             <div class="row text-center g-3">
               <div class="col-4">
-
                 <div class="fs-2 fw-bold text-primary">
                   <svg class="icon icon-sm me-1">
                     <use :href="sprites + '#it-calendar'"></use>
@@ -93,7 +90,6 @@
           </div>
         </div>
       </div>
-
       <!-- Grafico 2: Distribuzione per aula (accordion per sede) -->
       <div class="col-12 col-xl-5 pe-4">
         <div class="card border-0 shadow-sm h-100 px-3">
@@ -139,8 +135,7 @@
           </div>
         </div>
       </div>
-
-      <!-- Grafico 3: Top corsi (per corso_id) -->
+      <!-- Grafico 3: Top corsi -->
       <div class="col-12 col-xl-7">
         <div class="card border-0 shadow-sm h-100">
           <div
@@ -168,7 +163,6 @@
           </div>
         </div>
       </div>
-
       <!-- Grafico 4: Saturazione per aula -->
       <div class="col-12 col-xl-5">
         <div class="card border-0 shadow-sm h-100">
@@ -203,6 +197,7 @@ import { getAule } from '@/api/aule'
 import { getUtenti } from '@/api/utenti'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
+import { useCorsi } from '@/composables/useCorsi'
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -210,6 +205,8 @@ import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle, getAulaColor } = useAulaColor()
+const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
+
 const loading = ref(false)
 const sedi = ref([])
 const aule = ref([])
@@ -231,22 +228,11 @@ const granularita = [
   { val: 'settimana', label: 'Settimana' },
   { val: 'mese', label: 'Mese' },
 ]
+
 const coloriSede = [
-  '#0066CC',
-  '#008D62',
-  '#A04000',
-  '#6C3483',
-  '#B7950B',
-  '#C0392B',
-  '#117A65',
-  '#1A5276',
-  '#6E2C00',
-  '#4A235A',
-  '#1E8449',
-  '#784212',
-  '#1B2631',
-  '#922B21',
-  '#0E6655',
+  '#0066CC', '#008D62', '#A04000', '#6C3483', '#B7950B',
+  '#C0392B', '#117A65', '#1A5276', '#6E2C00', '#4A235A',
+  '#1E8449', '#784212', '#1B2631', '#922B21', '#0E6655',
 ]
 
 // ── aulaMap per filtro sede slot-level ────────────────────────────────────────
@@ -342,10 +328,15 @@ const datiPerSede = computed(() => {
 const datiCorsi = computed(() => {
   const map = {}
   for (const s of slotEspansiFiltrati.value.filter(s => s.stato === 'confermata')) {
-    const k = `Corso ${s.corso_id}`
+    const k = s.corso_id
     map[k] = (map[k] || 0) + 1
   }
-  return Object.entries(map).sort(([, a], [, b]) => b - a).map(([label, valore]) => ({ label, valore }))
+  return Object.entries(map)
+    .sort(([, a], [, b]) => b - a)
+    .map(([corsoId, valore]) => ({
+      label: formatCorso(corsoId),
+      valore
+    }))
 })
 
 // ── Grafico 4: Slot per aula ──────────────────────────────────────────────────
@@ -374,9 +365,6 @@ const totConflitti = computed(() => conflittiAttivi.value.length)
 async function carica() {
   loading.value = true
   try {
-    const totPrenotazioni = computed(() => new Set(slotEspansiFiltrati.value.map(s => s.id)).size)
-    const totConfermate = computed(() => new Set(slotEspansiFiltrati.value.filter(s => s.stato === 'confermata').map(s => s.id)).size)
-
     const fine = oggi()
     const inizio = aggiungiGiorni(fine, -parseInt(range.value) * 30)
     const data = await getPrenotazioni({
@@ -400,7 +388,7 @@ function esportaCsv() {
     for (const slot of (p.slots || [])) {
       if (slot.annullato) continue
       righe.push([
-        slot.corso_id || '',
+        formatCorso(slot.corso_id),
         sedeDiAula(slot.aula_id) || '',
         nomeAula(slot.aula_id) || '',
         slot.data || '',
@@ -423,7 +411,7 @@ function esportaCsv() {
 }
 
 onMounted(async () => {
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []

@@ -5,16 +5,13 @@
         <!-- Colonna sinistra: Saluto e info -->
         <div class="col-12 col-lg-7">
           <h2 class="page-title">Ciao, {{ auth.nomeUtenteInformale }} 👋</h2>
-
           <!-- Citazione del giorno -->
           <p class="mb-2">
             <span class="text-primary fw-600"><i>"{{ citazione.quote }}"</i></span>
             <span class="text-muted">({{ citazione.author }})</span>
           </p>
-
           <p class="text-muted mb-0">Riepilogo di oggi — <span class="fw-600 text-primary">{{ oggiLabel }}</span>:</p>
         </div>
-
         <!-- Colonna destra: Filtro sede impattante -->
         <div class="col-12 col-lg-5">
           <div class="filtro-sede-card">
@@ -31,8 +28,6 @@
         </div>
       </div>
     </div>
-
-    <!-- KPI -->
     <!-- KPI -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
@@ -80,7 +75,6 @@
         </StatCard>
       </div>
     </div>
-
     <!-- Azioni rapide -->
     <div class="row g-3 mb-4">
       <div class="col-12">
@@ -105,7 +99,6 @@
         </div>
       </div>
     </div>
-
     <!-- Ultimi slot + prossimi -->
     <div class="row g-3">
       <div class="col-12 col-xl-8">
@@ -148,18 +141,16 @@
                       </svg>
                       {{ s.oraInizio }} – {{ s.oraFine }}
                     </td>
-
                     <td>
                       <span class="aula-dot" :style="getAulaBadgeStyle(nomeAulaFn(s.aulaId))"></span>
                       <span class="small fw-semibold">{{ nomeAulaFn(s.aulaId) }}</span><br>
                       <small class="text-muted">{{ sedeDiAulaFn(s.aulaId) }}</small>
                     </td>
-
-                    <td><code class="small">
-                    <svg class="icon icon-xs">
-                      <use :href="sprites + '#it-bookmark'"></use>
-                    </svg>
-                    {{ s.corsoId }}</code>
+                    <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-bookmark'"></use>
+                      </svg>
+                      <span class="small">{{ getTitoloCorso(s.corsoId) }}</span>
                     </td>
                     <td>
                       <span v-if="s.haConflitti" class="badge bg-danger">Sì</span>
@@ -172,7 +163,6 @@
           </div>
         </div>
       </div>
-
       <div class="col-12 col-xl-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-0 pb-0">
@@ -188,7 +178,6 @@
             <ul v-else class="list-unstyled mb-0">
               <li v-for="s in prossimi" :key="s.key" class="d-flex align-items-start gap-2 px-3 py-3 border-bottom"
                 :class="{ 'bg-danger bg-opacity-10': s.haConflitti }">
-
                 <div class="d-flex flex-column justify-content-center">
                   <div class="d-flex justify-content-center">
                     <div class="cal-badge text-center flex-shrink-0 mb-2"
@@ -204,7 +193,6 @@
                     </svg>
                   </span>
                 </div>
-
                 <div class="small overflow-hidden flex-grow-1">
                   <div class="fw-semibold text-truncate">
                     <span class="aula-dot" :style="getAulaBadgeStyle(nomeAulaFn(s.aulaId))"></span>
@@ -212,9 +200,8 @@
                     <span class="text-muted">{{ sedeDiAulaFn(s.aulaId) }}</span>
                   </div>
                   <div class="text-muted">{{ s.oraInizio }} – {{ s.oraFine }}</div>
-                  <div class="text-muted">Corso {{ s.corsoId }}</div>
+                  <div class="text-muted">{{ getTitoloCorso(s.corsoId) }}</div>
                 </div>
-
               </li>
             </ul>
             <RouterLink :to="{ name: 'Calendario' }" class="btn btn-outline-primary btn-sm mt-3 w-100">
@@ -238,6 +225,7 @@ import { getMiePrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { getSedi } from '@/api/sedi'
 import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
+import { useCorsi } from '@/composables/useCorsi'
 import { useCitazioneDelGiorno } from '@/composables/useCitazioneDelGiorno'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { formatData, oggi, aggiungiGiorni } from '@/utils/formatters'
@@ -252,9 +240,10 @@ const conflittiAttivi = ref([])
 const sediDisponibili = ref([])
 const filtroSede = ref('')
 const tuttiIDatiCaricati = ref({})
-const { getAulaBadgeStyle } = useAulaColor()
 
+const { getAulaBadgeStyle } = useAulaColor()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
+const { caricaCorsi, getTitoloCorso } = useCorsi()
 
 const API_CITAZIONI_URL = null
 const { citazione, loading: citazioneLoading, errore: citazioneErrore } = useCitazioneDelGiorno(
@@ -264,7 +253,6 @@ const { citazione, loading: citazioneLoading, errore: citazioneErrore } = useCit
 
 const oggiISO = oggi()
 const fra7 = aggiungiGiorni(oggiISO, 7)
-
 const oggiLabel = new Date().toLocaleDateString('it-IT', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 }).replace(/\b\w/g, c => c.toUpperCase())
@@ -283,13 +271,13 @@ const slotIdConConflitti = computed(() => {
 })
 
 const miePrenotazioneIds = computed(() => new Set(prenotazioni.value.map(p => p.id)))
+
 const conteggioConflitti = computed(() =>
   conflittiAttivi.value.filter(cf =>
     miePrenotazioneIds.value.has(cf.prenotazione_id_1) ||
     miePrenotazioneIds.value.has(cf.prenotazione_id_2)
   ).length
 )
-
 
 const tuttiSlot = ref([])
 
@@ -310,7 +298,6 @@ const kpi = computed(() => ({
   conflitti: conteggioConflitti.value,
   prossimi7: prossimi.value.length,
 }))
-
 
 async function caricaDati() {
   loading.value = true
@@ -354,7 +341,6 @@ async function caricaDati() {
   }
 }
 
-
 function applicaFiltroSede() {
   const { auleList, prenList } = tuttiIDatiCaricati.value
   if (!auleList) return
@@ -364,17 +350,15 @@ function applicaFiltroSede() {
     : auleList
 
   const aulaIdsFiltrate = new Set(auleFiltrate.map(a => a.id))
-  const ids = slotIdConConflitti.value
 
+  const ids = slotIdConConflitti.value
   const list = []
   for (const p of prenList) {
     if (!auth.isCoordinamento && auth.utente?.id && p.richiedente_id !== auth.utente.id) continue
     for (let si = 0; si < (p.slots?.length || 0); si++) {
       const slot = p.slots[si]
       if (!slot?.data || slot.annullato) continue
-      // ← FILTRA PER SEDE
       if (!aulaIdsFiltrate.has(slot.aula_id)) continue
-
       list.push({
         key: `${p.id}-${si}`,
         prenId: p.id,
@@ -388,23 +372,18 @@ function applicaFiltroSede() {
       })
     }
   }
-
   tuttiSlot.value = list.sort((a, b) => b.data.localeCompare(a.data))
 }
-
 
 watch(filtroSede, () => {
   applicaFiltroSede()
 })
 
-
 onMounted(async () => {
-  await caricaAule()
+  await Promise.all([caricaAule(), caricaCorsi()])
   filtroSede.value = sedeDefaultFiltro.value
   await caricaDati()
 })
-
-
 </script>
 
 <style scoped>
@@ -458,11 +437,6 @@ onMounted(async () => {
   font-size: .6rem;
   font-weight: 600;
   opacity: .85;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
 }
 
 .kpi-card {

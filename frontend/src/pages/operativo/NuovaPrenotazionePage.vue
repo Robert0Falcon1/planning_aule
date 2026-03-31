@@ -58,20 +58,17 @@
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
 
-              <!-- Corso&nbsp;ID -->
+              <!-- Corso -->
               <div class="col-12">
-                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
-                <input v-model.number="singola.corso_id" type="number" min="1" class="form-control"
-                  :class="{ 'is-invalid': err.corso_id }" placeholder="Inserisci l'ID del corso" />
-                <div class="invalid-feedback">{{ err.corso_id }}</div>
-                <div class="form-text text-muted">Inserisci l'ID numerico del corso dalla piattaforma.</div>
-
-                <!-- <select v-model="form.corso_id">
-                  <option v-for="c in corsi" :key="c.id" :value="c.id">
+                <label class="form-label fw-semibold">Corso *</label>
+                <select v-model="singola.corso_id" class="form-select" :class="{ 'is-invalid': err.corso_id }"
+                  :disabled="caricandoCorsi">
+                  <option value="">{{ caricandoCorsi ? 'Caricamento…' : '— seleziona —' }}</option>
+                  <option v-for="c in corsiOrdinati" :key="c.id" :value="c.id">
                     {{ c.codice }} — {{ c.titolo }}
                   </option>
-                </select> -->
-
+                </select>
+                <div class="invalid-feedback">{{ err.corso_id }}</div>
               </div>
 
               <!-- Data -->
@@ -161,10 +158,16 @@
                 <div class="invalid-feedback">{{ errM.aula_id }}</div>
               </div>
 
+              <!-- Corso -->
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Titolo Corso (ID) *</label>
-                <input v-model.number="massiva.corso_id" type="number" min="1" class="form-control"
-                  :class="{ 'is-invalid': errM.corso_id }" placeholder="ID numerico corso" />
+                <label class="form-label fw-semibold">Corso *</label>
+                <select v-model="massiva.corso_id" class="form-select" :class="{ 'is-invalid': errM.corso_id }"
+                  :disabled="caricandoCorsi">
+                  <option value="">{{ caricandoCorsi ? 'Caricamento…' : '— seleziona —' }}</option>
+                  <option v-for="c in corsiOrdinati" :key="c.id" :value="c.id">
+                    {{ c.codice }} — {{ c.titolo }}
+                  </option>
+                </select>
                 <div class="invalid-feedback">{{ errM.corso_id }}</div>
               </div>
 
@@ -268,7 +271,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getSedi } from '@/api/sedi'
@@ -278,6 +281,7 @@ import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { useConflittiAlert } from '@/composables/useConflittiAlert'
+import { useCorsi } from '@/composables/useCorsi'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -296,13 +300,19 @@ const mostraPrimaPrenotazione = ref(false)
 const { sedeDefaultFiltro } = useSedePerFiltro()
 const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useConflittiAlert()
 
+// ── Composable corsi ─────────────────────────────────────────────────────────
+const { corsiAttivi, caricandoCorsi, caricaCorsi } = useCorsi()
+// ← Corsi ordinati alfabeticamente per codice
+const corsiOrdinati = computed(() => 
+  [...corsiAttivi.value].sort((a, b) => a.codice.localeCompare(b.codice))
+)
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
   return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
 })
 
 const singola = reactive({
-  sede_id: '', aula_id: '', corso_id: null,
+  sede_id: '', aula_id: '', corso_id: '',
   data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '',
 })
 
@@ -316,7 +326,7 @@ const errM = reactive({
 })
 
 const massiva = reactive({
-  sede_id: '', aula_id: '', corso_id: null,
+  sede_id: '', aula_id: '', corso_id: '',
   data_inizio: '', data_fine: '',
   ora_inizio: '09:00', ora_fine: '13:00',
   tipo_ricorrenza: 'settimanale',
@@ -339,8 +349,8 @@ async function checkPrimaPrenotazione() {
     // Conta solo le prenotazioni ATTIVE di questo utente
     const miePrenotazioni = prenotazioniUtente.filter(p =>
       p.richiedente_id === auth.utente?.id &&
-      p.stato === 'confermata' && // ← AGGIUNGI QUESTO
-      p.slots?.some(s => !s.annullato) // ← E QUESTO (almeno 1 slot non annullato)
+      p.stato === 'confermata' &&
+      p.slots?.some(s => !s.annullato)
     )
 
     console.log('Mie prenotazioni ATTIVE:', miePrenotazioni.length)
@@ -374,7 +384,6 @@ async function onSedeChange() {
   caricandoAule.value = true
   try {
     const data = await getAuleBySede(singola.sede_id)
-    // ← FILTRA SOLO AULE ATTIVE
     aule.value = (data || []).filter(a => a.attiva !== false)
   } finally {
     caricandoAule.value = false
@@ -385,7 +394,6 @@ async function onSedeChangeMassiva() {
   massiva.aula_id = ''; auleMassiva.value = []
   if (!massiva.sede_id) return
   const data = await getAuleBySede(massiva.sede_id)
-  // ← FILTRA SOLO AULE ATTIVE
   auleMassiva.value = (data || []).filter(a => a.attiva !== false)
 }
 
@@ -405,7 +413,7 @@ async function submitSingola() {
   if (!validaSingola()) return
   loading.value = true
   esito.value = null
-  resetAlert()  // ← Reset alert conflitti precedente
+  resetAlert()
 
   try {
     const risposta = await creaPrenotazione({
@@ -421,7 +429,6 @@ async function submitSingola() {
 
     esito.value = { tipo: 'ok', msg: '✓ Prenotazione confermata con successo.' }
 
-    // ← VERIFICA CONFLITTI
     const prenotazioneId = risposta?.id
     if (prenotazioneId) {
       await verificaConflittiNuovaPrenotazione(prenotazioneId, 'singola')
@@ -458,7 +465,7 @@ async function submitMassiva() {
   if (!validaMassiva()) return
   loadingMassiva.value = true
   esitoMassiva.value = null
-  resetAlert()  // ← Reset alert conflitti precedente
+  resetAlert()
 
   try {
     const payload = {
@@ -476,7 +483,6 @@ async function submitMassiva() {
     const risposta = await creaPrenotazioneMassiva(payload)
     esitoMassiva.value = { tipo: 'ok', msg: '✓ Prenotazioni ricorrenti create con successo.' }
 
-    // ← VERIFICA CONFLITTI
     const prenotazioneId = risposta?.id
     if (prenotazioneId) {
       await verificaConflittiNuovaPrenotazione(prenotazioneId, 'massiva')
@@ -491,7 +497,7 @@ async function submitMassiva() {
 }
 
 function resetSingola() {
-  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: null, data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '' })
+  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '' })
   Object.keys(err).forEach(k => (err[k] = ''))
   aule.value = []
 }
@@ -500,7 +506,7 @@ function resetMassiva() {
   Object.assign(massiva, {
     sede_id: '',
     aula_id: '',
-    corso_id: null,
+    corso_id: '',
     data_inizio: '',
     data_fine: '',
     ora_inizio: '09:00',
@@ -515,8 +521,12 @@ function resetMassiva() {
 }
 
 onMounted(async () => {
-  // Carica sedi E aule per filtrare
-  const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
+  // Carica sedi, aule e corsi in parallelo
+  const [dataSedi, dataAule] = await Promise.all([
+    getSedi(),
+    getAule(),
+    caricaCorsi()  // ← usa il composable
+  ])
 
   const tutteLeSedi = dataSedi || []
   const tutteLeAule = (dataAule?.items || dataAule || []).filter(a => a.attiva !== false)
@@ -531,7 +541,7 @@ onMounted(async () => {
     singola.sede_id = Number(route.query.sede_id)
     await onSedeChange()
   } else {
-    // ← AGGIUNGI: Imposta sede di default per ENTRAMBI i form
+    // Imposta sede di default per ENTRAMBI i form
     const sedeDefault = sedeDefaultFiltro.value
     if (sedeDefault) {
       const sedeHaAuleAttive = sedi.value.some(s => s.id === Number(sedeDefault))
@@ -597,36 +607,17 @@ onMounted(async () => {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes bounce {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.2);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 </style>
