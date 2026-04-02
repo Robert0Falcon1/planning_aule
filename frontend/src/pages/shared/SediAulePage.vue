@@ -76,15 +76,28 @@
                   <small class="text-muted d-block mb-1 fw-semibold">Prenotazioni:</small>
                   <div v-for="item in prenotazioniAula(aula.id)" :key="item.prenId + '-' + item.slotIdx"
                     class="prenotazione-chip">
-                    <div class="d-flex flex-column">
-                      <div>
-                        <span class="fw-semibold">
-                          <svg class="icon icon-xs me-1">
-                            <use :href="sprites + '#it-clock'"></use>
-                          </svg>
-                          {{ item.oraInizio }}–{{ item.oraFine }}
-                        </span>
-                        <span class="ms-2 text-muted small">{{ getTitoloCorso(item.corsoId) }}</span>
+                    <div class="d-flex flex-column w-100">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <span class="fw-semibold">
+                            <svg class="icon icon-xs me-1">
+                              <use :href="sprites + '#it-clock'"></use>
+                            </svg>
+                            {{ item.oraInizio }}–{{ item.oraFine }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="text-muted small mt-1">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-bookmark'"></use>
+                        </svg>
+                        {{ getTitoloCorso(item.corsoId) }}
+                      </div>
+                      <div class="text-muted small">
+                        <svg class="icon icon-xs me-1">
+                          <use :href="sprites + '#it-user'"></use>
+                        </svg>
+                        {{ getNomeDocente(item.docenteId) }}
                       </div>
                       <div v-if="item.note" class="fst-italic text-muted small mt-1">
                         <svg class="icon icon-xs me-1">
@@ -123,7 +136,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
@@ -131,6 +143,7 @@ import { getAule } from '@/api/aule'
 import { getPrenotazioni } from '@/api/prenotazioni'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -142,9 +155,9 @@ const prenotazioni = ref([])
 const oggiISO = oggi()
 const dataConsulta = ref(oggiISO)
 const filtroSede = ref('')
-
 const { getAulaBadgeStyle } = useAulaColor()
 const { caricaCorsi, getTitoloCorso } = useCorsi()
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 const { sedeDefaultFiltro } = useSedePerFiltro()
 
 const oreGiornata = Array.from({ length: 11 }, (_, i) => i + 8) // 08–18
@@ -188,6 +201,7 @@ const eventiPerAula = computed(() => {
         prenId: p.id,
         slotIdx: si,
         corsoId: slot.corso_id,
+        docenteId: slot.docente_id,  // ← AGGIUNTO
         note: slot.note || '',
         oraInizio: slot.ora_inizio?.slice(0, 5) || '',
         oraFine: slot.ora_fine?.slice(0, 5) || '',
@@ -231,11 +245,15 @@ async function caricaDisponibilita() {
 onMounted(async () => {
   loading.value = true
   try {
-    const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule(), caricaCorsi()])
+    const [dataSedi, dataAule] = await Promise.all([
+      getSedi(), 
+      getAule(), 
+      caricaCorsi(),
+      caricaDocenti()  // ← AGGIUNTO
+    ])
     sedi.value = Array.isArray(dataSedi) ? dataSedi : []
     aule.value = Array.isArray(dataAule) ? dataAule : []
     await caricaDisponibilita()
-
     const sedeDefault = sedeDefaultFiltro.value
     if (sedeDefault) {
       const sedeHaAuleAttive = sediConAuleAttive.value.some(s => s.id === Number(sedeDefault))
@@ -248,7 +266,6 @@ onMounted(async () => {
   }
 })
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;
@@ -306,7 +323,7 @@ onMounted(async () => {
   background: #f0f4ff;
   border-left: 3px solid #0066cc;
   border-radius: 4px;
-  padding: 3px 8px;
+  padding: 6px 8px;
   font-size: .78rem;
   margin-bottom: 4px;
   overflow: hidden;

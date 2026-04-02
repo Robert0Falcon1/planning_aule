@@ -101,6 +101,7 @@
                     <th style="width: 40px;"></th>
                     <th>Utente</th>
                     <th>Corso</th>
+                    <th>Docente</th>
                     <th>Orario</th>
                     <th>Data Prenotazione</th>
                     <th>Note</th>
@@ -137,6 +138,12 @@
                         <use :href="sprites + '#it-bookmark'"></use>
                       </svg>
                       <span class="small">{{ formatCorso(slot.corsoId) }}</span>
+                    </td>
+                    <td>
+                      <svg class="icon icon-xs me-1">
+                        <use :href="sprites + '#it-user'"></use>
+                      </svg>
+                      <span class="small">{{ getNomeDocente(slot.docenteId) }}</span>
                     </td>
                     <td>
                       <svg class="icon icon-xs me-1">
@@ -197,7 +204,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/stores/ui'
@@ -206,6 +212,7 @@ import { getSedi } from '@/api/sedi'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { formatData } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { getUtenti } from '@/api/utenti'
@@ -214,8 +221,9 @@ import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
 const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
-
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 const uiStore = useUiStore()
+
 const utenti = ref([])
 const loading = ref(false)
 const conflitti = ref([])
@@ -252,7 +260,6 @@ const opzioniUtenti = computed(() =>
 // Raggruppa conflitti per aula + data (indipendentemente dagli utenti)
 const conflittiRaggruppati = computed(() => {
   let lista = conflitti.value
-
   // Filtra per utenti selezionati
   if (filtroUtenti.value.length >= 1) {
     lista = lista.filter(c => {
@@ -261,7 +268,6 @@ const conflittiRaggruppati = computed(() => {
       return filtroUtenti.value.includes(richA) || filtroUtenti.value.includes(richB)
     })
   }
-
   // Raggruppa per: aula + data
   const gruppi = new Map()
   for (const c of lista) {
@@ -270,7 +276,6 @@ const conflittiRaggruppati = computed(() => {
     const aula = slot1?.aula_id || slot2?.aula_id
     const data = slot1?.data || slot2?.data
     if (!aula || !data) continue
-
     const chiave = `${aula}_${data}`
     if (!gruppi.has(chiave)) {
       gruppi.set(chiave, {
@@ -282,10 +287,8 @@ const conflittiRaggruppati = computed(() => {
         rilevato_il: c.rilevato_il,
       })
     }
-
     const gruppo = gruppi.get(chiave)
     gruppo.conflittiIds.push(c.id)
-
     // Aggiungi entrambi gli slot al gruppo (se non già presenti)
     if (slot1 && !gruppo.slotsInConflitto.has(slot1.id)) {
       const pren1 = prenById(c.prenotazione_id_1)
@@ -294,6 +297,7 @@ const conflittiRaggruppati = computed(() => {
         prenId: c.prenotazione_id_1,
         richiedenteId: pren1?.richiedente_id,
         corsoId: slot1.corso_id,
+        docenteId: slot1.docente_id,  // ← AGGIUNTO
         oraInizio: slot1.ora_inizio?.slice(0, 5),
         oraFine: slot1.ora_fine?.slice(0, 5),
         note: slot1.note || '',
@@ -308,6 +312,7 @@ const conflittiRaggruppati = computed(() => {
         prenId: c.prenotazione_id_2,
         richiedenteId: pren2?.richiedente_id,
         corsoId: slot2.corso_id,
+        docenteId: slot2.docente_id,  // ← AGGIUNTO
         oraInizio: slot2.ora_inizio?.slice(0, 5),
         oraFine: slot2.ora_fine?.slice(0, 5),
         note: slot2.note || '',
@@ -316,7 +321,6 @@ const conflittiRaggruppati = computed(() => {
       })
     }
   }
-
   // Converti Map in array e ordina cronologicamente
   return Array.from(gruppi.values())
     .map(g => ({
@@ -338,30 +342,23 @@ function gruppoRisolto(gruppo) {
 
 function slotVincitore(gruppo) {
   const slotsNonAnnullati = gruppo.slots.filter(s => !s.annullato)
-
   if (slotsNonAnnullati.length === 1) {
     return slotsNonAnnullati[0].slotId
   }
-
   if (slotsNonAnnullati.length === 0) {
     return null
   }
-
   for (const id of gruppo.conflittiIds) {
     const c = conflitti.value.find(cf => cf.id === id)
     if (!c || !c.stato_risoluzione) continue
-
     const stato = String(c.stato_risoluzione).toLowerCase()
-
     if (stato.includes('mantenuta_1')) {
       return c.slot_id_1
     }
-
     if (stato.includes('mantenuta_2')) {
       return c.slot_id_2
     }
   }
-
   return null
 }
 
@@ -382,16 +379,13 @@ async function carica() {
   try {
     const params = { solo_attivi: soloAttivi.value }
     if (filtroSede.value) params.sede_id = filtroSede.value
-
     const dataConflitti = await getConflitti(params)
     if (Array.isArray(dataConflitti)) conflitti.value = dataConflitti
     else if (dataConflitti?.items) conflitti.value = dataConflitti.items
     else conflitti.value = []
-
     const prenIds = [...new Set(
       conflitti.value.flatMap(c => [c.prenotazione_id_1, c.prenotazione_id_2])
     )]
-
     try {
       const dataPren = prenIds.length
         ? await Promise.all(prenIds.map(id => getPrenotazione(id)))
@@ -401,7 +395,6 @@ async function carica() {
       console.warn('Errore caricamento prenotazioni per conflitti:', e.message)
       prenotazioni.value = []
     }
-
     slotSelezionati.value = {}
   } catch (e) {
     console.warn('Conflitti:', e.message)
@@ -417,11 +410,9 @@ async function risolviGruppo(gruppo) {
     uiStore.errore('Seleziona quale slot mantenere')
     return
   }
-
   risolvendo.value = gruppo.chiave
   try {
     const slotsAnnullare = gruppo.slots.filter(s => s.slotId !== slotDaMantenere)
-
     for (const slot of slotsAnnullare) {
       try {
         await annullaSlot(slot.prenId, slot.slotId)
@@ -429,14 +420,11 @@ async function risolviGruppo(gruppo) {
         console.warn(`Slot ${slot.slotId} già annullato o errore:`, e.message)
       }
     }
-
     uiStore.successo(`✓ Conflitto risolto`)
-
     risolvendo.value = null
     conflitti.value = []
     prenotazioni.value = []
     slotSelezionati.value = {}
-
     await carica()
   } catch (e) {
     uiStore.errore(e.message)
@@ -445,7 +433,7 @@ async function risolviGruppo(gruppo) {
 }
 
 onMounted(async () => {
-  await Promise.all([caricaAule(), caricaCorsi()])
+  await Promise.all([caricaAule(), caricaCorsi(), caricaDocenti()])  // ← AGGIUNTO caricaDocenti
   filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataUtenti] = await Promise.all([
     getSedi(),
@@ -461,7 +449,6 @@ function nomeUtente(id) {
   return u ? `${u.nome} ${u.cognome}` : `#${id}`
 }
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

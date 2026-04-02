@@ -64,6 +64,7 @@
                 <tr>
                   <th>Aula</th>
                   <th>Corso</th>
+                  <th>Docente</th>
                   <th>Orario</th>
                   <th>Stato</th>
                 </tr>
@@ -81,6 +82,12 @@
                       <use :href="sprites + '#it-bookmark'"></use>
                     </svg>
                     {{ formatCorso(slot.corsoId) }}
+                  </td>
+                  <td>
+                    <svg class="icon icon-xs me-1">
+                      <use :href="sprites + '#it-user'"></use>
+                    </svg>
+                    {{ getNomeDocente(slot.docenteId) }}
                   </td>
                   <td class="text-nowrap">
                     <svg class="icon icon-xs me-1">
@@ -105,7 +112,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
@@ -113,6 +119,7 @@ import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
@@ -128,6 +135,7 @@ const { sedeDefaultFiltro } = useSedePerFiltro()
 const { nomeAula: nomeAulaFn, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
 const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 
 // Set di slot_id con conflitti NON_RISOLTO
 const slotIdConConflitti = computed(() => {
@@ -153,6 +161,7 @@ const slotDelGiorno = computed(() => {
         slotId: slot.id,
         aulaId: slot.aula_id,
         corsoId: slot.corso_id,
+        docenteId: slot.docente_id,  // ← AGGIUNTO
         tipo: p.tipo,
         stato: p.stato,
         haConflitti: ids.has(slot.id),
@@ -226,14 +235,13 @@ async function carica() {
 }
 
 onMounted(async () => {
-  await Promise.all([caricaAule(), caricaCorsi()])
+  await Promise.all([caricaAule(), caricaCorsi(), caricaDocenti()])  // ← AGGIUNTO caricaDocenti
   filtroSede.value = sedeDefaultFiltro.value
   const data = await getSedi()
   sedi.value = Array.isArray(data) ? data : []
   carica()
 })
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

@@ -175,11 +175,17 @@
             <strong>{{ nomeAulaFn(popover.ev?.aulaId) }}</strong>
           </div>
           <div class="mb-1 text-muted small">{{ sedeDiAulaFn(popover.ev?.aulaId) }}</div>
-          <div>
+          <div class="mb-1">
             <svg class="icon icon-sm me-1 text-secondary">
               <use :href="sprites + '#it-list'"></use>
             </svg>
             {{ formatCorso(popover.ev?.corsoId) }}
+          </div>
+          <div class="mb-1">
+            <svg class="icon icon-sm me-1 text-secondary">
+              <use :href="sprites + '#it-user'"></use>
+            </svg>
+            {{ getNomeDocente(popover.ev?.docenteId) }}
           </div>
           <div v-if="popover.ev?.note" class="mt-1 fst-italic text-muted small">
             <svg class="icon icon-sm me-1">
@@ -192,7 +198,6 @@
     </Teleport>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -202,6 +207,7 @@ import { getCalendario, getConflitti } from '@/api/prenotazioni'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { oggi, aggiungiGiorni, inizioSettimana } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
@@ -225,10 +231,10 @@ const conflittiAttivi = ref([])
 const dataRef = ref(oggi())
 const nowTop = ref(-1)
 const { sedeDefaultFiltro } = useSedePerFiltro()
-
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
 const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 
 // ── FIX TIMEZONE ─────────────────────────────────────────────────────────────
 function dateToISO(d) {
@@ -291,6 +297,7 @@ setInterval(aggiornaNow, 60000)
 const auleFiltrate = computed(() =>
   filtroSede.value ? aule.value.filter(a => a.sede_id == filtroSede.value) : aule.value
 )
+
 function onSedeChange() { filtroAula.value = '' }
 
 // ── Giorni visibili per vista ─────────────────────────────────────────────────
@@ -383,6 +390,7 @@ const eventiFiltrati = computed(() => {
       const oraFine = slot.ora_fine?.slice(0, 5) || ''
       list.push({
         prenId: p.id, slotIdx: si, aulaId: slot.aula_id, corsoId: slot.corso_id,
+        docenteId: slot.docente_id,  // ← AGGIUNTO
         stato: p.stato,
         haConflitti: ids.has(slot.id),
         note: slot.note || '',
@@ -503,7 +511,7 @@ onMounted(async () => {
     dataRef.value = route.query.data
   }
   aggiornaNow()
-  await Promise.all([caricaAule(), caricaCorsi()])
+  await Promise.all([caricaAule(), caricaCorsi(), caricaDocenti()])  // ← AGGIUNTO caricaDocenti
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
   const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
@@ -511,7 +519,6 @@ onMounted(async () => {
   caricaDati()
 })
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

@@ -189,7 +189,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSedi } from '@/api/sedi'
@@ -198,6 +197,7 @@ import { getUtenti } from '@/api/utenti'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { getPrenotazioni, getConflitti } from '@/api/prenotazioni'
 import { oggi, aggiungiGiorni } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
@@ -206,6 +206,7 @@ import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 const { nomeAula, sedeDiAula, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle, getAulaColor } = useAulaColor()
 const { caricaCorsi, getTitoloCorso, formatCorso } = useCorsi()
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 
 const loading = ref(false)
 const sedi = ref([])
@@ -251,7 +252,10 @@ const slotEspansi = computed(() => {
         _slotData: slot.data,
         aula_id: slot.aula_id,
         corso_id: slot.corso_id,
+        docente_id: slot.docente_id,  // ← AGGIUNTO
         note: slot.note,
+        ora_inizio: slot.ora_inizio,
+        ora_fine: slot.ora_fine,
       })
     }
   }
@@ -383,12 +387,13 @@ async function carica() {
 function esportaCsv() {
   if (!prenotazioni.value.length) { alert('Nessun dato da esportare.'); return }
   const mappaUtenti = Object.fromEntries(utenti.value.map(u => [u.id, `${u.nome} ${u.cognome}`]))
-  const righe = [['Corso', 'Sede', 'Aula', 'Data', 'Ora inizio', 'Ora fine', 'Note', 'Creata il', 'Creata da']]
+  const righe = [['Corso', 'Docente', 'Sede', 'Aula', 'Data', 'Ora inizio', 'Ora fine', 'Note', 'Creata il', 'Creata da']]  // ← AGGIUNTO Docente
   for (const p of prenotazioni.value) {
     for (const slot of (p.slots || [])) {
       if (slot.annullato) continue
       righe.push([
         formatCorso(slot.corso_id),
+        getNomeDocente(slot.docente_id),  // ← AGGIUNTO
         sedeDiAula(slot.aula_id) || '',
         nomeAula(slot.aula_id) || '',
         slot.data || '',
@@ -411,7 +416,7 @@ function esportaCsv() {
 }
 
 onMounted(async () => {
-  await Promise.all([caricaAule(), caricaCorsi()])
+  await Promise.all([caricaAule(), caricaCorsi(), caricaDocenti()])  // ← AGGIUNTO caricaDocenti
   filtroSede.value = sedeDefaultFiltro.value
   const [dataSedi, dataAule] = await Promise.all([getSedi(), getAule()])
   sedi.value = Array.isArray(dataSedi) ? dataSedi : []
@@ -428,7 +433,6 @@ onMounted(async () => {
   }
 })
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

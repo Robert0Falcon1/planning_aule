@@ -27,7 +27,6 @@
         </button>
       </li>
     </ul>
-
     <!-- ── SINGOLA ─────────────────────────────────────────────────────────── -->
     <div v-if="tab === 'singola'">
       <div class="card border-0 shadow-sm">
@@ -55,7 +54,7 @@
                 <div class="invalid-feedback">{{ err.aula_id }}</div>
               </div>
               <!-- Corso — filtrato per sede -->
-              <div class="col-12">
+              <div class="col-md-6">
                 <label class="form-label fw-semibold">Corso *</label>
                 <select v-model="singola.corso_id" class="form-select" :class="{ 'is-invalid': err.corso_id }"
                   :disabled="caricandoCorsi || !singola.sede_id">
@@ -70,6 +69,24 @@
                 <div v-if="singola.sede_id && !caricandoCorsi && corsiPerSedeSingola.length === 0"
                   class="form-text text-warning">
                   Nessun corso disponibile per questa sede.
+                </div>
+              </div>
+              <!-- Docente — filtrato per sede -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Docente *</label>
+                <select v-model="singola.docente_id" class="form-select" :class="{ 'is-invalid': err.docente_id }"
+                  :disabled="caricandoDocenti || !singola.sede_id">
+                  <option value="">
+                    {{ caricandoDocenti ? 'Caricamento…' : (!singola.sede_id ? '— seleziona sede prima —' : '— seleziona —') }}
+                  </option>
+                  <option v-for="d in docentiPerSede" :key="d.id" :value="d.id">
+                    {{ d.cognome }} {{ d.nome }}{{ d.tipologia ? ` (${d.tipologia})` : '' }}
+                  </option>
+                </select>
+                <div class="invalid-feedback">{{ err.docente_id }}</div>
+                <div v-if="singola.sede_id && !caricandoDocenti && docentiPerSede.length === 0"
+                  class="form-text text-warning">
+                  Nessun docente disponibile per questa sede.
                 </div>
               </div>
               <!-- Data -->
@@ -101,7 +118,7 @@
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
                 <textarea v-model="singola.note" class="form-control" rows="2"
-                  placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
+                  placeholder="es. Attrezzature necessarie, richieste particolari..."></textarea>
               </div>
             </div>
             <div v-if="esito" class="alert mt-3" :class="esito.tipo === 'ok' ? 'alert-success' : 'alert-danger'">
@@ -124,7 +141,6 @@
         </div>
       </div>
     </div>
-
     <!-- ── MASSIVA ─────────────────────────────────────────────────────────── -->
     <div v-else>
       <div class="card border-0 shadow-sm">
@@ -165,6 +181,24 @@
                 <div v-if="massiva.sede_id && !caricandoCorsi && corsiPerSedeMassiva.length === 0"
                   class="form-text text-warning">
                   Nessun corso disponibile per questa sede.
+                </div>
+              </div>
+              <!-- Docente — filtrato per sede -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Docente *</label>
+                <select v-model="massiva.docente_id" class="form-select" :class="{ 'is-invalid': errM.docente_id }"
+                  :disabled="caricandoDocenti || !massiva.sede_id">
+                  <option value="">
+                    {{ caricandoDocenti ? 'Caricamento…' : (!massiva.sede_id ? '— seleziona sede prima —' : '— seleziona —') }}
+                  </option>
+                  <option v-for="d in docentiPerSede" :key="d.id" :value="d.id">
+                    {{ d.cognome }} {{ d.nome }}{{ d.tipologia ? ` (${d.tipologia})` : '' }}
+                  </option>
+                </select>
+                <div class="invalid-feedback">{{ errM.docente_id }}</div>
+                <div v-if="massiva.sede_id && !caricandoDocenti && docentiPerSede.length === 0"
+                  class="form-text text-warning">
+                  Nessun docente disponibile per questa sede.
                 </div>
               </div>
               <div class="col-md-3">
@@ -217,7 +251,7 @@
               <div class="col-12">
                 <label class="form-label fw-semibold">Note</label>
                 <textarea v-model="massiva.note" class="form-control" rows="2"
-                  placeholder="es. DOCENTE - ATTREZZATURE - Altro"></textarea>
+                  placeholder="es. Attrezzature necessarie, richieste particolari..."></textarea>
               </div>
             </div>
             <div v-if="esitoMassiva" class="alert mt-3"
@@ -242,7 +276,6 @@
       </div>
     </div>
   </div>
-
   <!-- Modal prima prenotazione -->
   <div v-if="mostraPrimaPrenotazione" class="modal-backdrop-celebration" @click="mostraPrimaPrenotazione = false">
     <div class="modal-celebration" @click.stop>
@@ -253,7 +286,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -267,6 +299,7 @@ import { useSedePerFiltro } from '@/composables/useSedePerFiltro'
 import { useConflittiAlert } from '@/composables/useConflittiAlert'
 import { useCorsi } from '@/composables/useCorsi'
 import { useCorsiPerSede } from '@/composables/useCorsiPerSede'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -282,20 +315,22 @@ const esito = ref(null)
 const esitoMassiva = ref(null)
 const nomiGiorni = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 const mostraPrimaPrenotazione = ref(false)
-
 const { sedeDefaultFiltro } = useSedePerFiltro()
 const { alertConflitti, verificaConflittiNuovaPrenotazione, resetAlert } = useConflittiAlert()
 
 // ── Composable corsi ─────────────────────────────────────────────────────────
 const { corsiAttivi, caricandoCorsi, caricaCorsi } = useCorsi()
 
+// ── Composable docenti ───────────────────────────────────────────────────────
+const { docenti, docentiOrdinati, caricandoDocenti, caricaDocenti } = useDocenti()
+
 // ── Form reactive — DEVONO stare PRIMA dei computed che li leggono ───────────
 const singola = reactive({
-  sede_id: '', aula_id: '', corso_id: '',
+  sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO docente_id
   data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '',
 })
 const massiva = reactive({
-  sede_id: '', aula_id: '', corso_id: '',
+  sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO docente_id
   data_inizio: '', data_fine: '',
   ora_inizio: '09:00', ora_fine: '13:00',
   tipo_ricorrenza: 'settimanale',
@@ -303,10 +338,12 @@ const massiva = reactive({
   note: '',
 })
 const err = reactive({
-  sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '', ora_fine: '',
+  sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO
+  data: '', ora_inizio: '', ora_fine: '',
 })
 const errM = reactive({
-  sede_id: '', aula_id: '', corso_id: '', ora_inizio: '', ora_fine: '',
+  sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO
+  ora_inizio: '', ora_fine: '',
   data_inizio: '', data_fine: '', giorni_settimana: '',
 })
 
@@ -325,12 +362,24 @@ const corsiPerSedeMassiva = computed(() =>
   [...corsiFiltrati_massiva.value].sort((a, b) => a.codice.localeCompare(b.codice))
 )
 
+// ── Docenti filtrati per sede ────────────────────────────────────────────────
+const docentiPerSede = computed(() => {
+  if (!singola.sede_id && !massiva.sede_id) return []
+  const sedeId = tab.value === 'singola' ? singola.sede_id : massiva.sede_id
+  if (!sedeId) return []
+  
+  // Filtra docenti che operano nella sede selezionata
+  return docentiOrdinati.value.filter(d => 
+    d.sedi?.some(s => s.id === Number(sedeId))
+  )
+})
+
 const oreSlot = Array.from({ length: 29 }, (_, i) => {
   const totalMin = 7 * 60 + i * 30
   return `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`
 })
 
-// Reset corso se sede cambia e il corso non è più nella lista
+// Reset corso/docente se sede cambia e non sono più nella lista
 watch(corsiPerSedeSingola, (nuovaLista) => {
   if (singola.corso_id && !nuovaLista.some(c => c.id === singola.corso_id)) {
     singola.corso_id = ''
@@ -339,6 +388,14 @@ watch(corsiPerSedeSingola, (nuovaLista) => {
 watch(corsiPerSedeMassiva, (nuovaLista) => {
   if (massiva.corso_id && !nuovaLista.some(c => c.id === massiva.corso_id)) {
     massiva.corso_id = ''
+  }
+})
+watch(docentiPerSede, (nuovaLista) => {
+  if (singola.docente_id && !nuovaLista.some(d => d.id === singola.docente_id)) {
+    singola.docente_id = ''
+  }
+  if (massiva.docente_id && !nuovaLista.some(d => d.id === massiva.docente_id)) {
+    massiva.docente_id = ''
   }
 })
 
@@ -373,6 +430,7 @@ watch(() => massiva.ora_inizio, (nuovaOra) => {
 async function onSedeChange() {
   singola.aula_id = ''
   singola.corso_id = ''
+  singola.docente_id = ''  // ← AGGIUNTO reset docente
   aule.value = []
   if (!singola.sede_id) return
   caricandoAule.value = true
@@ -387,6 +445,7 @@ async function onSedeChange() {
 async function onSedeChangeMassiva() {
   massiva.aula_id = ''
   massiva.corso_id = ''
+  massiva.docente_id = ''  // ← AGGIUNTO reset docente
   auleMassiva.value = []
   if (!massiva.sede_id) return
   const data = await getAuleBySede(massiva.sede_id)
@@ -397,6 +456,7 @@ function validaSingola() {
   err.sede_id = singola.sede_id ? '' : 'Obbligatorio'
   err.aula_id = singola.aula_id ? '' : 'Obbligatorio'
   err.corso_id = singola.corso_id ? '' : 'Obbligatorio'
+  err.docente_id = singola.docente_id ? '' : 'Obbligatorio'  // ← AGGIUNTO
   err.data = singola.data ? '' : 'Obbligatorio'
   err.ora_inizio = singola.ora_inizio ? '' : 'Obbligatorio'
   err.ora_fine = singola.ora_fine ? '' : 'Obbligatorio'
@@ -414,6 +474,7 @@ async function submitSingola() {
     const risposta = await creaPrenotazione({
       aula_id: singola.aula_id,
       corso_id: singola.corso_id,
+      docente_id: singola.docente_id,  // ← AGGIUNTO
       slot: { data: singola.data, ora_inizio: singola.ora_inizio, ora_fine: singola.ora_fine },
       note: singola.note || undefined,
     })
@@ -432,6 +493,7 @@ function validaMassiva() {
   errM.sede_id = massiva.sede_id ? '' : 'Obbligatorio'
   errM.aula_id = massiva.aula_id ? '' : 'Obbligatorio'
   errM.corso_id = massiva.corso_id ? '' : 'Obbligatorio'
+  errM.docente_id = massiva.docente_id ? '' : 'Obbligatorio'  // ← AGGIUNTO
   errM.data_inizio = massiva.data_inizio ? '' : 'Obbligatorio'
   errM.data_fine = massiva.data_fine ? '' : 'Obbligatorio'
   errM.ora_inizio = massiva.ora_inizio ? '' : 'Obbligatorio'
@@ -454,6 +516,7 @@ async function submitMassiva() {
     const risposta = await creaPrenotazioneMassiva({
       aula_id: massiva.aula_id,
       corso_id: massiva.corso_id,
+      docente_id: massiva.docente_id,  // ← AGGIUNTO
       data_inizio: massiva.data_inizio,
       data_fine: massiva.data_fine,
       ora_inizio: massiva.ora_inizio,
@@ -473,14 +536,17 @@ async function submitMassiva() {
 }
 
 function resetSingola() {
-  Object.assign(singola, { sede_id: '', aula_id: '', corso_id: '', data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '' })
+  Object.assign(singola, { 
+    sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO docente_id
+    data: '', ora_inizio: '09:00', ora_fine: '13:00', note: '' 
+  })
   Object.keys(err).forEach(k => (err[k] = ''))
   aule.value = []
 }
 
 function resetMassiva() {
   Object.assign(massiva, {
-    sede_id: '', aula_id: '', corso_id: '',
+    sede_id: '', aula_id: '', corso_id: '', docente_id: '',  // ← AGGIUNTO docente_id
     data_inizio: '', data_fine: '',
     ora_inizio: '09:00', ora_fine: '13:00',
     tipo_ricorrenza: 'settimanale',
@@ -496,7 +562,8 @@ onMounted(async () => {
   const [dataSedi, dataAule] = await Promise.all([
     getSedi(),
     getAule(),
-    caricaCorsi()
+    caricaCorsi(),
+    caricaDocenti()  // ← AGGIUNTO
   ])
   const tutteLeSedi = dataSedi || []
   const tutteLeAule = (dataAule?.items || dataAule || []).filter(a => a.attiva !== false)
@@ -522,8 +589,6 @@ onMounted(async () => {
   if (route.query.data) singola.data = route.query.data
 })
 </script>
-
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

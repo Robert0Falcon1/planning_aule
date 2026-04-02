@@ -101,6 +101,7 @@
                 <th>Orario</th>
                 <th>Aula</th>
                 <th>Corso</th>
+                <th>Docente</th>
                 <th>Note</th>
                 <th v-if="authStore.isCoordinamento">Prenotato&nbsp;da</th>
                 <th>Conflitti</th>
@@ -137,6 +138,12 @@
                     <use :href="sprites + '#it-bookmark'"></use>
                   </svg>
                   <span class="small">{{ formatCorso(slot.corsoId) }}</span>
+                </td>
+                <td>
+                  <svg class="icon icon-xs me-1">
+                    <use :href="sprites + '#it-user'"></use>
+                  </svg>
+                  <span class="small">{{ getNomeDocente(slot.docenteId) }}</span>
                 </td>
                 <td>
                   <svg class="icon icon-xs me-1">
@@ -224,7 +231,6 @@
   <ModificaSlotModal v-model:aperta="modalModifica" :slot="slotInModifica" :sedi="sedi" :aula-map="aulaMap"
     @salvato="caricaTutto" />
 </template>
-
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
@@ -236,6 +242,7 @@ import { getAule } from '@/api/aule'
 import { useAule } from '@/composables/useAule'
 import { useAulaColor } from '@/composables/useAulaColor'
 import { useCorsi } from '@/composables/useCorsi'
+import { useDocenti } from '@/composables/useDocenti'  // ← AGGIUNTO
 import { formatData, oggi } from '@/utils/formatters'
 import sprites from 'bootstrap-italia/dist/svg/sprites.svg?url'
 import ModificaSlotModal from '@/components/layout/ModificaSlotModal.vue'
@@ -246,6 +253,7 @@ const authStore = useAuthStore()
 const { nomeAula: nomeAulaFn, sedeDiAula: sedeDiAulaFn, carica: caricaAule } = useAule()
 const { getAulaBadgeStyle } = useAulaColor()
 const { corsiAttivi, caricandoCorsi, caricaCorsi, formatCorso } = useCorsi()
+const { getNomeDocente, caricaDocenti } = useDocenti()  // ← AGGIUNTO
 
 const loading = ref(false)
 const prenotazioni = ref([])
@@ -327,6 +335,7 @@ const tuttiGliSlot = computed(() => {
         slotIdx: si,
         aulaId: slot.aula_id,
         corsoId: slot.corso_id,
+        docenteId: slot.docente_id,  // ← AGGIUNTO
         note: slot.note || '',
         richiedenteId: p.richiedente_id,
         haConflitti: ids.has(slot.id),
@@ -386,9 +395,7 @@ const paginaCorrente = computed(() => {
 })
 
 const totalePagine = computed(() => Math.ceil(slotFiltrati.value.length / PER_PAGINA) || 1)
-
 const conteggioSlot = computed(() => tuttiGliSlot.value.length)
-
 const conteggioConflitti = computed(() => {
   if (authStore.isCoordinamento) {
     return tuttiGliSlot.value.filter(s => s.haConflitti).length
@@ -434,25 +441,19 @@ async function caricaTutto() {
   try {
     const calls = [getSedi(), getAule(), getMiePrenotazioni(), getConflitti({ solo_attivi: true })]
     if (authStore.isCoordinamento) calls.push(getUtenti())
-
     const results = await Promise.all(calls)
     const [dataSedi, dataAule, dataPren, dataConflitti] = results
     const dataUtenti = results[4]
-
     const tutteLeAule = Array.isArray(dataAule) ? dataAule : []
     const auleAttive = tutteLeAule.filter(a => a.attiva !== false)
-
     const tutteLeSedi = Array.isArray(dataSedi) ? dataSedi : []
     sedi.value = tutteLeSedi.filter(sede =>
       auleAttive.some(aula => aula.sede_id === sede.id)
     )
-
     aule.value = tutteLeAule
     prenotazioni.value = Array.isArray(dataPren) ? dataPren : (dataPren?.items || [])
     conflittiAttivi.value = Array.isArray(dataConflitti) ? dataConflitti : (dataConflitti?.items || [])
-
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
-
     await caricaAule()
     if (dataUtenti) utenti.value = Array.isArray(dataUtenti) ? dataUtenti : []
   } catch (e) {
@@ -467,9 +468,8 @@ function vaiACalendario(data) {
 }
 
 onMounted(async () => {
-  await Promise.all([caricaAule(), caricaCorsi()])
+  await Promise.all([caricaAule(), caricaCorsi(), caricaDocenti()])  // ← AGGIUNTO caricaDocenti
   await caricaTutto()
-
   const sedeDefault = sedeDefaultFiltro.value
   if (sedeDefault) {
     const sedeHaAuleAttive = sedi.value.some(s => s.id === Number(sedeDefault))
@@ -479,7 +479,6 @@ onMounted(async () => {
 
 onActivated(caricaTutto)
 </script>
-
 <style scoped>
 .page-title {
   font-size: 1.4rem;

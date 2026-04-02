@@ -28,6 +28,7 @@ def crea_prenotazione_singola(
         prenotazione_id=prenotazione.id,
         aula_id=dati.aula_id,
         corso_id=dati.corso_id,
+        docente_id=dati.docente_id,  # ← AGGIUNTO
         note=dati.note,
         data=dati.slot.data,
         ora_inizio=dati.slot.ora_inizio,
@@ -106,6 +107,7 @@ def crea_prenotazione_massiva(
             prenotazione_id=prenotazione.id,
             aula_id=dati.aula_id,
             corso_id=dati.corso_id,
+            docente_id=dati.docente_id,  # ← AGGIUNTO
             note=dati.note,
             data=d,
             ora_inizio=dati.ora_inizio,

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.database import crea_tabelle
 # Import di tutti i router
-from backend.routers import auth, utenti, sedi, aule, prenotazioni, conflitti, corsi
+from backend.routers import auth, utenti, sedi, aule, prenotazioni, conflitti, corsi, docenti
 # ── Lifespan (sostituisce il deprecato @app.on_event) ────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,6 +56,8 @@ app.include_router(aule.router,         prefix=PREFIX)
 app.include_router(prenotazioni.router, prefix=PREFIX)
 app.include_router(conflitti.router,    prefix=PREFIX)
 app.include_router(corsi.router,        prefix=PREFIX)
+app.include_router(docenti.router,      prefix=PREFIX)
+
 @app.get("/", summary="Health check")
 def root():
     """Endpoint di verifica dello stato del server."""
