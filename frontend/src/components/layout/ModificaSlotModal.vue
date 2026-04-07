@@ -330,3 +330,13 @@ onMounted(async () => {
   tutteLeAule.value = a?.items || a || []
 })
 </script>
+
+<style scoped>
+input[type=date] {
+    padding: .25rem .5rem !important;
+}
+.form-select {
+    border-bottom: 1px solid hsl(210,17%,44%) !important;
+    border-radius: 0 !important;
+}
+</style>

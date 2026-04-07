@@ -629,6 +629,13 @@ onMounted(async () => {
   color: #5c6f82;
   margin-bottom: 24px;
 }
+input[type=date] {
+    padding: .25rem .5rem !important;
+}
+.form-select {
+    border-bottom: 1px solid hsl(210,17%,44%) !important;
+    border-radius: 0 !important;
+}
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
