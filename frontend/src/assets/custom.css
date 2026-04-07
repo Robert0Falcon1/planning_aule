@@ -536,7 +536,7 @@ body:has(#mobileSidebar.show) {
 /* Filtro sede custom */
 .sede-select {
     font-weight: 600;
-    border: 3px solid var(--bs-primary) !important;
+    border: 2px solid var(--bs-primary) !important;
     font-size: 1rem;
     transition: all 0.2s ease;
     color: var(--bs-primary) !important;
