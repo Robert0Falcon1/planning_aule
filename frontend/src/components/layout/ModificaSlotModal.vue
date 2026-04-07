@@ -62,7 +62,7 @@
                     }}
                   </option>
                   <option v-for="d in docentiPerSelect" :key="d.id" :value="d.id">
-                    {{ d.cognome }} {{ d.nome }}{{ d.tipologia ? ` (${d.tipologia})` : '' }}
+                    {{ d.cognome }} {{ d.nome }}
                   </option>
                 </select>
                 <div class="invalid-feedback">{{ err.docente_id }}</div>

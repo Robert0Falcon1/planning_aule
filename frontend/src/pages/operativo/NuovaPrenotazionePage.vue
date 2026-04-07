@@ -80,7 +80,7 @@
                     {{ caricandoDocenti ? 'Caricamento…' : (!singola.sede_id ? '— seleziona sede prima —' : '— seleziona —') }}
                   </option>
                   <option v-for="d in docentiPerSede" :key="d.id" :value="d.id">
-                    {{ d.cognome }} {{ d.nome }}{{ d.tipologia ? ` (${d.tipologia})` : '' }}
+                    {{ d.cognome }} {{ d.nome }}
                   </option>
                 </select>
                 <div class="invalid-feedback">{{ err.docente_id }}</div>
@@ -192,7 +192,7 @@
                     {{ caricandoDocenti ? 'Caricamento…' : (!massiva.sede_id ? '— seleziona sede prima —' : '— seleziona —') }}
                   </option>
                   <option v-for="d in docentiPerSede" :key="d.id" :value="d.id">
-                    {{ d.cognome }} {{ d.nome }}{{ d.tipologia ? ` (${d.tipologia})` : '' }}
+                    {{ d.cognome }} {{ d.nome }}
                   </option>
                 </select>
                 <div class="invalid-feedback">{{ errM.docente_id }}</div>
