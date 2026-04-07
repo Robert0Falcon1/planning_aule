@@ -1,3 +1,5 @@
+gA4M5EG!y6H1
+
 # Avvio Applicativo in locale
 
 ### Database
@@ -29,6 +31,5 @@ docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}
 
 <!--
 simone.dardanello_lav@IPA
-RamCosa-4926 
+gA4M5EG!y6H1
 -->
-
