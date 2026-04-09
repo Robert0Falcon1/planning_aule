@@ -5,7 +5,7 @@
       <div class="it-header-slim-wrapper-content">
         <span class="navbar-brand">
           <router-link class="navbar-brand" :to="homePath">
-            <img class="logo filter-logo hover-link" src="/img/logo_ICE.png">
+            <img class="logo" src="/img/logo_ICE.png">
           </router-link>
         </span>
         <div class="header-slim-right-zone">

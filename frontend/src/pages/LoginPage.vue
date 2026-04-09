@@ -6,10 +6,10 @@
       <div class="card-body px-5 pt-5 pb-5">
         <!-- Logo / Brand -->
         <div class="text-center mb-4">
-          <div class="mx-auto mb-3">
-            <img class="logo" src="/img/logo_ICE.png" />
+          <div class="mx-auto">
+            <img class="logo-login ms-3" src="/img/logo_ICE.png" />
           </div>
-          <p class="text-muted small">Planning Aule v1.0</p>
+          <p class="text-muted small">v1.0 beta</p>
         </div>
 
         <!-- Alert errore -->
@@ -87,7 +87,7 @@
       <div class="col-12">
         <div class="row py-3 mx-auto">
           <small class="text-center text-small">
-                © {{ new Date().getFullYear() }} Inforcoop Ecipa Piemonte | Planning Aule v1.0
+                © {{ new Date().getFullYear() }} Inforcoop Ecipa Piemonte | Mirai v1.0 beta
           </small>
         </div>
       </div>

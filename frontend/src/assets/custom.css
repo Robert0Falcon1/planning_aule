@@ -308,11 +308,15 @@ input[type="date"]:focus {
 
 /* Logo */
 .logo {
-    max-width: 200px;
-}
-
-.filter-logo {
+    max-width: 100px;
     filter: grayscale(1) contrast(10) invert(1);
+}
+.logo:hover{
+    filter: hue-rotate(286deg) brightness(2) contrast(0.6) !important;
+}
+.logo-login{
+	max-width: 200px;
+    filter: brightness(1) saturate(1.5);
 }
 
 /* Bottoni - Hover states */
@@ -404,7 +408,6 @@ a:hover {
 }
 
 .hover-link:hover {
-    filter: none !important;
     cursor: pointer;
     font-weight: 600;
 }
